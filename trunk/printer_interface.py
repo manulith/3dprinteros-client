@@ -66,10 +66,11 @@ class PrinterInterface(object):
                 elapsed += 0.5
         self.logger.warning('Error. Timeout while waiting for printer to become operational.')
 
-    @try_protection
+    #@try_protection
     def is_operational(self):
         if self.printer:
             return self.printer.is_operational()
+        self.logger.warning("No printer in printer_interface " + str(self.profile['name']))
         return False
 
     @try_protection
@@ -100,7 +101,7 @@ class PrinterInterface(object):
             self.logger.info("Force close serial port forbidden: \
                                 not serial printer or force_port_close disabled in config")
 
-    @try_protection
+    #@try_protection
     def report(self):
         if self.printer:
             return self.printer.report()

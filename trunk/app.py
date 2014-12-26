@@ -113,6 +113,7 @@ class App():
             before = time.time()
             currently_detected = self.detect_printers()
             self.detect_and_connect(currently_detected)
+            time.sleep(0.5)
             self.do_things_with_connected(currently_detected)
             elapsed = time.time() - before
             if elapsed < self.MIN_LOOP_TIME:

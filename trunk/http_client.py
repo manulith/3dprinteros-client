@@ -161,7 +161,7 @@ if __name__ == '__main__':
             processor = command_processor.process_command_request
         else:
             answer =  'Invalid choice'
-        print user_choice1
+        print user_choice
         print 'Raw answer:' + str(answer)
         print command_processor
 
