@@ -141,6 +141,8 @@ class App():
                     self.logger.info('Waiting for printer to become operational. %f secs' % (time.time() - pi.creation_time))
                     time.sleep(1) #remove me in release
                     continue
+            else:
+                self.logger.waring("Printer %s %s no longer detected!" % (pi.profile['name'], pi.profile['SNR']))
             self.disconnect_printer(pi)
 
     def report_state_and_execute_new_job(self, printer):
@@ -154,8 +156,11 @@ class App():
         return report
 
     def connect_printer(self, printer_profile):
-        new_pi = printer_interface.PrinterInterface(printer_profile)
-        self.printer_interfaces.append(new_pi)
+        if printer_profile['name'] == self.printer_name_by_token:
+            new_pi = printer_interface.PrinterInterface(printer_profile)
+            self.printer_interfaces.append(new_pi)
+        else:
+            self.logger.debug("Wrong token prevent creation of interface")
 
     def disconnect_printer(self, printer_interface=None):
         if not printer_interface:

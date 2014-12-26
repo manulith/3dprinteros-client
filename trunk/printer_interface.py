@@ -10,12 +10,13 @@ class PrinterInterface(object):
 
     def try_protection(func):
         def decorator(self, *args, **kwargs):
-            self.logger.info('Executing command: ' + str(func.__name__))
+            name = str(func.__name__)
+            self.logger.info('Executing command: ' + name)
             try:
                 func(self, *args, **kwargs)
             except Exception as e:
                 self.logger.error("Error executing command " + str(func.__name__), exc_info=True)
-            self.logger.debug('Released ' + str(func.__name__))
+            self.logger.debug('Command %s finished.' % name)
         return decorator
 
     def __init__(self, profile):
