@@ -12,7 +12,7 @@ command_uri = "/command"
 cloudsync_uril = "/cloudsync_upload"
 token_jobs_path = "/getJobs"
 token_login_path = "/sendRequestToken" #json['token': token]
-token_camera_path = "/setImageForWebCamPrinter" #json['image': base64_image ]
+token_camera_path = "/image" #json['image': base64_image ]
 
 
 def load_json(jdata):
