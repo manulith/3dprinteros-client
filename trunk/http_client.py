@@ -14,6 +14,19 @@ token_jobs_path = "/getJobs"
 token_login_path = "/sendRequestToken" #json['token': token]
 token_camera_path = "/setImageForWebCamPrinter" #json['image': base64_image ]
 
+
+def load_json(jdata):
+    logger = logging.getLogger('app.' +__name__)
+    try:
+        data = json.loads(jdata)
+    except ValueError as e:
+        logger.debug("Received data is not valid json: " + e.message)
+    else:
+        if type(data) == dict and data:
+            return data
+        else:
+            logger.error("Data should be dictionary: " + str(data))
+
 def md5_hash(text):
     hash = md5(text)
     hex_str_hash = hash.hexdigest()
@@ -96,7 +109,7 @@ def send(packager, payloads):
         request_body, path = packager(*payloads)
         json_answer = post_request(connection, request_body, path)
         if json_answer:
-            return utils.load_json(json_answer)
+            return load_json(json_answer)
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
