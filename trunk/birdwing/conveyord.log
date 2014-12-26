@@ -1,0 +1,185 @@
+profile.py:30: DEBUG
+Profile:__init__
+2014-11-24 14:55:25,862
+{"event":"open_profile", "path":/home/vic/Work/secured3d-printer-driver-mb-mini/birdwing/birdwing_profiles/Moose.json}
+
+profile.py:30: DEBUG
+Profile:__init__
+2014-11-24 14:55:25,864
+{"event":"open_profile", "path":/home/vic/Work/secured3d-printer-driver-mb-mini/birdwing/birdwing_profiles/Tinkerbell.json}
+
+profile.py:30: DEBUG
+Profile:__init__
+2014-11-24 14:55:25,864
+{"event":"open_profile", "path":/home/vic/Work/secured3d-printer-driver-mb-mini/birdwing/birdwing_profiles/Platypus.json}
+
+__main__.py:72: INFO
+__main__.ServerMain:_run
+2014-11-24 14:55:25,865
+Listening for client connections
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-11-24 14:55:25,937
+Checking for printer class devices.  VID: 6127, PID: 29754
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-11-24 14:55:25,938
+Checking for printer class devices.  VID: 7531, PID: 2
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-11-24 14:55:25,938
+Checking for printer class devices.  VID: 2522, PID: 49418
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-11-24 14:55:25,938
+Checking for printer class devices.  VID: 7531, PID: 1
+
+networked_machine_detector.py:208: DEBUG
+conveyor.networked_machine_detector.NetworkedMachineDetector:run
+2014-11-24 14:55:25,939
+starting detection thread
+
+networked_machine_detector.py:443: DEBUG
+conveyor.networked_machine_detector.Listener:run
+2014-11-24 14:55:26,023
+starting listen loop
+
+networked_machine_detector.py:509: INFO
+conveyor.networked_machine_detector.BroadcastManager:__init__
+2014-11-24 14:55:26,040
+BotDiscoverer will search on: 127.0.0.1
+
+networked_machine_detector.py:529: INFO
+conveyor.networked_machine_detector.BroadcastManager:run
+2014-11-24 14:55:26,043
+found new interface 127.0.0.1 
+
+networked_machine_detector.py:289: DEBUG
+conveyor.networked_machine_detector.Broadcaster:run
+2014-11-24 14:55:26,044
+starting broadcast loop
+
+networked_machine_detector.py:383: DEBUG
+conveyor.networked_machine_detector.BroadcastListener:run
+2014-11-24 14:55:26,045
+starting BroadcastListener
+
+networked_machine_detector.py:293: DEBUG
+conveyor.networked_machine_detector.Broadcaster:run
+2014-11-24 14:55:26,047
+Sending broadcast on 127.0.0.1
+
+networked_machine_detector.py:269: DEBUG
+conveyor.networked_machine_detector.Broadcaster:__init__
+2014-11-24 14:55:31,045
+ERROR: error creating broadcast sockets
+Traceback (most recent call last):
+  File "/home/vic/Work/secured3d-printer-driver-mb-mini/birdwing/conveyor/networked_machine_detector.py", line 265, in __init__
+    self.broadcastSocket.bind((self.ip_address, self.dummyPort))
+  File "/usr/lib/python2.7/socket.py", line 224, in meth
+    return getattr(self._sock,name)(*args)
+error: [Errno 98] Address already in use
+networked_machine_detector.py:535: INFO
+conveyor.networked_machine_detector.BroadcastManager:run
+2014-11-24 14:55:31,059
+ERROR: error creating broadcaster for 127.0.0.1
+Traceback (most recent call last):
+  File "/home/vic/Work/secured3d-printer-driver-mb-mini/birdwing/conveyor/networked_machine_detector.py", line 531, in run
+    broadcaster_to_add = Broadcaster(new_ip)
+  File "/home/vic/Work/secured3d-printer-driver-mb-mini/birdwing/conveyor/networked_machine_detector.py", line 265, in __init__
+    self.broadcastSocket.bind((self.ip_address, self.dummyPort))
+  File "/usr/lib/python2.7/socket.py", line 224, in meth
+    return getattr(self._sock,name)(*args)
+error: [Errno 98] Address already in use
+networked_machine_detector.py:269: DEBUG
+conveyor.networked_machine_detector.Broadcaster:__init__
+2014-11-24 14:55:36,061
+ERROR: error creating broadcast sockets
+Traceback (most recent call last):
+  File "/home/vic/Work/secured3d-printer-driver-mb-mini/birdwing/conveyor/networked_machine_detector.py", line 265, in __init__
+    self.broadcastSocket.bind((self.ip_address, self.dummyPort))
+  File "/usr/lib/python2.7/socket.py", line 224, in meth
+    return getattr(self._sock,name)(*args)
+error: [Errno 98] Address already in use
+networked_machine_detector.py:535: INFO
+conveyor.networked_machine_detector.BroadcastManager:run
+2014-11-24 14:55:36,062
+ERROR: error creating broadcaster for 127.0.0.1
+Traceback (most recent call last):
+  File "/home/vic/Work/secured3d-printer-driver-mb-mini/birdwing/conveyor/networked_machine_detector.py", line 531, in run
+    broadcaster_to_add = Broadcaster(new_ip)
+  File "/home/vic/Work/secured3d-printer-driver-mb-mini/birdwing/conveyor/networked_machine_detector.py", line 265, in __init__
+    self.broadcastSocket.bind((self.ip_address, self.dummyPort))
+  File "/usr/lib/python2.7/socket.py", line 224, in meth
+    return getattr(self._sock,name)(*args)
+error: [Errno 98] Address already in use
+networked_machine_detector.py:269: DEBUG
+conveyor.networked_machine_detector.Broadcaster:__init__
+2014-11-24 14:55:41,064
+ERROR: error creating broadcast sockets
+Traceback (most recent call last):
+  File "/home/vic/Work/secured3d-printer-driver-mb-mini/birdwing/conveyor/networked_machine_detector.py", line 265, in __init__
+    self.broadcastSocket.bind((self.ip_address, self.dummyPort))
+  File "/usr/lib/python2.7/socket.py", line 224, in meth
+    return getattr(self._sock,name)(*args)
+error: [Errno 98] Address already in use
+networked_machine_detector.py:535: INFO
+conveyor.networked_machine_detector.BroadcastManager:run
+2014-11-24 14:55:41,065
+ERROR: error creating broadcaster for 127.0.0.1
+Traceback (most recent call last):
+  File "/home/vic/Work/secured3d-printer-driver-mb-mini/birdwing/conveyor/networked_machine_detector.py", line 531, in run
+    broadcaster_to_add = Broadcaster(new_ip)
+  File "/home/vic/Work/secured3d-printer-driver-mb-mini/birdwing/conveyor/networked_machine_detector.py", line 265, in __init__
+    self.broadcastSocket.bind((self.ip_address, self.dummyPort))
+  File "/usr/lib/python2.7/socket.py", line 224, in meth
+    return getattr(self._sock,name)(*args)
+error: [Errno 98] Address already in use
+networked_machine_detector.py:269: DEBUG
+conveyor.networked_machine_detector.Broadcaster:__init__
+2014-11-24 14:55:46,080
+ERROR: error creating broadcast sockets
+Traceback (most recent call last):
+  File "/home/vic/Work/secured3d-printer-driver-mb-mini/birdwing/conveyor/networked_machine_detector.py", line 265, in __init__
+    self.broadcastSocket.bind((self.ip_address, self.dummyPort))
+  File "/usr/lib/python2.7/socket.py", line 224, in meth
+    return getattr(self._sock,name)(*args)
+error: [Errno 98] Address already in use
+networked_machine_detector.py:535: INFO
+conveyor.networked_machine_detector.BroadcastManager:run
+2014-11-24 14:55:46,081
+ERROR: error creating broadcaster for 127.0.0.1
+Traceback (most recent call last):
+  File "/home/vic/Work/secured3d-printer-driver-mb-mini/birdwing/conveyor/networked_machine_detector.py", line 531, in run
+    broadcaster_to_add = Broadcaster(new_ip)
+  File "/home/vic/Work/secured3d-printer-driver-mb-mini/birdwing/conveyor/networked_machine_detector.py", line 265, in __init__
+    self.broadcastSocket.bind((self.ip_address, self.dummyPort))
+  File "/usr/lib/python2.7/socket.py", line 224, in meth
+    return getattr(self._sock,name)(*args)
+error: [Errno 98] Address already in use
+networked_machine_detector.py:269: DEBUG
+conveyor.networked_machine_detector.Broadcaster:__init__
+2014-11-24 14:55:51,083
+ERROR: error creating broadcast sockets
+Traceback (most recent call last):
+  File "/home/vic/Work/secured3d-printer-driver-mb-mini/birdwing/conveyor/networked_machine_detector.py", line 265, in __init__
+    self.broadcastSocket.bind((self.ip_address, self.dummyPort))
+  File "/usr/lib/python2.7/socket.py", line 224, in meth
+    return getattr(self._sock,name)(*args)
+error: [Errno 98] Address already in use
+networked_machine_detector.py:535: INFO
+conveyor.networked_machine_detector.BroadcastManager:run
+2014-11-24 14:55:51,084
+ERROR: error creating broadcaster for 127.0.0.1
+Traceback (most recent call last):
+  File "/home/vic/Work/secured3d-printer-driver-mb-mini/birdwing/conveyor/networked_machine_detector.py", line 531, in run
+    broadcaster_to_add = Broadcaster(new_ip)
+  File "/home/vic/Work/secured3d-printer-driver-mb-mini/birdwing/conveyor/networked_machine_detector.py", line 265, in __init__
+    self.broadcastSocket.bind((self.ip_address, self.dummyPort))
+  File "/usr/lib/python2.7/socket.py", line 224, in meth
+    return getattr(self._sock,name)(*args)
+error: [Errno 98] Address already in use
