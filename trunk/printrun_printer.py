@@ -261,9 +261,9 @@ class Printer:
             finally:
                 self._force_operational = False
 
-    # def end(self):
-    #     self._logger.debug('End debug info : ' + self._debug_info())
-    #     self._got_all_gcodes = True
+    def end(self):
+        self._logger.debug('End debug info : ' + self._debug_info())
+        self._got_all_gcodes = True
 
     def pause(self):
         self._logger.debug(self._debug_info())
