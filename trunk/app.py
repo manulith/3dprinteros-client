@@ -143,7 +143,7 @@ class App():
                     time.sleep(1) #remove me in release
                     continue
             else:
-                self.logger.waring("Printer %s %s no longer detected!" % (pi.profile['name'], pi.profile['SNR']))
+                self.logger.warning("Printer %s %s no longer detected!" % (pi.profile['name'], pi.profile['SNR']))
             self.disconnect_printer(pi)
 
     def report_state_and_execute_new_job(self, printer):
