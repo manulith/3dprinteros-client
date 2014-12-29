@@ -39,8 +39,8 @@ class Printer():
         self._eof = False
         self.self_restart = profile.get("quiet_restart", False)
         self._restarts_count = 0
+        self._lock = threading.Lock()
         if self.init_parser():
-            self._lock = threading.Lock()
             self._printing_thread = threading.Thread(target=self._printing, name='PR')
             self._printing_thread.start()
             self._logger.info('Makerbot printer created')
@@ -235,7 +235,8 @@ class Printer():
                 self._close()
                 self._error_code = 'serial'
                 self._error_message = str(e)
-                raise e
+                if self.profile.get('stop_on_error', False):
+                    raise e
 
             except makerbot_driver.ProtocolError as e:
                 self._logger.info('ProtocolError: ' + str(traceback.format_exc()))
@@ -246,7 +247,8 @@ class Printer():
                 self._close()
                 self._error_code = 'general'
                 self._error_message = str(e)
-                raise e
+                if self.profile.get('stop_on_error', False):
+                    raise e
 
             except makerbot_driver.Gcode.GcodeError as e:
                 self._logger.info('makerbot_driver.Gcode.GcodeError')
@@ -255,7 +257,8 @@ class Printer():
                 self._close()
                 self._error_code = 'gcode'
                 self._error_message = str(e)
-                raise e
+                if self.profile.get('stop_on_error', False):
+                    raise e
 
             except Exception as e:
                 self._logger.info('Unexpected error: ' + str(traceback.format_exc()))
@@ -264,7 +267,9 @@ class Printer():
                 self._close()
                 self._error_code = 'general'
                 self._error_message = str(e)
-                raise e
+                if self.profile.get('stop_on_error', False):
+                    raise e
+
             #except makerbot_driver.TransmissionError as e:
             #except makerbot_driver.BuildCancelledError as e:
             #except makerbot_driver.ActiveBuildError as e:

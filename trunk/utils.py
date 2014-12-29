@@ -64,12 +64,13 @@ def read_token():
     paths.append(path)
     for path in paths:
         logger.debug("Searching for token-file in %s" % path)
-        with open(path) as token_file:
-            try:
+        try:
+            with open(path) as token_file:
                 token = token_file.read()
                 logger.debug('Token loaded from ' + path)
-            except IOError as e:
-                continue
+        except IOError as e:
+            continue
+        else:
             return token.strip()
     logger.debug('Error while loading token in paths: %s' % str(paths) )
 

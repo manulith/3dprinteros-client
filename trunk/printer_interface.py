@@ -143,4 +143,6 @@ class PrinterInterface(object):
     def gcodes(self, gcodes):
         self.printer.gcodes(gcodes)
 
-
+    @try_protection
+    def end(self):
+        self.printer.end()

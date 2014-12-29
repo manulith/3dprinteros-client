@@ -63,6 +63,8 @@ def process_job_request(printer_interface, data_dict):
             printer_interface.cancel()
         elif job == '/emergency_stop':
             printer_interface.emergency_stop()
+        elif job == '/end':
+            printer_interface.end()
         else:
             logger.info('GCodes received')
             if printer_interface.profile['print_from_binary']:
