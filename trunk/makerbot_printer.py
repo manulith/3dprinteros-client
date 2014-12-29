@@ -235,7 +235,7 @@ class Printer():
                 self._close()
                 self._error_code = 'serial'
                 self._error_message = str(e)
-                if self.profile.get('stop_on_error', False):
+                if self._profile.get('stop_on_error', False):
                     raise e
 
             except makerbot_driver.ProtocolError as e:
@@ -247,7 +247,7 @@ class Printer():
                 self._close()
                 self._error_code = 'general'
                 self._error_message = str(e)
-                if self.profile.get('stop_on_error', False):
+                if self._profile.get('stop_on_error', False):
                     raise e
 
             except makerbot_driver.Gcode.GcodeError as e:
@@ -257,7 +257,7 @@ class Printer():
                 self._close()
                 self._error_code = 'gcode'
                 self._error_message = str(e)
-                if self.profile.get('stop_on_error', False):
+                if self._profile.get('stop_on_error', False):
                     raise e
 
             except Exception as e:
@@ -267,7 +267,7 @@ class Printer():
                 self._close()
                 self._error_code = 'general'
                 self._error_message = str(e)
-                if self.profile.get('stop_on_error', False):
+                if self._profile.get('stop_on_error', False):
                     raise e
 
             #except makerbot_driver.TransmissionError as e:
