@@ -127,6 +127,9 @@ class Printer:
     def is_operational(self):
         return self.operational_flag
 
+    def is_paused(self):
+        return self.pause_flag
+
     def send_next_if_ready(self):
         if not self.pause_flag:
             gcode = None

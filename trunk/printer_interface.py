@@ -144,3 +144,5 @@ class PrinterInterface(object):
     def resume(self):
         self.printer.resume()
 
+    def is_paused(self):
+        return self.printer.is_paused()

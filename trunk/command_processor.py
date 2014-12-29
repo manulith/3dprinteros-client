@@ -56,7 +56,10 @@ def process_job_request(printer_interface, data_dict):
                 gcode_count = sys.maxint
             printer_interface.begin(gcode_count)
         elif job == '/pause':
-            printer_interface.pause()
+            if printer_interface.is_paused():
+                printer_interface.resume()
+            else:
+                printer_interface.pause()
         elif job == '/resume':
             printer_interface.resume()
         elif job == '/cancel':
