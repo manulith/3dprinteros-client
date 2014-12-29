@@ -89,6 +89,8 @@ def request(connection, payload, path, method, headers):
         resp = connection.getresponse()
     except httplib.error as e:
         logger.info("Error during HTTP request:" + str(e))
+    except Exception as e:
+        logger.info(("Error during HTTP request:" + str(e)))
     else:
         logger.debug("Request status: %s %s" % (resp.status , resp.reason))
         if resp.status == httplib.OK and resp.reason == "OK":

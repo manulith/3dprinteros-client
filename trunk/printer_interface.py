@@ -66,12 +66,16 @@ class PrinterInterface(object):
                 elapsed += 0.5
         self.logger.warning('Error. Timeout while waiting for printer to become operational.')
 
-    #@try_protection
     def is_operational(self):
         if self.printer:
             return self.printer.is_operational()
         self.logger.warning("No printer in printer_interface " + str(self.profile['name']))
         return False
+
+    def report(self):
+        if self.printer:
+            return self.printer.report()
+        return {'status': 'no_printer'}
 
     @try_protection
     def close(self):
@@ -82,7 +86,6 @@ class PrinterInterface(object):
             self.printer = None
         else:
             self.logger.debug('Nothing to close')
-
 
     def close_hanged_port(self):
         self.logger.info("Trying to force close serial port %s" % self.profile['COM'])
@@ -101,11 +104,13 @@ class PrinterInterface(object):
             self.logger.info("Force close serial port forbidden: \
                                 not serial printer or force_port_close disabled in config")
 
-    #@try_protection
-    def report(self):
-        if self.printer:
-            return self.printer.report()
-        return {'status': 'no_printer'}
+    @try_protection
+    def binary_file(self, data):
+        self.printer.binary_file(data)
+
+    @try_protection
+    def gcodes(self, gcodes):
+        self.printer.gcodes(gcodes)
 
     @try_protection
     def pause(self):
@@ -120,12 +125,12 @@ class PrinterInterface(object):
         self.printer.emergency_stop()
 
     @try_protection
-    def begin(self, length):
-        self.set_total_gcodes(length)
-
-    @try_protection
     def set_total_gcodes(self, length):
         self.printer.set_total_gcodes(length)
+
+    @try_protection
+    def begin(self, length):
+        self.set_total_gcodes(length)
 
     @try_protection
     def enqueue(self, gcodes):
@@ -139,10 +144,3 @@ class PrinterInterface(object):
     def resume(self):
         self.printer.resume()
 
-    @try_protection
-    def gcodes(self, gcodes):
-        self.printer.gcodes(gcodes)
-
-    @try_protection
-    def end(self):
-        self.printer.end()

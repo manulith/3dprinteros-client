@@ -188,8 +188,10 @@ class Printer:
             self.job_id = str(current_job['id']) # job_id need to be str, don't remove!
         else:
             self.logger.critical("No running print job!")
-
     def enqueue(self, makerbot_file):
+        self.binary_file(makerbot_file)
+
+    def binary_file(self, makerbot_file):
         #self.logger.debug("Acquiring print lock")
         #self.print_lock.acquire()
         self.job_id = None # essential. don't remove
