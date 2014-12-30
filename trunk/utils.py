@@ -15,7 +15,7 @@ def singleton(cls):
     return getinstance()
 
 def elapse_stretcher(looptime):
-    SLEEP_STEP = 0.1
+    SLEEP_STEP = 0.01
     def edec(func):
         def idec(*args, **kwargs):
             start_time = time.time()

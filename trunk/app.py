@@ -16,7 +16,6 @@ import http_client
 import printer_interface
 import command_processor
 
-#@utils.singleton
 class App():
 
     MIN_LOOP_TIME = 2
@@ -41,7 +40,7 @@ class App():
                 file_handler.setFormatter(formatter)
                 logger.addHandler(file_handler)
             except Exception as e:
-                logger.debug('Could not create log file because' + e.message + ' .No log mode.')
+                logger.debug('Could not create log file because' + e.message + '\n.No log mode.')
         return logger
 
     def __init__(self):
@@ -58,7 +57,7 @@ class App():
         self.detected_printers = []
         self.printer_interfaces = []
         self.token_related_s()
-        #self.kill_makebot_conveyor()
+        self.kill_makerbot_conveyor()
         self.stop_flag = False
         self.main_loop()
 
@@ -173,11 +172,14 @@ class App():
             self.tray_wrapper.qt_thread.show_notification('Closing ' + printer_interface.profile['name'])
 
     def kill_makerbot_conveyor(self):
+        self.logger.info('Stopping third party software...')
         try:
             import birdwing.conveyor_from_egg
             birdwing.conveyor_from_egg.kill_existing_conveyor()
         except ImportError as e:
             self.logger.debug(e.message)
+        else:
+            self.logger.info('...done.')
 
     def check_autoselect(self):
         autoselect = config.config['autoselect']

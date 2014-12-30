@@ -11,12 +11,15 @@ class PrinterInterface(object):
     def try_protection(func):
         def decorator(self, *args, **kwargs):
             name = str(func.__name__)
-            self.logger.info('Executing command: ' + name)
+            self.logger.info('[ Executing: ' + name + "...")
             try:
-                func(self, *args, **kwargs)
+                result = func(self, *args, **kwargs)
             except Exception as e:
-                self.logger.error("Error executing command " + str(func.__name__), exc_info=True)
-            self.logger.debug('Command %s finished.' % name)
+                self.logger.error("!Error in command %s\n[%s]" % (str(func.__name__), str(e)))
+            else:
+                self.logger.info('... ' + name + " finished ]")
+                return result
+
         return decorator
 
     def __init__(self, profile):
@@ -66,12 +69,14 @@ class PrinterInterface(object):
                 elapsed += 0.5
         self.logger.warning('Error. Timeout while waiting for printer to become operational.')
 
+    @try_protection
     def is_operational(self):
         if self.printer:
             return self.printer.is_operational()
         self.logger.warning("No printer in printer_interface " + str(self.profile['name']))
         return False
 
+    @try_protection
     def report(self):
         if self.printer:
             return self.printer.report()
@@ -87,6 +92,7 @@ class PrinterInterface(object):
         else:
             self.logger.debug('Nothing to close')
 
+    @try_protection
     def close_hanged_port(self):
         self.logger.info("Trying to force close serial port %s" % self.profile['COM'])
         if self.profile["force_port_close"] and self.profile['COM']:
@@ -144,5 +150,6 @@ class PrinterInterface(object):
     def resume(self):
         self.printer.resume()
 
+    @try_protection
     def is_paused(self):
         return self.printer.is_paused()

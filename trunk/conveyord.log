@@ -655,3 +655,779 @@ Traceback (most recent call last):
   File "/home/vic/Work/secured3d-printer-driver-mb-mini/birdwing/conveyor/networked_machine_detector.py", line 440, in __init__
     self.listenPort.settimeout(3)
 AttributeError: 'int' object has no attribute 'settimeout'
+profile.py:30: DEBUG
+Profile:__init__
+2014-12-30 11:27:21,322
+{"event":"open_profile", "path":/home/vic/Work/3dprinteros-client/trunk/birdwing/birdwing_profiles/Moose.json}
+
+profile.py:30: DEBUG
+Profile:__init__
+2014-12-30 11:27:21,336
+{"event":"open_profile", "path":/home/vic/Work/3dprinteros-client/trunk/birdwing/birdwing_profiles/Tinkerbell.json}
+
+profile.py:30: DEBUG
+Profile:__init__
+2014-12-30 11:27:21,337
+{"event":"open_profile", "path":/home/vic/Work/3dprinteros-client/trunk/birdwing/birdwing_profiles/Platypus.json}
+
+__main__.py:72: INFO
+__main__.ServerMain:_run
+2014-12-30 11:27:21,347
+Listening for client connections
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:27:21,407
+Checking for printer class devices.  VID: 7531, PID: 1
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:27:21,408
+Checking for printer class devices.  VID: 7531, PID: 2
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:27:21,408
+Checking for printer class devices.  VID: 7531, PID: 1
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:27:21,408
+Checking for printer class devices.  VID: 7531, PID: 2
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:27:21,408
+Checking for printer class devices.  VID: 9025, PID: 66
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:27:21,408
+Checking for printer class devices.  VID: 2522, PID: 49418
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:27:21,408
+Checking for printer class devices.  VID: 7531, PID: 1
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:27:21,408
+Checking for printer class devices.  VID: 7531, PID: 3
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:27:21,408
+Checking for printer class devices.  VID: 7531, PID: 2
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:27:21,408
+Checking for printer class devices.  VID: 7531, PID: 3
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:27:21,408
+Checking for printer class devices.  VID: 7247, PID: 38
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:27:21,408
+Checking for printer class devices.  VID: 7531, PID: 2
+
+networked_machine_detector.py:210: DEBUG
+conveyor.networked_machine_detector.NetworkedMachineDetector:run
+2014-12-30 11:27:21,409
+starting detection thread
+
+networked_machine_detector.py:215: INFO
+conveyor.networked_machine_detector.NetworkedMachineDetector:run
+2014-12-30 11:27:21,410
+Error detecting machines
+Traceback (most recent call last):
+  File "/home/vic/Work/3dprinteros-client/trunk/birdwing/conveyor/networked_machine_detector.py", line 213, in run
+    self.detector_thread.start()
+  File "/home/vic/Work/3dprinteros-client/trunk/birdwing/conveyor/networked_machine_detector.py", line 593, in start
+    self._listener_thread = Listener(self._detector)
+  File "/home/vic/Work/3dprinteros-client/trunk/birdwing/conveyor/networked_machine_detector.py", line 440, in __init__
+    self.listenPort.settimeout(3)
+AttributeError: 'int' object has no attribute 'settimeout'
+profile.py:30: DEBUG
+Profile:__init__
+2014-12-30 11:29:18,170
+{"event":"open_profile", "path":/home/vic/Work/3dprinteros-client/trunk/birdwing/birdwing_profiles/Moose.json}
+
+profile.py:30: DEBUG
+Profile:__init__
+2014-12-30 11:29:18,171
+{"event":"open_profile", "path":/home/vic/Work/3dprinteros-client/trunk/birdwing/birdwing_profiles/Tinkerbell.json}
+
+profile.py:30: DEBUG
+Profile:__init__
+2014-12-30 11:29:18,171
+{"event":"open_profile", "path":/home/vic/Work/3dprinteros-client/trunk/birdwing/birdwing_profiles/Platypus.json}
+
+__main__.py:72: INFO
+__main__.ServerMain:_run
+2014-12-30 11:29:18,171
+Listening for client connections
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:29:18,177
+Checking for printer class devices.  VID: 7531, PID: 1
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:29:18,177
+Checking for printer class devices.  VID: 7531, PID: 2
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:29:18,177
+Checking for printer class devices.  VID: 7531, PID: 1
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:29:18,177
+Checking for printer class devices.  VID: 7531, PID: 2
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:29:18,177
+Checking for printer class devices.  VID: 9025, PID: 66
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:29:18,177
+Checking for printer class devices.  VID: 2522, PID: 49418
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:29:18,177
+Checking for printer class devices.  VID: 7531, PID: 1
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:29:18,177
+Checking for printer class devices.  VID: 7531, PID: 3
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:29:18,178
+Checking for printer class devices.  VID: 7531, PID: 2
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:29:18,178
+Checking for printer class devices.  VID: 7531, PID: 3
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:29:18,178
+Checking for printer class devices.  VID: 7247, PID: 38
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:29:18,178
+Checking for printer class devices.  VID: 7531, PID: 2
+
+networked_machine_detector.py:210: DEBUG
+conveyor.networked_machine_detector.NetworkedMachineDetector:run
+2014-12-30 11:29:18,178
+starting detection thread
+
+networked_machine_detector.py:215: INFO
+conveyor.networked_machine_detector.NetworkedMachineDetector:run
+2014-12-30 11:29:18,179
+Error detecting machines
+Traceback (most recent call last):
+  File "/home/vic/Work/3dprinteros-client/trunk/birdwing/conveyor/networked_machine_detector.py", line 213, in run
+    self.detector_thread.start()
+  File "/home/vic/Work/3dprinteros-client/trunk/birdwing/conveyor/networked_machine_detector.py", line 593, in start
+    self._listener_thread = Listener(self._detector)
+  File "/home/vic/Work/3dprinteros-client/trunk/birdwing/conveyor/networked_machine_detector.py", line 440, in __init__
+    self.listenPort.settimeout(3)
+AttributeError: 'int' object has no attribute 'settimeout'
+profile.py:30: DEBUG
+Profile:__init__
+2014-12-30 11:30:18,901
+{"event":"open_profile", "path":/home/vic/Work/3dprinteros-client/trunk/birdwing/birdwing_profiles/Moose.json}
+
+profile.py:30: DEBUG
+Profile:__init__
+2014-12-30 11:30:18,901
+{"event":"open_profile", "path":/home/vic/Work/3dprinteros-client/trunk/birdwing/birdwing_profiles/Tinkerbell.json}
+
+profile.py:30: DEBUG
+Profile:__init__
+2014-12-30 11:30:18,902
+{"event":"open_profile", "path":/home/vic/Work/3dprinteros-client/trunk/birdwing/birdwing_profiles/Platypus.json}
+
+__main__.py:72: INFO
+__main__.ServerMain:_run
+2014-12-30 11:30:18,902
+Listening for client connections
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:30:18,908
+Checking for printer class devices.  VID: 7531, PID: 1
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:30:18,908
+Checking for printer class devices.  VID: 7531, PID: 2
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:30:18,909
+Checking for printer class devices.  VID: 7531, PID: 1
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:30:18,909
+Checking for printer class devices.  VID: 7531, PID: 2
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:30:18,909
+Checking for printer class devices.  VID: 9025, PID: 66
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:30:18,909
+Checking for printer class devices.  VID: 2522, PID: 49418
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:30:18,909
+Checking for printer class devices.  VID: 7531, PID: 1
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:30:18,909
+Checking for printer class devices.  VID: 7531, PID: 3
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:30:18,909
+Checking for printer class devices.  VID: 7531, PID: 2
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:30:18,909
+Checking for printer class devices.  VID: 7531, PID: 3
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:30:18,909
+Checking for printer class devices.  VID: 7247, PID: 38
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:30:18,909
+Checking for printer class devices.  VID: 7531, PID: 2
+
+networked_machine_detector.py:210: DEBUG
+conveyor.networked_machine_detector.NetworkedMachineDetector:run
+2014-12-30 11:30:18,910
+starting detection thread
+
+networked_machine_detector.py:215: INFO
+conveyor.networked_machine_detector.NetworkedMachineDetector:run
+2014-12-30 11:30:18,910
+Error detecting machines
+Traceback (most recent call last):
+  File "/home/vic/Work/3dprinteros-client/trunk/birdwing/conveyor/networked_machine_detector.py", line 213, in run
+    self.detector_thread.start()
+  File "/home/vic/Work/3dprinteros-client/trunk/birdwing/conveyor/networked_machine_detector.py", line 593, in start
+    self._listener_thread = Listener(self._detector)
+  File "/home/vic/Work/3dprinteros-client/trunk/birdwing/conveyor/networked_machine_detector.py", line 440, in __init__
+    self.listenPort.settimeout(3)
+AttributeError: 'int' object has no attribute 'settimeout'
+profile.py:30: DEBUG
+Profile:__init__
+2014-12-30 11:38:21,910
+{"event":"open_profile", "path":/home/vic/Work/3dprinteros-client/trunk/birdwing/birdwing_profiles/Moose.json}
+
+profile.py:30: DEBUG
+Profile:__init__
+2014-12-30 11:38:21,910
+{"event":"open_profile", "path":/home/vic/Work/3dprinteros-client/trunk/birdwing/birdwing_profiles/Tinkerbell.json}
+
+profile.py:30: DEBUG
+Profile:__init__
+2014-12-30 11:38:21,910
+{"event":"open_profile", "path":/home/vic/Work/3dprinteros-client/trunk/birdwing/birdwing_profiles/Platypus.json}
+
+__main__.py:72: INFO
+__main__.ServerMain:_run
+2014-12-30 11:38:21,911
+Listening for client connections
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:38:21,917
+Checking for printer class devices.  VID: 7531, PID: 1
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:38:21,917
+Checking for printer class devices.  VID: 7531, PID: 2
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:38:21,917
+Checking for printer class devices.  VID: 7531, PID: 1
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:38:21,917
+Checking for printer class devices.  VID: 7531, PID: 2
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:38:21,918
+Checking for printer class devices.  VID: 9025, PID: 66
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:38:21,918
+Checking for printer class devices.  VID: 2522, PID: 49418
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:38:21,918
+Checking for printer class devices.  VID: 7531, PID: 1
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:38:21,918
+Checking for printer class devices.  VID: 7531, PID: 3
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:38:21,918
+Checking for printer class devices.  VID: 7531, PID: 2
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:38:21,918
+Checking for printer class devices.  VID: 7531, PID: 3
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:38:21,918
+Checking for printer class devices.  VID: 7247, PID: 38
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:38:21,918
+Checking for printer class devices.  VID: 7531, PID: 2
+
+networked_machine_detector.py:210: DEBUG
+conveyor.networked_machine_detector.NetworkedMachineDetector:run
+2014-12-30 11:38:21,919
+starting detection thread
+
+networked_machine_detector.py:215: INFO
+conveyor.networked_machine_detector.NetworkedMachineDetector:run
+2014-12-30 11:38:21,919
+Error detecting machines
+Traceback (most recent call last):
+  File "/home/vic/Work/3dprinteros-client/trunk/birdwing/conveyor/networked_machine_detector.py", line 213, in run
+    self.detector_thread.start()
+  File "/home/vic/Work/3dprinteros-client/trunk/birdwing/conveyor/networked_machine_detector.py", line 593, in start
+    self._listener_thread = Listener(self._detector)
+  File "/home/vic/Work/3dprinteros-client/trunk/birdwing/conveyor/networked_machine_detector.py", line 440, in __init__
+    self.listenPort.settimeout(3)
+AttributeError: 'int' object has no attribute 'settimeout'
+profile.py:30: DEBUG
+Profile:__init__
+2014-12-30 11:38:37,015
+{"event":"open_profile", "path":/home/vic/Work/3dprinteros-client/trunk/birdwing/birdwing_profiles/Moose.json}
+
+profile.py:30: DEBUG
+Profile:__init__
+2014-12-30 11:38:37,015
+{"event":"open_profile", "path":/home/vic/Work/3dprinteros-client/trunk/birdwing/birdwing_profiles/Tinkerbell.json}
+
+profile.py:30: DEBUG
+Profile:__init__
+2014-12-30 11:38:37,015
+{"event":"open_profile", "path":/home/vic/Work/3dprinteros-client/trunk/birdwing/birdwing_profiles/Platypus.json}
+
+__main__.py:72: INFO
+__main__.ServerMain:_run
+2014-12-30 11:38:37,016
+Listening for client connections
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:38:37,021
+Checking for printer class devices.  VID: 7531, PID: 1
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:38:37,022
+Checking for printer class devices.  VID: 7531, PID: 2
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:38:37,022
+Checking for printer class devices.  VID: 7531, PID: 1
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:38:37,022
+Checking for printer class devices.  VID: 7531, PID: 2
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:38:37,022
+Checking for printer class devices.  VID: 9025, PID: 66
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:38:37,022
+Checking for printer class devices.  VID: 2522, PID: 49418
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:38:37,022
+Checking for printer class devices.  VID: 7531, PID: 1
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:38:37,022
+Checking for printer class devices.  VID: 7531, PID: 3
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:38:37,022
+Checking for printer class devices.  VID: 7531, PID: 2
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:38:37,022
+Checking for printer class devices.  VID: 7531, PID: 3
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:38:37,022
+Checking for printer class devices.  VID: 7247, PID: 38
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:38:37,022
+Checking for printer class devices.  VID: 7531, PID: 2
+
+networked_machine_detector.py:210: DEBUG
+conveyor.networked_machine_detector.NetworkedMachineDetector:run
+2014-12-30 11:38:37,023
+starting detection thread
+
+networked_machine_detector.py:215: INFO
+conveyor.networked_machine_detector.NetworkedMachineDetector:run
+2014-12-30 11:38:37,023
+Error detecting machines
+Traceback (most recent call last):
+  File "/home/vic/Work/3dprinteros-client/trunk/birdwing/conveyor/networked_machine_detector.py", line 213, in run
+    self.detector_thread.start()
+  File "/home/vic/Work/3dprinteros-client/trunk/birdwing/conveyor/networked_machine_detector.py", line 593, in start
+    self._listener_thread = Listener(self._detector)
+  File "/home/vic/Work/3dprinteros-client/trunk/birdwing/conveyor/networked_machine_detector.py", line 440, in __init__
+    self.listenPort.settimeout(3)
+AttributeError: 'int' object has no attribute 'settimeout'
+profile.py:30: DEBUG
+Profile:__init__
+2014-12-30 11:40:37,508
+{"event":"open_profile", "path":/home/vic/Work/3dprinteros-client/trunk/birdwing/birdwing_profiles/Moose.json}
+
+profile.py:30: DEBUG
+Profile:__init__
+2014-12-30 11:40:37,509
+{"event":"open_profile", "path":/home/vic/Work/3dprinteros-client/trunk/birdwing/birdwing_profiles/Tinkerbell.json}
+
+profile.py:30: DEBUG
+Profile:__init__
+2014-12-30 11:40:37,509
+{"event":"open_profile", "path":/home/vic/Work/3dprinteros-client/trunk/birdwing/birdwing_profiles/Platypus.json}
+
+__main__.py:72: INFO
+__main__.ServerMain:_run
+2014-12-30 11:40:37,509
+Listening for client connections
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:40:37,515
+Checking for printer class devices.  VID: 7531, PID: 1
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:40:37,515
+Checking for printer class devices.  VID: 7531, PID: 2
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:40:37,515
+Checking for printer class devices.  VID: 7531, PID: 1
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:40:37,515
+Checking for printer class devices.  VID: 7531, PID: 2
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:40:37,515
+Checking for printer class devices.  VID: 9025, PID: 66
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:40:37,516
+Checking for printer class devices.  VID: 2522, PID: 49418
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:40:37,516
+Checking for printer class devices.  VID: 7531, PID: 1
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:40:37,516
+Checking for printer class devices.  VID: 7531, PID: 3
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:40:37,516
+Checking for printer class devices.  VID: 7531, PID: 2
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:40:37,516
+Checking for printer class devices.  VID: 7531, PID: 3
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:40:37,516
+Checking for printer class devices.  VID: 7247, PID: 38
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:40:37,516
+Checking for printer class devices.  VID: 7531, PID: 2
+
+networked_machine_detector.py:210: DEBUG
+conveyor.networked_machine_detector.NetworkedMachineDetector:run
+2014-12-30 11:40:37,516
+starting detection thread
+
+networked_machine_detector.py:215: INFO
+conveyor.networked_machine_detector.NetworkedMachineDetector:run
+2014-12-30 11:40:37,517
+Error detecting machines
+Traceback (most recent call last):
+  File "/home/vic/Work/3dprinteros-client/trunk/birdwing/conveyor/networked_machine_detector.py", line 213, in run
+    self.detector_thread.start()
+  File "/home/vic/Work/3dprinteros-client/trunk/birdwing/conveyor/networked_machine_detector.py", line 593, in start
+    self._listener_thread = Listener(self._detector)
+  File "/home/vic/Work/3dprinteros-client/trunk/birdwing/conveyor/networked_machine_detector.py", line 440, in __init__
+    self.listenPort.settimeout(3)
+AttributeError: 'int' object has no attribute 'settimeout'
+profile.py:30: DEBUG
+Profile:__init__
+2014-12-30 11:42:13,457
+{"event":"open_profile", "path":/home/vic/Work/3dprinteros-client/trunk/birdwing/birdwing_profiles/Moose.json}
+
+profile.py:30: DEBUG
+Profile:__init__
+2014-12-30 11:42:13,457
+{"event":"open_profile", "path":/home/vic/Work/3dprinteros-client/trunk/birdwing/birdwing_profiles/Tinkerbell.json}
+
+profile.py:30: DEBUG
+Profile:__init__
+2014-12-30 11:42:13,457
+{"event":"open_profile", "path":/home/vic/Work/3dprinteros-client/trunk/birdwing/birdwing_profiles/Platypus.json}
+
+__main__.py:72: INFO
+__main__.ServerMain:_run
+2014-12-30 11:42:13,458
+Listening for client connections
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:42:13,463
+Checking for printer class devices.  VID: 7531, PID: 1
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:42:13,464
+Checking for printer class devices.  VID: 7531, PID: 2
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:42:13,464
+Checking for printer class devices.  VID: 7531, PID: 1
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:42:13,464
+Checking for printer class devices.  VID: 7531, PID: 2
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:42:13,464
+Checking for printer class devices.  VID: 9025, PID: 66
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:42:13,464
+Checking for printer class devices.  VID: 2522, PID: 49418
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:42:13,464
+Checking for printer class devices.  VID: 7531, PID: 1
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:42:13,464
+Checking for printer class devices.  VID: 7531, PID: 3
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:42:13,464
+Checking for printer class devices.  VID: 7531, PID: 2
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:42:13,464
+Checking for printer class devices.  VID: 7531, PID: 3
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:42:13,464
+Checking for printer class devices.  VID: 7247, PID: 38
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:42:13,464
+Checking for printer class devices.  VID: 7531, PID: 2
+
+networked_machine_detector.py:210: DEBUG
+conveyor.networked_machine_detector.NetworkedMachineDetector:run
+2014-12-30 11:42:13,465
+starting detection thread
+
+networked_machine_detector.py:215: INFO
+conveyor.networked_machine_detector.NetworkedMachineDetector:run
+2014-12-30 11:42:13,465
+Error detecting machines
+Traceback (most recent call last):
+  File "/home/vic/Work/3dprinteros-client/trunk/birdwing/conveyor/networked_machine_detector.py", line 213, in run
+    self.detector_thread.start()
+  File "/home/vic/Work/3dprinteros-client/trunk/birdwing/conveyor/networked_machine_detector.py", line 593, in start
+    self._listener_thread = Listener(self._detector)
+  File "/home/vic/Work/3dprinteros-client/trunk/birdwing/conveyor/networked_machine_detector.py", line 440, in __init__
+    self.listenPort.settimeout(3)
+AttributeError: 'int' object has no attribute 'settimeout'
+profile.py:30: DEBUG
+Profile:__init__
+2014-12-30 11:43:21,690
+{"event":"open_profile", "path":/home/vic/Work/3dprinteros-client/trunk/birdwing/birdwing_profiles/Moose.json}
+
+profile.py:30: DEBUG
+Profile:__init__
+2014-12-30 11:43:21,690
+{"event":"open_profile", "path":/home/vic/Work/3dprinteros-client/trunk/birdwing/birdwing_profiles/Tinkerbell.json}
+
+profile.py:30: DEBUG
+Profile:__init__
+2014-12-30 11:43:21,690
+{"event":"open_profile", "path":/home/vic/Work/3dprinteros-client/trunk/birdwing/birdwing_profiles/Platypus.json}
+
+__main__.py:72: INFO
+__main__.ServerMain:_run
+2014-12-30 11:43:21,690
+Listening for client connections
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:43:21,697
+Checking for printer class devices.  VID: 7531, PID: 1
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:43:21,697
+Checking for printer class devices.  VID: 7531, PID: 2
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:43:21,697
+Checking for printer class devices.  VID: 7531, PID: 1
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:43:21,697
+Checking for printer class devices.  VID: 7531, PID: 2
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:43:21,697
+Checking for printer class devices.  VID: 9025, PID: 66
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:43:21,697
+Checking for printer class devices.  VID: 2522, PID: 49418
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:43:21,698
+Checking for printer class devices.  VID: 7531, PID: 1
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:43:21,698
+Checking for printer class devices.  VID: 7531, PID: 3
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:43:21,698
+Checking for printer class devices.  VID: 7531, PID: 2
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:43:21,698
+Checking for printer class devices.  VID: 7531, PID: 3
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:43:21,698
+Checking for printer class devices.  VID: 7247, PID: 38
+
+__init__.py:1395: DEBUG
+conveyor.server.Server:usb_scan_devices
+2014-12-30 11:43:21,698
+Checking for printer class devices.  VID: 7531, PID: 2
+
+networked_machine_detector.py:210: DEBUG
+conveyor.networked_machine_detector.NetworkedMachineDetector:run
+2014-12-30 11:43:21,699
+starting detection thread
+
+networked_machine_detector.py:215: INFO
+conveyor.networked_machine_detector.NetworkedMachineDetector:run
+2014-12-30 11:43:21,699
+Error detecting machines
+Traceback (most recent call last):
+  File "/home/vic/Work/3dprinteros-client/trunk/birdwing/conveyor/networked_machine_detector.py", line 213, in run
+    self.detector_thread.start()
+  File "/home/vic/Work/3dprinteros-client/trunk/birdwing/conveyor/networked_machine_detector.py", line 593, in start
+    self._listener_thread = Listener(self._detector)
+  File "/home/vic/Work/3dprinteros-client/trunk/birdwing/conveyor/networked_machine_detector.py", line 440, in __init__
+    self.listenPort.settimeout(3)
+AttributeError: 'int' object has no attribute 'settimeout'
