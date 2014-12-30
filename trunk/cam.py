@@ -1,11 +1,16 @@
-import numpy as np
 import cv2
 import time
 import base64
 import threading
 import logging
+import numpy
+import requests
 
 import http_client
+
+URL = 'http://54.67.6.162/oldliveview/setLiveView/'
+TOKEN = open("3DPrinterOS-Key", "rb").read()
+
 
 class CameraImageSender(threading.Thread):
 
@@ -47,7 +52,9 @@ class CameraImageSender(threading.Thread):
         (encode_ret, image) = cv2.imencode('.jpg', frame)
         if cap_ret and encode_ret:
             #gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            return image
+            cv2.imwrite('frame.jpg', frame)
+            data = open('frame.jpg', 'r').read()
+            return data
         else:
             self.init_camera()
 
@@ -56,6 +63,14 @@ class CameraImageSender(threading.Thread):
         if connection:
             encoded_picture = base64.b64encode(str(picture))
             http_client.send(http_client.token_camera_request, (self.token, encoded_picture))
+
+    def alt_send_picture(self, picture):
+            #send file
+            picture = base64.b64encode(str(picture))
+            data = {"token": TOKEN, "data": picture}
+            r = requests.post(URL, data = data)
+            s = str(r.text)
+            print 'Response: ' + s
 
     def close(self):
         self.stop_flag = True
@@ -72,8 +87,8 @@ class CameraImageSender(threading.Thread):
         while not self.stop_flag:
             if self.cap.isOpened():
                 picture = self.take_a_picture()
-                if picture.any():
-                    self.send_picture(picture)
+                if picture != '':
+                    self.alt_send_picture(picture)
             else:
                 time.sleep(1)
                 self.init_camera()
