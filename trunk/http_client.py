@@ -2,18 +2,21 @@ import re
 import json
 import httplib
 import logging
+import requests
 from hashlib import md5
 
 CONNECTION_TIMEOUT = 10
 URL = "service1.3dprinteros.com"
-user_login_uri = "/user_login"
-printer_login_uri = "/printer_login"
-command_uri = "/command"
-cloudsync_uril = "/cloudsync_upload"
+user_login_path = "/user_login"
+printer_login_path = "/printer_login"
+command_path = "/command"
+cloudsync_path = "/cloudsync_upload"
 token_jobs_path = "/getJobs"
 token_login_path = "/sendRequestToken" #json['token': token]
 token_camera_path = "/image" #json['image': base64_image ]
+token_send_logs_path = "/sendLogs"
 
+domain_path_re = re.compile("https?:\/\/(.+)(\/.*)")
 
 def load_json(jdata):
     logger = logging.getLogger('app.' +__name__)
@@ -51,23 +54,24 @@ def package_users_login(username, password, error=[None,None]):
     user_hash = md5_hash(username)
     pass_hash = md5_hash(password)
     data = { 'login': {'user': user_hash, 'password': pass_hash}, 'error': error}
-    return json.dump(data), user_login_uri
+    return json.dump(data), user_login_path
 
 def package_printer_login(login_hash, printer_profile, error=[None,None]):
     data = { 'login_hash': login_hash, 'printer': printer_profile, 'error': error }
-    return json.dump(data), printer_login_uri
+    return json.dump(data), printer_login_path
 
 def package_command_request(printer_session_hash, state, error=[None,None]):
     data = { 'printer_session_hash': printer_session_hash, 'state': state, 'error': error }
-    return json.dump(data), command_uri
+    return json.dump(data), command_path
 
 def package_cloud_sync_upload(token, file_data, file_name):
     data = { 'token': token, 'file_data': file_data, 'file_name': file_name }
-    return json.dump(data), cloudsync_uril
+    return json.dump(data), cloudsync_path
 
 #TODO turn on https
 def connect(URL):
     logger = logging.getLogger('app.' +__name__)
+    logger.debug("")
     try:
         connection = httplib.HTTPSConnection(URL, port = 443, timeout = CONNECTION_TIMEOUT)#, cert_file=utils.cert_file_path)
     except httplib.error as e:
@@ -121,7 +125,6 @@ if __name__ == '__main__':
 
 def download(url):
     logger = logging.getLogger('app.' +__name__)
-    domain_path_re = re.compile("https?:\/\/(.+)(\/.*)")
     match = domain_path_re.match(url)
     try:
         domain, path = match.groups()
@@ -132,6 +135,11 @@ def download(url):
         if connection:
             return post_request(connection, "", path)
 
+def multipart_upload(url, token, file_obj):
+    token = {"token": token}
+    f = {"file": file_obj}
+    r = requests.post(URL, data=token, files=f)
+    return r.status_code == 200
 
 if __name__ == '__main__':
     import command_processor
