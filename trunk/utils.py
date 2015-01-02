@@ -1,6 +1,11 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 import os
 import sys
 import time
+import uuid
+import zipfile
 import logging
 import threading
 
@@ -73,6 +78,24 @@ def read_token():
         else:
             return token.strip()
     logger.debug('Error while loading token in paths: %s' % str(paths) )
+
+def zip_file(file_obj_or_path):
+    if type(file_obj_or_path) == str:
+        try:
+            file_obj = open(file_obj_or_path, "rb")
+            data = file_obj.read()
+            file_obj.close()
+        except IOError:
+            logging.debug("Error zipping file %s" % str(file_obj_or_path))
+            return False
+    return zip_data_into_file(data)
+
+def zip_data_into_file(data):
+    zip_file_name = uuid.uuid1()
+    zf = zipfile.ZipFile(zip_file_name, mode='w')
+    zf.write(data, compress_type=zipfile.ZIP_DEFLATED)
+    zf.close()
+    return zf
 
 if __name__ == '__main__':
     logging.basicConfig()

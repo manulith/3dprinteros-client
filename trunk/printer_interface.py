@@ -19,7 +19,6 @@ class PrinterInterface(object):
             else:
                 self.logger.info('... ' + name + " finished ]")
                 return result
-
         return decorator
 
     def __init__(self, profile):
