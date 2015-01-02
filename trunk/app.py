@@ -57,7 +57,7 @@ class App():
         self.detected_printers = []
         self.printer_interfaces = []
         self.token_related_s()
-        self.kill_makerbot_conveyor()
+        #self.kill_makerbot_conveyor()
         self.stop_flag = False
         self.main_loop()
 

@@ -17,6 +17,8 @@ class PrinterInterface(object):
             except Exception as e:
                 self.logger.error("!Error in command %s\n[%s]" % (str(func.__name__), str(e)))
             else:
+                if result != None:
+                    self.logger.info('Result is: ( ' + str(result) + " )")
                 self.logger.info('... ' + name + " finished ]")
                 return result
         return decorator
