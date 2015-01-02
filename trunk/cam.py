@@ -1,14 +1,14 @@
+import numpy as np
 import cv2
 import time
 import base64
 import threading
 import logging
-import numpy
 import requests
 
-import http_client
+from utils import elapse_stretcher
 
-URL = 'http://54.67.6.162/oldliveview/setLiveView/'
+URL = 'https://acorn.3dprinteros.com/oldliveview/setLiveView/'
 TOKEN = open("3DPrinterOS-Key", "rb").read()
 
 
@@ -51,10 +51,11 @@ class CameraImageSender(threading.Thread):
         cap_ret, frame = self.cap.read()
         (encode_ret, image) = cv2.imencode('.jpg', frame)
         if cap_ret and encode_ret:
-            #gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            cv2.imwrite('frame.jpg', frame)
-            data = open('frame.jpg', 'r').read()
-            return data
+            encode_param = [int(cv2.IMWRITE_JPEG_QUALITY),90]
+            result, imgencode = cv2.imencode('.jpg', frame, encode_param)
+            data = np.array(imgencode)
+            string_data = data.tostring()
+            return string_data
         else:
             self.init_camera()
 
