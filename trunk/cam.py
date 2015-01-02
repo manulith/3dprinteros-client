@@ -49,10 +49,9 @@ class CameraImageSender(threading.Thread):
 
     def take_a_picture(self):
         cap_ret, frame = self.cap.read()
-        (encode_ret, image) = cv2.imencode('.jpg', frame)
-        if cap_ret and encode_ret:
-            encode_param = [int(cv2.IMWRITE_JPEG_QUALITY),90]
-            result, imgencode = cv2.imencode('.jpg', frame, encode_param)
+        encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 90]
+        result, imgencode = cv2.imencode('.jpg', frame, encode_param)
+        if cap_ret and result:
             data = np.array(imgencode)
             string_data = data.tostring()
             return string_data
