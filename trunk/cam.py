@@ -4,29 +4,48 @@ import time
 import base64
 import threading
 import logging
+import requests
 
-import http_client
+from utils import elapse_stretcher
+'''
+class CameraFinder(Object):
+    def __init__(self):
+        self.logger = logging.getLogger("app." + __name__)
+
+    def get_number_of_cameras(self):
+        cameras_count = 0
+        while True:
+            cap = cv2.VideoCapture(cameras_count)
+            is_opened = cap.isOpened()
+            cap.release()
+            if not is_opened:
+                break
+            cameras_count += 1
+        self.logger.info("Found %i cameras" % cameras_count)
+        return cameras_count
+'''
 
 class CameraImageSender(threading.Thread):
 
     @staticmethod
     def get_number_of_cameras():
         logger = logging.getLogger("app." + __name__)
-        cameras_count = -1
+        cameras_count = 0
         while True:
-            cameras_count += 1
             cap = cv2.VideoCapture(cameras_count)
             is_opened = cap.isOpened()
             cap.release()
             if not is_opened:
                 break
+            cameras_count += 1
         logger.info("Found %i cameras" % cameras_count)
-        return cameras_count + 1
+        return cameras_count
 
     def __init__(self, token, camera_number = 0 ):
         self.logger = logging.getLogger("app." + __name__)
         self.stop_flag = False
         self.token = token
+        self.url = 'https://acorn.3dprinteros.com/oldliveview/setLiveView/'
         self.cap = None
         self.camera_number = camera_number
         self.image_ready_lock = threading.Lock()
@@ -44,10 +63,12 @@ class CameraImageSender(threading.Thread):
 
     def take_a_picture(self):
         cap_ret, frame = self.cap.read()
-        (encode_ret, image) = cv2.imencode('.jpg', frame)
-        if cap_ret and encode_ret:
-            #gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            return image
+        encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 90]
+        result, image_encode = cv2.imencode('.jpg', frame, encode_param)
+        if cap_ret and result:
+            data = np.array(image_encode)
+            string_data = data.tostring()
+            return string_data
         else:
             self.init_camera()
 
@@ -57,11 +78,19 @@ class CameraImageSender(threading.Thread):
             encoded_picture = base64.b64encode(str(picture))
             http_client.send(http_client.token_camera_request, (self.token, encoded_picture))
 
+    def alt_send_picture(self, picture):
+            #send file alternative way with Requests
+            picture = base64.b64encode(str(picture))
+            data = {"token": self.token, "data": picture}
+            r = requests.post(self.url, data = data)
+            s = str(r.text)
+            print 'Response: ' + s
+
     def close(self):
         self.stop_flag = True
 
     def wait_for_camera(self):
-        self.logger.debug("Waiting for camera..")
+        self.logger.debug("Waiting for camera...")
         while not self.cap:
             self.init_camera()
             time.sleep(1)
@@ -72,13 +101,14 @@ class CameraImageSender(threading.Thread):
         while not self.stop_flag:
             if self.cap.isOpened():
                 picture = self.take_a_picture()
-                if picture.any():
-                    self.send_picture(picture)
+                if picture != '':
+                    self.alt_send_picture(picture)
             else:
                 time.sleep(1)
                 self.init_camera()
         self.cap.release()
         cv2.destroyAllWindows()
+
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
