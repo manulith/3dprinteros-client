@@ -1,6 +1,7 @@
 import re
 import sys
 import base64
+import string
 import logging
 import http_client
 
@@ -75,10 +76,13 @@ def process_job_request(printer_interface, data_dict):
                 printer_interface.enqueue(job)
             else:
                 try:
-                    lines = base64.b64decode(job).split('\n')
+                    data = base64.b64decode(job)
+                    data = remove_illegal_symbols(data)
+                    lines = data.split('\n')
                     logger.info("GCode count: " + str(len(lines)))
                     if len(lines) < 5:
                         logger.info("GCodes:" + str(lines))
+                    lines = remove_corrupted_lines(lines)
                     printer_interface.enqueue(lines)
                 except TypeError:
                     logger.critical("Can't decode GCodes, must be base64")
@@ -91,4 +95,27 @@ def process_login_request(data_dict):
     if printer_type:
         return printer_type
 
+def remove_illegal_symbols(data):
+    count = 0
+    length = len(data)
+    while count < len(data):
+        if not data[count] in string.printable:
+            data.replace(data[count], "")
+        count += 1
+    return data
 
+def remove_corrupted_lines(lines):
+    for line in lines:
+        if not line or line in string.whitespace:
+            lines.remove(line)
+    return lines
+
+if __name__ == "__main__":
+    import time
+    with open("/tmp/test.gcode", "r") as f:
+        gcodes = f.read()
+    start_time = time.time()
+    result = remove_illegal_symbols(gcodes)
+    end_time = time.time()
+    print result
+    print "process time", end_time - start_time
