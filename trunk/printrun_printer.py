@@ -89,7 +89,7 @@ class Printer:
 
     def _recvcb_for_connection_check(self, line):
         self._logger.debug("While selecting baudrate received: %s", str(line))
-        if "ok" in line:
+        if "ok " in line or 'echo' in line:
             self.connected_flag = True
 
     def _select_baudrate_and_connect(self):
@@ -101,6 +101,7 @@ class Printer:
                 raise RuntimeError("Printrun: no more baudrates to try for %s" % self._profile['name'])
             self._logger.info("Trying to connect with baudrate %i" % baudrates[baudrate_count])
             try:
+                self._printer.reset()
                 self._printer.disconnect()
             except:
                 pass
@@ -108,14 +109,15 @@ class Printer:
                 self._printer = printcore(self._profile['COM'], baudrates[baudrate_count])
             except Exception as e:
                 self._logger.warning("Error connecting to printer with baudrate %i" % baudrates[baudrate_count])
+                self._printer.reset()
                 self._printer.disconnect()
             else:
                 time.sleep(0.1)
                 self._printer.recvcb = self._recvcb_for_connection_check
                 #self._printer.errorcb = self._logger.warning
                 self._printer.send("M105")
+            time.sleep(0.5)
             baudrate_count += 1
-            time.sleep(0.2)
 
         self._logger.info("Successful connection! Correct baudrate is %i" % baudrates[baudrate_count-1])
 
@@ -192,7 +194,6 @@ class Printer:
         #if match:
         #    self._position = [ match.group(0), match.group(1), match.group(2) ]
         #self._logger.debug(self._debug_position())
-
 
     def _recvcb(self, line):
         self._logger.debug(line)
