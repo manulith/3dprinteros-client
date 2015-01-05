@@ -78,6 +78,7 @@ def connect(URL):
         logger.info("Error during HTTP connection: " + str(e))
     else:
         return connection
+
 def post_request(connection, payload, path, headers=None):
     if not headers:
         headers = {"Content-Type": "application/json", "Content-Length": str(len(payload))}
@@ -118,12 +119,6 @@ def send(packager, payloads):
         if json_answer:
             return load_json(json_answer)
 
-if __name__ == '__main__':
-    logging.basicConfig(level=logging.DEBUG)
-    import utils
-    token = utils.read_token()
-    print send(token_login, token)
-
 def download(url):
     logger = logging.getLogger('app.' +__name__)
     match = domain_path_re.match(url)
@@ -145,7 +140,7 @@ def multipart_upload(url, token, file_obj):
 if __name__ == '__main__':
     import command_processor
     import printer_interface
-
+    logging.basicConfig(level=logging.DEBUG)
     user = ''
     password = ''
     profile = json.loads('{"extruder_count": 1, "baudrate": [250000, 115200], "vids_pids": [["16C0", "0483"], ["2341", "0042"]], "name": "Marlin Firmware", "VID": "2341", "PID": "0042", "end_gcodes": [], "driver": "printrun_printer", "reconnect_on_cancel": false, "Product": null, "SNR": null, "COM": "/dev/ttyACM0", "Manufacturer": null, "force_port_close": false, "print_from_binary": false}')
@@ -153,8 +148,8 @@ if __name__ == '__main__':
     while True:
         user = "Nobody"
         password = "qwert"
-        user_login_hash = ""
-        printer_login_hash = ""
+        user_login = ""
+        printer_login = ""
         user_choice = raw_input('Welcome to test menu:\n' \
                                 'Type 1 for - User login\n' \
                                 'Type 2 for - Printer login\n' \
@@ -164,25 +159,25 @@ if __name__ == '__main__':
             if answer:
                 processor = command_processor.process_user_login
                 result = processor(answer)
-                user_login_hash = result
+                user_login = result
             else:
                 print 'No answer'
         elif '2' in user_choice:
-            if not user_login_hash:
+            if not user_login:
                 print "!First you need to login as user"
             else:
-                answer = send(package_printer_login, (user_login_hash, profile))
+                answer = send(package_printer_login, (user_login, profile))
                 if answer:
                     processor = command_processor.process_printer_login
                     result = processor(answer)
-                    printer_login_hash = result
+                    printer_login = result
                 else:
                     print 'No answer'
         elif '3' in user_choice:
-            if not printer_login_hash:
+            if not printer_login:
                 print "!First you need to login printer"
             else:
-                answer = send(package_command_request, printer_login_hash)
+                answer = send(package_command_request, printer_login)
                 if answer:
                     processor = command_processor.process_command_request
                     result = processor(user_choice)
