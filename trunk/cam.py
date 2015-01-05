@@ -4,7 +4,7 @@ import time
 import base64
 import threading
 import logging
-import requests
+import http_client
 
 from utils import elapse_stretcher
 '''
@@ -73,18 +73,9 @@ class CameraImageSender(threading.Thread):
             self.init_camera()
 
     def send_picture(self, picture):
-        connection = http_client.connect(http_client.URL)
-        if connection:
-            encoded_picture = base64.b64encode(str(picture))
-            http_client.send(http_client.token_camera_request, (self.token, encoded_picture))
-
-    def alt_send_picture(self, picture):
-            #send file alternative way with Requests
-            picture = base64.b64encode(str(picture))
-            data = {"token": self.token, "data": picture}
-            r = requests.post(self.url, data = data)
-            s = str(r.text)
-            print 'Response: ' + s
+        picture = base64.b64encode(str(picture))
+        data = {"token": self.token, "data": picture}
+        http_client.multipart_upload(http_client.token_camera_path, data)
 
     def close(self):
         self.stop_flag = True

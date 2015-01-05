@@ -5,7 +5,7 @@ import logging
 import requests
 from hashlib import md5
 
-CONNECTION_TIMEOUT = 10
+CONNECTION_TIMEOUT = 6
 URL = "service1.3dprinteros.com"
 user_login_path = "/user_login"
 printer_login_path = "/printer_login"
@@ -13,7 +13,7 @@ command_path = "/command"
 cloudsync_path = "/cloudsync_upload"
 token_jobs_path = "/getJobs"
 token_login_path = "/sendRequestToken" #json['token': token]
-token_camera_path = "/image" #json['image': base64_image ]
+token_camera_path = "/image" #json['image': basebase64_image ]
 token_send_logs_path = "/sendLogs"
 
 domain_path_re = re.compile("https?:\/\/(.+)(\/.*)")
@@ -71,12 +71,14 @@ def package_cloud_sync_upload(token, file_data, file_name):
 #TODO turn on https
 def connect(URL):
     logger = logging.getLogger('app.' +__name__)
-    logger.debug("")
+    logger.debug("{ Connecting...")
     try:
         connection = httplib.HTTPSConnection(URL, port = 443, timeout = CONNECTION_TIMEOUT)#, cert_file=utils.cert_file_path)
     except httplib.error as e:
         logger.info("Error during HTTP connection: " + str(e))
+        logger.debug("...failed }")
     else:
+        logger.debug("...success }")
         return connection
 
 def post_request(connection, payload, path, headers=None):
@@ -89,11 +91,10 @@ def get_request(connection, payload, path, headers=""):
 
 def request(connection, payload, path, method, headers):
     logger = logging.getLogger('app.' +__name__)
+    logger.debug("{ Requesting...")
     try:
         connection.request(method, path, payload, headers)
         resp = connection.getresponse()
-    except httplib.error as e:
-        logger.info("Error during HTTP request:" + str(e))
     except Exception as e:
         logger.info(("Error during HTTP request:" + str(e)))
     else:
@@ -101,12 +102,14 @@ def request(connection, payload, path, method, headers):
         if resp.status == httplib.OK and resp.reason == "OK":
             try:
                 received = resp.read()
-                connection.close()
             except httplib.error as e:
                 logger.debug("Error reading response: " + str(e))
                 connection.close()
             else:
+                connection.close()
+                logger.debug("...success }")
                 return received
+    logger.debug("...failed }")
 
 def send(packager, payloads):
     if type(payloads) != tuple:
@@ -131,16 +134,19 @@ def download(url):
         if connection:
             return post_request(connection, "", path)
 
-def multipart_upload(url, token, file_obj):
-    token = {"token": token}
-    f = {"file": file_obj}
-    r = requests.post(URL, data=token, files=f)
+def multipart_upload(url, payload, file_obj=None):
+    if file_obj:
+        f = {"file": file_obj}
+        r = requests.post(URL, data=payload, files=f)
+    else:
+        r = requests.post(URL, data=payload)
     return r.status_code == 200
 
 if __name__ == '__main__':
     import command_processor
     import printer_interface
-    logging.basicConfig(level=logging.DEBUG)
+    from app import App
+    App.get_logger()
     user = "Nobody"
     password = "qwert"
     profile = json.loads('{"extruder_count": 1, "baudrate": [250000, 115200], "vids_pids": [["16C0", "0483"], ["2341", "0042"]], "name": "Marlin Firmware", "VID": "2341", "PID": "0042", "end_gcodes": [], "driver": "printrun_printer", "reconnect_on_cancel": false, "Product": null, "SNR": null, "COM": "/dev/ttyACM0", "Manufacturer": null, "force_port_close": false, "print_from_binary": false}')

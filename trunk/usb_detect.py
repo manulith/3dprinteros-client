@@ -112,9 +112,5 @@ def get_unknown_printers(devices):
 
 if __name__ == '__main__':
     import json
-    import time
-    before = time.time()
-    #for _ in range(0,100):
     printers = get_printers()
-    print "time=" + str( time.time() - before )
     print json.dumps(printers)
