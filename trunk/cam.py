@@ -93,7 +93,7 @@ class CameraImageSender(threading.Thread):
             if self.cap.isOpened():
                 picture = self.take_a_picture()
                 if picture != '':
-                    self.alt_send_picture(picture)
+                    self.send_picture(picture)
             else:
                 time.sleep(1)
                 self.init_camera()
