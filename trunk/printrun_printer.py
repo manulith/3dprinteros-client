@@ -116,7 +116,7 @@ class Printer:
                 self._printer.recvcb = self._recvcb_for_connection_check
                 #self._printer.errorcb = self._logger.warning
                 self._printer.send("M105")
-            time.sleep(0.5)
+            time.sleep(2)
             baudrate_count += 1
 
         self._logger.info("Successful connection! Correct baudrate is %i" % baudrates[baudrate_count-1])
