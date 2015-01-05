@@ -2,13 +2,11 @@
 # -*- coding: utf-8 -*-
 
 import sys
-import os
 import time
 import webbrowser
 import time
 import subprocess
 import threading
-from PySide import QtCore, QtGui, QtUiTools
 
 import notification
 import version
