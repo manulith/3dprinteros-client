@@ -56,15 +56,17 @@ def get_devices():
     return device_data_dcts
 
 def get_port_by_vid_pid_snr(vid, pid, snr=None):
-    vid_pid_re = re.compile('(?:.*\=([0-9-A-Z-a-f]+):([0-9-A-Z-a-f]+) SNR)|(?:VID_([0-9-A-Z-a-f]+)\+PID_([0-9-A-Z-a-f]+)\+)')
+    vid_pid_re = re.compile('(?:.*\=([0-9-A-Z-a-f]+):([0-9-A-Z-a-f]+) SNR)|(?:.*VID_([0-9-A-Z-a-f]+)\+PID_([0-9-A-Z-a-f]+)\+)')
     for port_dct in serial.tools.list_ports.comports():
         match = vid_pid_re.match(port_dct[2])
         if match:
-            vid_of_comport = match.group(1).zfill(4).upper()
-            pid_of_comport = match.group(2).zfill(4).upper()
+            vid_of_comport = match.group(1)
+            pid_of_comport = match.group(2)
             if not vid_of_comport or not pid_of_comport:
-                vid_of_comport = match.group(3).zfill(4).upper()
-                pid_of_comport = match.group(4).zfill(4).upper()
+                vid_of_comport = match.group(3)
+                pid_of_comport = match.group(4)
+            vid_of_comport = vid_of_comport.zfill(4).upper()
+            pid_of_comport = pid_of_comport.zfill(4).upper()
             if vid == vid_of_comport and pid == pid_of_comport:
                 if snr and not 'SNR=' + snr in port_dct[2].upper():
                     continue
