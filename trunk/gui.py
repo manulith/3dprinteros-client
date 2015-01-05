@@ -10,21 +10,31 @@ import subprocess
 import threading
 from PySide import QtCore, QtGui, QtUiTools
 
+import notification
 import version
 
 HEADER = '3DPrinterOS v' + version.version
 
+# TODO: delete debugging stuff like this
+# path = os.path.dirname(os.path.abspath(__file__))
+# path = os.path.join(path, "PySide")
+# sys.path.append(path)
+
 class GuiTrayThread(QtCore.QThread):
     show_token_request = QtCore.Signal()
     show_tray = QtCore.Signal()
+    show_login = QtCore.Signal()
     set_printer = QtCore.Signal()
-    show_notification = QtCore.Signal()
+    #quit = QtCore.Signal()
     running_flag = True
 
     def run(self):
         while self.running_flag:
             time.sleep(1)
         print 'Qt Thread stopped!'
+
+    # def stop(self):
+    #     self.running_flag = False
 
 
 class Printer():
@@ -54,7 +64,7 @@ class Printer():
 
 
 class LoginWindow(QtGui.QMainWindow):
-    def __init__(self, app=None):
+    def __init__(self, app_stub, app):
         QtGui.QMainWindow.__init__(self)
         QtGui.QApplication.setQuitOnLastWindowClosed(True)
         self.load_resources()
@@ -62,7 +72,14 @@ class LoginWindow(QtGui.QMainWindow):
         self.setWindowTitle(HEADER)
         self.setFixedSize(500, 600)
         self.app = app
+        self.app_stub = app_stub
+        #self.show()
+
+    def show_login(self):
         self.show()
+
+    def hide_login(self):
+        self.hide()
 
     def load_resources(self):
         self.images = {}
@@ -119,7 +136,7 @@ class LoginWindow(QtGui.QMainWindow):
                 self.app.gui_exchange_in['token'] = token
             except:
                 pass
-            self.exit()
+            self.hide_login()
         #else:
         #    self.trayIcon.showMessage(self.notificateHeader, 'Please input token first')
 
@@ -143,17 +160,19 @@ class LoginWindow(QtGui.QMainWindow):
         self.cancelButton.setIcon(self.images['button_cancel_default'])
 
     def exit(self):
-        # TODO: shutdown http-client here
-        #self.running = False
-        time.sleep(0.1)
-        #app.App.close()
-        QtGui.qApp.quit()
+        self.hide()
+        #QtGui.qApp.quit()
+        #QtGui.qApp.exit()
+        #QtGui.QApplication.quit()
+        self.app_stub.exit()
+
 
 class TDPrinterOSTray(QtGui.QSystemTrayIcon):
-    def __init__(self, app=None):
+    def __init__(self, app_stub, app):
         QtGui.QSystemTrayIcon.__init__(self)
         QtGui.QApplication.setQuitOnLastWindowClosed(False)
         self.app = app
+        self.app_stub = app_stub
         self.load_resources()
         self.create_actions()
         self.setup_tray_icon()
@@ -161,16 +180,34 @@ class TDPrinterOSTray(QtGui.QSystemTrayIcon):
         self.icon.addPixmap(self.appIcon, QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.init_additional_windows()
         self.set_status()
+        self._running_flag = True
+        self._notifying = threading.Thread(target=self._notificate_thread)
+        self._notifying.start()
         # self.show()
         #self.show_notification('Program started!')
 
+    def _notificate_thread(self):
+        interval = 5
+        while self._running_flag:
+            if len(notification.messages):
+                with notification.lock:
+                    try:
+                        self.show_notification(notification.messages.popleft())
+                    except IndexError:
+                        pass
+                    time.sleep(interval)
+            time.sleep(0.05)
+
     def set_printer(self):
-        self.printer = Printer(None, self)
-        self.printer.select()
+        profile = self.app.detected_printers[0]
+        self.printer = Printer(profile, self)
+        #self.printer.select()
 
     def show_tray(self):
         self.show()
-        self.show_notification('Program started!')
+
+    def hide_tray(self):
+        self.hide()
 
     def setup_tray_icon(self):
         self.trayIconMenu = QtGui.QMenu()
@@ -290,13 +327,11 @@ class TDPrinterOSTray(QtGui.QSystemTrayIcon):
         self.settingsNotification.setLayout(notificationLayout)
 
     def confirmed_exit(self):
-        try:
-            #pass
-            QtGui.qApp.quit()
-            #self.app.quit()
-        except Exception, e:
-            print 'Error in exiting QtApp!'
-            print e.message
+        self._running_flag = False
+        self.exitConfirmGui.hide()
+        self.hide_tray()
+        self.app_stub.exit()
+
 
     # Shows tray popup
     def show_notification(self, message):
@@ -369,7 +404,7 @@ class TDPrinterOSTray(QtGui.QSystemTrayIcon):
 
     def _defaultPrinterMethod(self):
         # TODO: logic when user chooses printer in list
-        self.show_notification(self.printer + ' is ready!')
+        self.show_notification(self.printer.profile['name'] + ' is ready!')
         self.printer_action.setEnabled(False)
         self.printersDisableAction.setEnabled(True)
         self.set_status('online')
@@ -427,8 +462,6 @@ class TDPrinterOSTray(QtGui.QSystemTrayIcon):
         self.exitConfirm.show()
 
     def _tokenChangeNoMethod(self):
-        # TODO: here is a method that clears token file
-        self.exit()
         self.tokenChange.hide()
 
     def _tokenChangeYesMethod(self):
@@ -440,15 +473,19 @@ class TDPrinterOSTray(QtGui.QSystemTrayIcon):
 class App_Stub():
     def __init__(self, main_app):
         self.tray = None
-        self.init_gui()
+        self.login_window = None
         self.main_app = main_app
-        while not self.tray:
-            time.sleep(0.001)
+        self.init_gui()
+        time.sleep(0.1)
+        # while not self.tray and not self.login_window:
+        #     time.sleep(0.001)
         self.qt_thread = GuiTrayThread()
         #self.qt_thread.show_token_request.connect(self.tray.show_tray, QtCore.Qt.QueuedConnection)
-        #self.qt_thread.show_tray.connect(self.tray.show_tray, QtCore.Qt.QueuedConnection)
-        self.qt_thread.set_printer.connect(self.tray.show_tray, QtCore.Qt.QueuedConnection)
-        self.qt_thread.show_notification.connect(self.tray.show_tray, QtCore.Qt.QueuedConnection)
+        self.qt_thread.show_login.connect(self.login_window.show, QtCore.Qt.QueuedConnection)
+        self.qt_thread.show_tray.connect(self.tray.show_tray, QtCore.Qt.QueuedConnection)
+        #self.qt_thread.quit.connect(self.quit, QtCore.Qt.QueuedConnection)
+        self.qt_thread.set_printer.connect(self.tray.set_printer, QtCore.Qt.QueuedConnection)
+        #self.qt_thread.show_notification.connect(self.tray.notificate, QtCore.Qt.QueuedConnection)
         self.qt_thread.start()
 
     def init_gui(self):
@@ -457,18 +494,37 @@ class App_Stub():
 
     def _gui_init_thread(self):
         self.qt_app = QtGui.QApplication(sys.argv)
-        self.tray = TDPrinterOSTray(self.main_app)
+        self.login_window = LoginWindow(self, self.main_app)
+        self.tray = TDPrinterOSTray(self, self.main_app)
         self.qt_app.exec_()
 
     def show(self):
-        self.qt_thread.show_token_request.emit()
+        self.qt_thread.show_tray.emit()
+
+    def show_login(self):
+        self.qt_thread.show_login.emit()
+
+    def set_printer(self):
+        self.qt_thread.set_printer.emit()
+
+    # def notificate(self):
+    #     self.qt_thread.show_notification.emit()
+
+    # def quit(self):
+    #     QtGui.qApp.quit()
+    #     self.qt_thread.quit.emit()
+    #     self.main_app.exit()
 
     def exit(self):
-        self.qt_thread.running_flag = False
-        self.qt_thread.wait()
-        self.tray.confirmed_exit()
-        self.gui_thread.join()
-        #QtGui.qApp.quit()
+        try:
+            QtGui.qApp.quit()
+            self.qt_thread.running_flag = False
+            #self.gui_thread.join()
+            #self.qt_thread.wait()
+            self.main_app.exit()
+        except RuntimeError:
+            pass
+            # TODO: Found why gui_thread does not exit correctly from qt_app.exec_()
 
 
 # def show_tray_app(app):
@@ -481,11 +537,15 @@ class App_Stub():
 
 def show_login_window(app):
     qt_app = QtGui.QApplication(sys.argv)
+    #qt_app.aboutToQuit.connect(qt_app.deleteLater)
     window = LoginWindow(app)
     qt_app.exec_()
+    #QtGui.qApp.quit()
+    #time.sleep(5)
+
 
 
 if __name__ == '__main__':
-    app = App_Stub()
+    app = App_Stub('stub')
     app.show()
     #app.exit()
