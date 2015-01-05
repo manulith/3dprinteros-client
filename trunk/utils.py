@@ -96,8 +96,3 @@ def zip_data_into_file(data):
     zf.write(data, compress_type=zipfile.ZIP_DEFLATED)
     zf.close()
     return zf
-
-if __name__ == '__main__':
-    logging.basicConfig()
-
-    print read_token()

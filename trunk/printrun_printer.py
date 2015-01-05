@@ -307,16 +307,6 @@ class Printer:
 
     def cancel(self):
         self.stop()
-        if self._reconnect_on_cancel:
-            self._force_operational = True
-            self._printer.disconnect()
-            self._printer.connect(self._port, self._baudrate)
-            elapsed = 0
-            while elapsed < 5:
-                elapsed += 0.5
-                time.sleep(0.5)
-            self._force_operational = False
-
         if self.is_operational():
             for gcode in self._end_gcodes:
                 self._printer.send_now(gcode)
