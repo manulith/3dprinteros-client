@@ -141,13 +141,11 @@ if __name__ == '__main__':
     import command_processor
     import printer_interface
     logging.basicConfig(level=logging.DEBUG)
-    user = ''
-    password = ''
+    user = "Nobody"
+    password = "qwert"
     profile = json.loads('{"extruder_count": 1, "baudrate": [250000, 115200], "vids_pids": [["16C0", "0483"], ["2341", "0042"]], "name": "Marlin Firmware", "VID": "2341", "PID": "0042", "end_gcodes": [], "driver": "printrun_printer", "reconnect_on_cancel": false, "Product": null, "SNR": null, "COM": "/dev/ttyACM0", "Manufacturer": null, "force_port_close": false, "print_from_binary": false}')
-    #2pr_int = printer_interface.PrinterInterface(profile)
+    pr_int = printer_interface.PrinterInterface(profile)
     while True:
-        user = "Nobody"
-        password = "qwert"
         user_login = ""
         printer_login = ""
         user_choice = raw_input('Welcome to test menu:\n' \
