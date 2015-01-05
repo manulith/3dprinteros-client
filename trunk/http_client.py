@@ -137,9 +137,9 @@ def download(url):
 def multipart_upload(url, payload, file_obj=None):
     if file_obj:
         f = {"file": file_obj}
-        r = requests.post(URL, data=payload, files=f)
+        r = requests.post(url, data=payload, files=f)
     else:
-        r = requests.post(URL, data=payload)
+        r = requests.post(url, data=payload)
     return r.status_code == 200
 
 if __name__ == '__main__':
