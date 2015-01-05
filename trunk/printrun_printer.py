@@ -45,12 +45,6 @@ class Printer:
     def __init__(self, profile):
         self._profile = profile
         self._logger = logging.getLogger('app.' + __name__)
-        # self._logger.info("Creating new printrun printer")
-        # self._logger.info("Profile:" + str(profile))
-        #self._logger.setLevel(logging.DEBUG)
-        #self._logger.propagate = True
-        self._end_gcodes = profile['end_gcodes']
-        self._reconnect_on_cancel = profile['reconnect_on_cancel']
         self._extruder_count = profile['extruder_count']
         self._pause_lift_height = 5
         self._pause_extrude_length = 7
@@ -86,6 +80,9 @@ class Printer:
         self._append_thread = None
         self._append_active = False
         #self._position = [0.00,0.00,0.00]
+        time.sleep(0.1)
+        for gcode in self._profile['end_gcodes']:
+            self._printer.send_now(gcode)
 
     def _recvcb_for_connection_check(self, line):
         self._logger.debug("While selecting baudrate received: %s", str(line))
@@ -307,9 +304,8 @@ class Printer:
 
     def cancel(self):
         self.stop()
-        if self.is_operational():
-            for gcode in self._end_gcodes:
-                self._printer.send_now(gcode)
+        self._printer.reset()
+        self._printer.disconnect()
 
     def stop(self):
         self._logger.debug(self._debug_info())
@@ -319,8 +315,7 @@ class Printer:
         self._last_percent = 100
 
     def emergency_stop(self):
-        self.stop() #TODO investigate reset is enough
-        self._printer.reset()
+        self.cancel()
 
     def is_paused(self):
         self._logger.debug('Is_paused debug info : ' + self._debug_info())
