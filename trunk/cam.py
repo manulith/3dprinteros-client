@@ -94,7 +94,7 @@ class CameraImageSender(threading.Thread):
     def send_picture(self, picture):
         picture = base64.b64encode(str(picture))
         data = {"token": self.token, "data": picture}
-        http_client.multipart_upload(http_client.token_camera_path, data)
+        http_client.multipart_upload(self.url, data)
 
     def close(self):
         self.stop_flag = True
@@ -123,7 +123,7 @@ class CameraImageSender(threading.Thread):
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
     import utils
-    c = CameraImageSender(utils.read_token())
+    c = CameraImageSender(utils.read_token(), CameraFinder())
     c.start()
     while True:
         try:
