@@ -43,12 +43,10 @@ class Printer:
     #    return text
 
     def __init__(self, profile):
-        self.profile = profile
-        self._baudrate = profile['baudrate']
-        self._port = profile['COM']
+        self._profile = profile
         self._logger = logging.getLogger('app.' + __name__)
-        self._logger.info("Creating new printer")
-        self._logger.info("Profile:" + str(profile))
+        # self._logger.info("Creating new printrun printer")
+        # self._logger.info("Profile:" + str(profile))
         #self._logger.setLevel(logging.DEBUG)
         #self._logger.propagate = True
         self._end_gcodes = profile['end_gcodes']
@@ -56,17 +54,15 @@ class Printer:
         self._extruder_count = profile['extruder_count']
         self._pause_lift_height = 5
         self._pause_extrude_length = 7
-
         self._force_operational = False
         self._was_error = False
         self._error_code = ''
         self._error_message = ''
-        self._printer = printcore()
+        self._select_baudrate_and_connect()
         self._printer.tempcb = self._tempcb
         self._printer.recvcb = self._recvcb
         self._printer.sendcb = self._sendcb
         self._printer.errorcb = self._errorcb
-
         self._tool_temp = [0, 0]
         self._tool_target_temp = [0, 0]
         self._platform_temp = 0
@@ -83,18 +79,47 @@ class Printer:
         self._temp_request_thread = threading.Thread(target=self._temp_request)
         self._temp_request_active = True
         self._temp_request_thread.start()
-
         self._append_buffer = deque()
-        '''
-        self._append_thread = threading.Thread(target=self._append)
-        self._append_active = True
-        self._append_thread.start()
-        '''
+        # self._append_thread = threading.Thread(target=self._append)
+        # self._append_active = True
+        # self._append_thread.start()
         self._append_thread = None
         self._append_active = False
         #self._position = [0.00,0.00,0.00]
 
-        self._printer.connect(self._port, self._baudrate)
+    def _recvcb_for_connection_check(self, line):
+        self._logger.debug("While selecting baudrate received: %s", str(line))
+        if "ok " in line or 'echo' in line:
+            self.connected_flag = True
+
+    def _select_baudrate_and_connect(self):
+        self.connected_flag = False
+        baudrate_count = 0
+        baudrates = self._profile['baudrate']
+        while not self.connected_flag:
+            if baudrate_count >= len(baudrates):
+                raise RuntimeError("Printrun: no more baudrates to try for %s" % self._profile['name'])
+            self._logger.info("Trying to connect with baudrate %i" % baudrates[baudrate_count])
+            try:
+                self._printer.reset()
+                self._printer.disconnect()
+            except:
+                pass
+            try:
+                self._printer = printcore(self._profile['COM'], baudrates[baudrate_count])
+            except Exception as e:
+                self._logger.warning("Error connecting to printer with baudrate %i" % baudrates[baudrate_count])
+                self._printer.reset()
+                self._printer.disconnect()
+            else:
+                time.sleep(0.1)
+                self._printer.recvcb = self._recvcb_for_connection_check
+                #self._printer.errorcb = self._logger.warning
+                self._printer.send("M105")
+            time.sleep(2)
+            baudrate_count += 1
+
+        self._logger.info("Successful connection! Correct baudrate is %i" % baudrates[baudrate_count-1])
 
     def define_regexp(self):
         # ok T:29.0 /29.0 B:29.5 /29.0 @:0
@@ -170,7 +195,6 @@ class Printer:
         #    self._position = [ match.group(0), match.group(1), match.group(2) ]
         #self._logger.debug(self._debug_position())
 
-
     def _recvcb(self, line):
         self._logger.debug(line)
         if line[0] == 'T':
@@ -233,12 +257,11 @@ class Printer:
         self.gcodes(gcodes)
 
     def gcodes(self, gcodes):
-        if not self._printing:
-            self._was_error = True
-            self._error_code = 'protocol'
-            self._error_message = 'Begin was not sent'
-            return
-
+        # if not self._printing:
+        #     self._was_error = True
+        #     self._error_code = 'protocol'
+        #     self._error_message = 'Begin was not sent'
+        #     return
         self._logger.info('len(gcodes): ' + str(len(gcodes)) + ', ' + self._debug_info())
         if len(self._gcodes) > 0:
             self._append_buffer += gcodes
@@ -261,9 +284,9 @@ class Printer:
             finally:
                 self._force_operational = False
 
-    # def end(self):
-    #     self._logger.debug('End debug info : ' + self._debug_info())
-    #     self._got_all_gcodes = True
+    def end(self):
+        self._logger.debug('End debug info : ' + self._debug_info())
+        self._got_all_gcodes = True
 
     def pause(self):
         self._logger.debug(self._debug_info())
@@ -284,16 +307,6 @@ class Printer:
 
     def cancel(self):
         self.stop()
-        if self._reconnect_on_cancel:
-            self._force_operational = True
-            self._printer.disconnect()
-            self._printer.connect(self._port, self._baudrate)
-            elapsed = 0
-            while elapsed < 5:
-                elapsed += 0.5
-                time.sleep(0.5)
-            self._force_operational = False
-
         if self.is_operational():
             for gcode in self._end_gcodes:
                 self._printer.send_now(gcode)
@@ -456,3 +469,6 @@ class Printer:
         }
         return result
 
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.DEBUG)
+    p = Printer({"name" : "test", "COM" : "/dev/ttyACM0", "baudrate" : [115200, 250000], "end_gcodes" : [], "reconnect_on_cancel" : False, "extruder_count" :1})

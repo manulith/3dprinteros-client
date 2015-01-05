@@ -11,49 +11,38 @@ class PrinterInterface(object):
     def try_protection(func):
         def decorator(self, *args, **kwargs):
             name = str(func.__name__)
-            self.logger.info('Executing command: ' + name)
+            self.logger.info('[ Executing: ' + name + "...")
             try:
-                func(self, *args, **kwargs)
+                result = func(self, *args, **kwargs)
             except Exception as e:
-                self.logger.error("Error executing command " + str(func.__name__), exc_info=True)
-            self.logger.debug('Command %s finished.' % name)
+                self.logger.error("!Error in command %s\n[%s]" % (str(func.__name__), str(e)))
+                if self.profile.get('stop_on_error', False):
+                    raise e
+            else:
+                if result != None:
+                    self.logger.info('Result is: ( ' + str(result) + " )")
+                self.logger.info('... ' + name + " finished ]")
+                return result
         return decorator
 
     def __init__(self, profile):
         self.printer = None
         self.creation_time = time.time()
         self.logger = logging.getLogger('app.' + __name__)
-        # if 'timeout' not in profile:
-        #     profile['timeout'] = self.DEFAULT_TIMEOUT
         self.profile = profile
         self.logger.info('Creating interface with package : ' + profile['driver'])
         self.connect_printer()
 
     def connect_printer(self):
         printer_driver = __import__(self.profile['driver'])
-        profile = self.profile
-        if 'baudrate' in profile:
-            profile = {}
-            profile.update(self.profile)
-            profile['baudrate'] = self.next_baudrate()
-            self.logger.info("Using serial port %s:%i" % (profile['COM'], profile['baudrate']))
-        self.logger.info("Connecting with profile: " + str(profile))
+        self.logger.info("Connecting with profile: " + str(self.profile))
         try:
-            printer = printer_driver.Printer(profile)
+            printer = printer_driver.Printer(self.profile)
         except Exception as e:
-            self.logger.warning("Error connecting to %s. %s" % (self.profile['name'], e.message))
+            self.logger.warning("Error connecting to %s" % self.profile['name'], exc_info=True)
         else:
             self.printer = printer
             self.logger.info("Successful connection to %s!" % (self.profile['name']))
-
-    def next_baudrate(self):
-        try:
-            current_baudrate = self.printer.profile['baudrate']
-            index = self.profile['baudrate'].index(current_baudrate) + 1
-            self.profile['baudrate'][index] #this line should raise exception if index too high
-        except:
-            index = 0
-        return self.profile['baudrate'][index]
 
     def wait_operational(self, timeout=30):
         elapsed = 0
@@ -66,12 +55,14 @@ class PrinterInterface(object):
                 elapsed += 0.5
         self.logger.warning('Error. Timeout while waiting for printer to become operational.')
 
+    @try_protection
     def is_operational(self):
         if self.printer:
             return self.printer.is_operational()
         self.logger.warning("No printer in printer_interface " + str(self.profile['name']))
         return False
 
+    @try_protection
     def report(self):
         if self.printer:
             return self.printer.report()
@@ -87,6 +78,7 @@ class PrinterInterface(object):
         else:
             self.logger.debug('Nothing to close')
 
+    @try_protection
     def close_hanged_port(self):
         self.logger.info("Trying to force close serial port %s" % self.profile['COM'])
         if self.profile["force_port_close"] and self.profile['COM']:
@@ -144,5 +136,6 @@ class PrinterInterface(object):
     def resume(self):
         self.printer.resume()
 
+    @try_protection
     def is_paused(self):
         return self.printer.is_paused()

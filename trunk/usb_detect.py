@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 import re
 import logging
 import usb.core
@@ -48,17 +51,22 @@ def get_devices():
         device_dct['Product'] = product
         device_dct['COM'] = get_port_by_vid_pid_snr(device_dct['VID'], device_dct['PID'], SNR)
         device_data_dcts.append(device_dct)
-        dev.close()
+        #dev.close()
         #logger.debug(device_dct)
     return device_data_dcts
 
 def get_port_by_vid_pid_snr(vid, pid, snr=None):
-    vid_pid_re = re.compile('.*\=([0-9-A-Z-a-f]+):([0-9-A-Z-a-f]+) SNR')
+    vid_pid_re = re.compile('(?:.*\=([0-9-A-Z-a-f]+):([0-9-A-Z-a-f]+) SNR)|(?:.*VID_([0-9-A-Z-a-f]+)\+PID_([0-9-A-Z-a-f]+)\+)')
     for port_dct in serial.tools.list_ports.comports():
         match = vid_pid_re.match(port_dct[2])
         if match:
-            vid_of_comport = match.group(1).zfill(4).upper()
-            pid_of_comport = match.group(2).zfill(4).upper()
+            vid_of_comport = match.group(1)
+            pid_of_comport = match.group(2)
+            if not vid_of_comport or not pid_of_comport:
+                vid_of_comport = match.group(3)
+                pid_of_comport = match.group(4)
+            vid_of_comport = vid_of_comport.zfill(4).upper()
+            pid_of_comport = pid_of_comport.zfill(4).upper()
             if vid == vid_of_comport and pid == pid_of_comport:
                 if snr and not 'SNR=' + snr in port_dct[2].upper():
                     continue
@@ -104,9 +112,5 @@ def get_unknown_printers(devices):
 
 if __name__ == '__main__':
     import json
-    import time
-    before = time.time()
-    #for _ in range(0,100):
     printers = get_printers()
-    print "time=" + str( time.time() - before )
     print json.dumps(printers)

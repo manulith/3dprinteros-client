@@ -1,6 +1,11 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 import os
 import sys
 import time
+import uuid
+import zipfile
 import logging
 import threading
 
@@ -15,7 +20,7 @@ def singleton(cls):
     return getinstance()
 
 def elapse_stretcher(looptime):
-    SLEEP_STEP = 0.1
+    SLEEP_STEP = 0.01
     def edec(func):
         def idec(*args, **kwargs):
             start_time = time.time()
@@ -74,7 +79,20 @@ def read_token():
             return token.strip()
     logger.debug('Error while loading token in paths: %s' % str(paths) )
 
-if __name__ == '__main__':
-    logging.basicConfig()
+def zip_file(file_obj_or_path):
+    if type(file_obj_or_path) == str:
+        try:
+            file_obj = open(file_obj_or_path, "rb")
+            data = file_obj.read()
+            file_obj.close()
+        except IOError:
+            logging.debug("Error zipping file %s" % str(file_obj_or_path))
+            return False
+    return zip_data_into_file(data)
 
-    print read_token()
+def zip_data_into_file(data):
+    zip_file_name = uuid.uuid1()
+    zf = zipfile.ZipFile(zip_file_name, mode='w')
+    zf.write(data, compress_type=zipfile.ZIP_DEFLATED)
+    zf.close()
+    return zf

@@ -4,7 +4,7 @@ import time
 import base64
 import threading
 import logging
-import requests
+import http_client
 
 
 class CameraFinder():
@@ -92,18 +92,9 @@ class CameraImageSender(threading.Thread):
             self.init_camera()
 
     def send_picture(self, picture):
-        connection = http_client.connect(http_client.URL)
-        if connection:
-            encoded_picture = base64.b64encode(str(picture))
-            http_client.send(http_client.token_camera_request, (self.token, encoded_picture))
-
-    def alt_send_picture(self, picture):
-            #send file alternative way with Requests
-            picture = base64.b64encode(str(picture))
-            data = {"token": self.token, "data": picture}
-            r = requests.post(self.url, data = data)
-            s = str(r.text)
-            self.logger.debug('Sending response: ' + s)
+        picture = base64.b64encode(str(picture))
+        data = {"token": self.token, "data": picture}
+        http_client.multipart_upload(http_client.token_camera_path, data)
 
     def close(self):
         self.stop_flag = True
@@ -121,7 +112,7 @@ class CameraImageSender(threading.Thread):
             if self.cap.isOpened():
                 picture = self.take_a_picture()
                 if picture != '':
-                    self.alt_send_picture(picture)
+                    self.send_picture(picture)
             else:
                 time.sleep(1)
                 self.init_camera()
@@ -132,12 +123,11 @@ class CameraImageSender(threading.Thread):
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
     import utils
-    cf = CameraFinder()
-    cis = CameraImageSender(utils.read_token(), cf)
-    cis.start()
+    c = CameraImageSender(utils.read_token())
+    c.start()
     while True:
         try:
             time.sleep(0.1)
         except KeyboardInterrupt:
-            cis.close()
+            c.close()
             break

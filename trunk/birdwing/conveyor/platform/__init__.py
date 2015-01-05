@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 # vim:ai:et:ff=unix:fileencoding=utf-8:sw=4:ts=4:
 # conveyor/src/main/python/conveyor/platform/__init__.py
 #
@@ -16,6 +19,8 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
+
+
 
 from __future__ import (absolute_import, print_function, unicode_literals)
 

@@ -20,6 +20,9 @@ class Printer():
     STATE_FATAL_ERROR = 7
     STATE_CANCELLED = 8
 
+    MAX_RETRIES = 1 # should be 1 for now. don't touch before implementing good error reporting to app main loop.
+    MAX_QUIET_RESTARTS = 4
+
     def __init__(self, profile):
         self._profile = profile
         self._port = profile['COM']
@@ -37,7 +40,8 @@ class Printer():
         #self._position = ([0,0,0], None)
         self._mb = {'preheat': False, 'heat_shutdown': False}
         self._eof = False
-        self.self_restart = profile.get("quiet_restart", False)
+        self._quiet_restart = profile.get("quiet_restart", False)
+        self._retries_count = 0
         self._restarts_count = 0
         self._lock = threading.Lock()
         if self.init_parser():
@@ -124,7 +128,6 @@ class Printer():
                 self._error_code = 'protocol'
                 self._error_message = 'Begin was not sent'
                 return
-
             self._buffer += gcodes
             self._logger.info('Enqueued block: ' + str(len(gcodes)) + ', total: ' + str(len(self._buffer)))
 
@@ -183,8 +186,7 @@ class Printer():
 
     def close(self):
         self._logger.info('Closing Makerbot Printer')
-        with self._lock:
-            self._state = self.STATE_CLOSED
+        self._state = self.STATE_CLOSED
 
     def _close(self):
         if self._parser is not None:
@@ -202,12 +204,13 @@ class Printer():
         self._logger.info('Trying quiet restart. Retry N' + str(self._restarts_count))
         self._close()
         time.sleep(0.1)
-        if self._restarts_count < 10:
+        if self._restarts_count < self.MAX_QUIET_RESTARTS:
             self.init_parser()
             return True
 
     def _execute(self, command):
         while True:
+            self._logger.debug("Executing command: {" + str(command) + "}")
             try:
                 if isinstance(command, str):
                     self._parser.execute_line(command)
@@ -228,27 +231,25 @@ class Printer():
 
             except serial.serialutil.SerialException as e:
                 self._logger.info('SerialException')
-                if self.self_restart:
+                if self._quiet_restart:
                     if self.try_to_restart_parser(): continue
                 self._state_before_error = self._state
                 self._state = self.STATE_RETRYABLE_ERROR
+                self._retries_count += 1
                 self._close()
                 self._error_code = 'serial'
                 self._error_message = str(e)
-                if self.profile.get('stop_on_error', False):
-                    raise e
 
             except makerbot_driver.ProtocolError as e:
                 self._logger.info('ProtocolError: ' + str(traceback.format_exc()))
-                if self.self_restart:
+                if self._quiet_restart:
                     if self.try_to_restart_parser(): continue
                 self._state_before_error = self._state
                 self._state = self.STATE_RETRYABLE_ERROR
+                self._retries_count += 1
                 self._close()
                 self._error_code = 'general'
                 self._error_message = str(e)
-                if self.profile.get('stop_on_error', False):
-                    raise e
 
             except makerbot_driver.Gcode.GcodeError as e:
                 self._logger.info('makerbot_driver.Gcode.GcodeError')
@@ -257,7 +258,7 @@ class Printer():
                 self._close()
                 self._error_code = 'gcode'
                 self._error_message = str(e)
-                if self.profile.get('stop_on_error', False):
+                if self._profile.get('stop_on_error', False):
                     raise e
 
             except Exception as e:
@@ -267,8 +268,11 @@ class Printer():
                 self._close()
                 self._error_code = 'general'
                 self._error_message = str(e)
-                if self.profile.get('stop_on_error', False):
+                if self._profile.get('stop_on_error', False):
                     raise e
+
+            else:
+                self._retries_count = 0
 
             #except makerbot_driver.TransmissionError as e:
             #except makerbot_driver.BuildCancelledError as e:
@@ -322,8 +326,8 @@ class Printer():
         return self.get_state() in [self.STATE_FATAL_ERROR, self.STATE_RETRYABLE_ERROR]
 
     def is_operational(self):
-        return self.is_printing() or \
-               self.get_state() in [self.STATE_READY, self.STATE_CANCELLED]
+        return self._retries_count < self.MAX_RETRIES and \
+               (self.is_printing() or self.get_state() in [self.STATE_READY, self.STATE_CANCELLED])
 
     def is_paused(self):
         return self.get_state() == self.STATE_PAUSED
@@ -478,3 +482,4 @@ class Printer():
             'last_error':  { "code" : self.get_error_code(), "message" : self.get_error_message() }
         }
         return result
+
