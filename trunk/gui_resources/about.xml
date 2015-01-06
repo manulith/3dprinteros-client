@@ -20,7 +20,7 @@
    <string notr="true">background-color: rgb(36, 128, 138);</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <widget class="QLabel" name="label">
+   <widget class="QLabel" name="headerLabel">
     <property name="geometry">
      <rect>
       <x>0</x>

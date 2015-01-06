@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import sys
+import os
 import time
 import webbrowser
 import time
@@ -10,6 +11,7 @@ import threading
 
 import notification
 import version
+from PySide import QtCore, QtGui, QtUiTools
 
 HEADER = '3DPrinterOS v' + version.version
 
@@ -17,6 +19,7 @@ HEADER = '3DPrinterOS v' + version.version
 # path = os.path.dirname(os.path.abspath(__file__))
 # path = os.path.join(path, "PySide")
 # sys.path.append(path)
+
 
 class GuiTrayThread(QtCore.QThread):
     show_token_request = QtCore.Signal()
@@ -81,19 +84,22 @@ class LoginWindow(QtGui.QMainWindow):
 
     def load_resources(self):
         self.images = {}
-        self.appIcon = QtGui.QPixmap('./gui_resources/icons/128x128.png')
-        self.images['button_ok_default'] = QtGui.QPixmap('./gui_resources/images/token/ok1.png')
-        self.images['button_ok_hover'] = QtGui.QPixmap('./gui_resources/images/token/ok2.png')
-        self.images['button_ok_pressed'] = QtGui.QPixmap('./gui_resources/images/token/ok3.png')
-        self.images['button_ok_inactive'] = QtGui.QPixmap('./gui_resources/images/token/ok4.png')
+        dir_path = os.path.dirname(os.path.abspath(__file__))
+        dir_path = os.path.join(dir_path, 'gui_resources')
 
-        self.images['button_cancel_default'] = QtGui.QPixmap('./gui_resources/images/token/can1.png')
-        self.images['button_cancel_hover'] = QtGui.QPixmap('./gui_resources/images/token/can2.png')
-        self.images['button_cancel_pressed'] = QtGui.QPixmap('./gui_resources/images/token/can3.png')
-        self.images['button_cancel_inactive'] = QtGui.QPixmap('./gui_resources/images/token/can4.png')
+        self.appIcon = QtGui.QPixmap(os.path.join(dir_path, 'icons', '128x128.png'))
+        self.images['button_ok_default'] = QtGui.QPixmap(os.path.join(dir_path, 'images', 'token', 'ok1.png'))
+        self.images['button_ok_hover'] = QtGui.QPixmap(os.path.join(dir_path, 'images', 'token', 'ok2.png'))
+        self.images['button_ok_pressed'] = QtGui.QPixmap(os.path.join(dir_path, 'images', 'token', 'ok3.png'))
+        self.images['button_ok_inactive'] = QtGui.QPixmap(os.path.join(dir_path, 'images', 'token', 'ok4.png'))
 
-        self.images['getkey'] = QtGui.QPixmap('./gui_resources/images/token/getkey5.png')
-        self.images['enter_key'] = QtGui.QPixmap('./gui_resources/images/token/key.png')
+        self.images['button_cancel_default'] = QtGui.QPixmap(os.path.join(dir_path, 'images', 'token', 'can1.png'))
+        self.images['button_cancel_hover'] = QtGui.QPixmap(os.path.join(dir_path, 'images', 'token', 'can2.png'))
+        self.images['button_cancel_pressed'] = QtGui.QPixmap(os.path.join(dir_path, 'images', 'token', 'can3.png'))
+        self.images['button_cancel_inactive'] = QtGui.QPixmap(os.path.join(dir_path, 'images', 'token', 'can4.png'))
+
+        self.images['getkey'] = QtGui.QPixmap(os.path.join(dir_path, 'images', 'token', 'getkey5.png'))
+        self.images['enter_key'] = QtGui.QPixmap(os.path.join(dir_path, 'images', 'token', 'key.png'))
 
     # def set_detected_printers(self):
     #     self.show_notification(self.app.storage['selected_printer'][0]['name'] + ' is ready!')
@@ -102,7 +108,10 @@ class LoginWindow(QtGui.QMainWindow):
 
     def init_widgets(self):
         loader = QtUiTools.QUiLoader()
-        file = QtCore.QFile(os.path.join('./gui_resources/gui.xml'))
+        dir_path = os.path.dirname(os.path.abspath(__file__))
+        file_path = os.path.join(dir_path, 'gui_resources', 'gui.xml')
+        file = QtCore.QFile(file_path)
+        #print 'File path = ' + str(file)
         file.open(QtCore.QFile.ReadOnly)
         self.myWidget = loader.load(file, self)
         file.close()
@@ -120,6 +129,11 @@ class LoginWindow(QtGui.QMainWindow):
 
         self.keyInput = self.myWidget.keyInput
         self.keyInput.textChanged.connect(self._keyInputTextChanged)
+
+        self.myWidget.getKeyLabel.setPixmap(self.images['getkey'])
+        self.myWidget.enterKeyLabel.setPixmap(self.images['enter_key'])
+        self.myWidget.okButton.setIcon(self.images['button_ok_inactive'])
+        self.myWidget.cancelButton.setIcon(self.images['button_cancel_default'])
 
     def _keyInputTextChanged(self):
         if self.keyInput.text():
@@ -231,12 +245,16 @@ class TDPrinterOSTray(QtGui.QSystemTrayIcon):
         self.setContextMenu(self.trayIconMenu)
 
     def load_resources(self):
+        dir_path = os.path.dirname(os.path.abspath(__file__))
+        dir_path = os.path.join(dir_path, 'gui_resources')
         self.images = dict()
         # TODO: find out what are other icons for
-        self.images['status_disconnected'] = QtGui.QIcon('./gui_resources/icons/1-0.png')
-        self.images['status_online'] = QtGui.QIcon('./gui_resources/icons/1-1.png')
-        self.images['status_error'] = QtGui.QIcon('./gui_resources/icons/1-3.png')
-        self.appIcon = QtGui.QPixmap('./gui_resources/icons/128x128.png')
+        self.images['status_disconnected'] = QtGui.QIcon(os.path.join(dir_path, 'icons', '1-0.png'))
+        self.images['status_online'] = QtGui.QIcon(os.path.join(dir_path, 'icons', '1-1.png'))
+        self.images['status_error'] = QtGui.QIcon(os.path.join(dir_path, 'icons', '1-3.png'))
+        self.images['about_header'] = QtGui.QPixmap(os.path.join(dir_path, 'images', 'about', 'header_about.png'))
+        self.appIcon = QtGui.QPixmap(os.path.join(dir_path, 'icons', '128x128.png'))
+
 
     def create_actions(self):
         self.statusAction = QtGui.QAction('Printer offline', self)
@@ -254,16 +272,20 @@ class TDPrinterOSTray(QtGui.QSystemTrayIcon):
 
     def init_additional_windows(self):
         loader = QtUiTools.QUiLoader()
+        dir_path = os.path.dirname(os.path.abspath(__file__))
+        dir_path = os.path.join(dir_path, 'gui_resources')
+        file_path = os.path.join(dir_path, 'about.xml')
         # About window setup
         self.aboutSection = QtGui.QMainWindow()
         self.aboutSection.setWindowTitle("About")
         self.aboutSection.setFixedSize(500, 300)
         self.aboutSection.hide()
         self.aboutSection.setWindowIcon(self.icon)
-        file = QtCore.QFile(os.path.join('./gui_resources/about.xml'))
+        file = QtCore.QFile(file_path)
         file.open(QtCore.QFile.ReadOnly)
         self.about = loader.load(file)
         file.close()
+        self.about.headerLabel.setPixmap(self.images['about_header'])
         self.about.softwareLabel.setText(
         '<b><font color=white>3DPrinterOS Software Edition v ' + version.version + \
         '<br><br>3D Control Systems Ltd. 1355, Market Street, San Francisco, CA 94103, USA<br></font></b>')
@@ -276,7 +298,8 @@ class TDPrinterOSTray(QtGui.QSystemTrayIcon):
         self.tokenChange.setFixedSize(550, 130)
         self.tokenChange.hide()
         self.tokenChange.setWindowIcon(self.icon)
-        file = QtCore.QFile(os.path.join('./gui_resources/token_change.xml'))
+        file_path = os.path.join(dir_path, 'token_change.xml')
+        file = QtCore.QFile(file_path)
         file.open(QtCore.QFile.ReadOnly)
         self.tokenChangeGui = loader.load(file)
         file.close()
@@ -289,7 +312,8 @@ class TDPrinterOSTray(QtGui.QSystemTrayIcon):
         self.exitConfirm = QtGui.QMainWindow()
         self.exitConfirm.setWindowTitle('Are you sure?')
         self.exitConfirm.setFixedSize(550, 130)
-        file = QtCore.QFile(os.path.join('./gui_resources/exit.xml'))
+        file_path = os.path.join(dir_path, 'exit.xml')
+        file = QtCore.QFile(file_path)
         file.open(QtCore.QFile.ReadOnly)
         self.exitConfirmGui = loader.load(file)
         file.close()
@@ -302,7 +326,8 @@ class TDPrinterOSTray(QtGui.QSystemTrayIcon):
         self.settingsWindow = QtGui.QMainWindow()
         self.settingsWindow.setWindowTitle('Settings')
         self.settingsWindow.setFixedSize(400, 300)
-        file = QtCore.QFile(os.path.join('./gui_resources/settings.xml'))
+        file_path = os.path.join(dir_path, 'settings.xml')
+        file = QtCore.QFile(file_path)
         file.open(QtCore.QFile.ReadOnly)
         self.settingsWindowGui = loader.load(file)
         file.close()
@@ -325,11 +350,10 @@ class TDPrinterOSTray(QtGui.QSystemTrayIcon):
         self.settingsNotification.setLayout(notificationLayout)
 
     def confirmed_exit(self):
-        self._running_flag = False
         self.exitConfirmGui.hide()
         self.hide_tray()
+        self._running_flag = False
         self.app_stub.exit()
-
 
     # Shows tray popup
     def show_notification(self, message):
@@ -337,11 +361,11 @@ class TDPrinterOSTray(QtGui.QSystemTrayIcon):
             path = __file__
             path = os.path.dirname(path)
             path = os.path.abspath(path)
-            mac_path = os.path.join(path, 'gui_resources/mac')
+            mac_path = os.path.join(path, 'gui_resources', 'mac')
             mac_path = os.path.abspath(mac_path)
             message_path = os.path.join(mac_path, 'message')
             message_path = os.path.abspath(message_path)
-            applet_path = os.path.join(mac_path, '3DPrinterOS.app/Contents/MacOS/./applet')
+            applet_path = os.path.join(mac_path, '3DPrinterOS.app', 'Contents', 'MacOS', 'applet')
             applet_path = os.path.abspath(applet_path)
             # mac applet magic
             with open(message_path, 'w') as message_file:
@@ -470,6 +494,7 @@ class TDPrinterOSTray(QtGui.QSystemTrayIcon):
 
 class App_Stub():
     def __init__(self, main_app):
+        self.qt_thread = None
         self.tray = None
         self.login_window = None
         self.main_app = main_app
@@ -478,6 +503,8 @@ class App_Stub():
         # while not self.tray and not self.login_window:
         #     time.sleep(0.001)
         self.qt_thread = GuiTrayThread()
+        while not self.qt_thread:
+            time.sleep(0.01)
         #self.qt_thread.show_token_request.connect(self.tray.show_tray, QtCore.Qt.QueuedConnection)
         self.qt_thread.show_login.connect(self.login_window.show, QtCore.Qt.QueuedConnection)
         self.qt_thread.show_tray.connect(self.tray.show_tray, QtCore.Qt.QueuedConnection)
@@ -515,14 +542,16 @@ class App_Stub():
 
     def exit(self):
         try:
-            QtGui.qApp.quit()
             self.qt_thread.running_flag = False
+            QtGui.qApp.exit()
+            # When using QtGui.qApp.quit there are floating bug when thread freeze up while this operation
+            #QtGui.qApp.quit()
+            # TODO: these threads are not join correctly. Now application is crashing after exiting.
             #self.gui_thread.join()
             #self.qt_thread.wait()
             self.main_app.exit()
         except RuntimeError:
             pass
-            # TODO: Found why gui_thread does not exit correctly from qt_app.exec_()
 
 
 # def show_tray_app(app):
