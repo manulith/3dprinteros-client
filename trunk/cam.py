@@ -14,36 +14,45 @@ class CameraFinder():
         self.cameras_count = len(self.cameras_names)
 
     def get_cameras_names(self):
-        import win32com.client
-        str_computer = "."
         cameras_names = {}
-        objWMIService = win32com.client.Dispatch("WbemScripting.SWbemLocator")
-        objSWbemServices = objWMIService.ConnectServer(str_computer,"root\cimv2")
-        items = objSWbemServices.ExecQuery("SELECT * FROM Win32_PnPEntity")
-        count = 0
-        for item in items:
-            name = item.Name
-            if ("web" in name) or ("Web" in name) or ("WEB" in name) or ("cam" in name) or ("Cam" in name) or ("CAM" in name):
-                new_camera = ''
-                if item.Manufacturer != None:
-                    new_camera = item.Manufacturer
-                if item.Name != None:
-                    new_camera = new_camera + ': ' + item.Name
-                cameras_names[count] = new_camera
-                count += 1
+        import sys
+        if sys.platform.startswith('win'):
+            import win32com.client
+            str_computer = "."
+            objWMIService = win32com.client.Dispatch("WbemScripting.SWbemLocator")
+            objSWbemServices = objWMIService.ConnectServer(str_computer,"root\cimv2")
+            items = objSWbemServices.ExecQuery("SELECT * FROM Win32_PnPEntity")
+            count = 0
+            for item in items:
+                name = item.Name
+                if ("web" in name) or ("Web" in name) or ("WEB" in name) or ("cam" in name) or ("Cam" in name) or ("CAM" in name):
+                    new_camera = ''
+                    if item.Manufacturer != None:
+                        new_camera = item.Manufacturer
+                    if item.Name != None:
+                        new_camera = new_camera + ': ' + item.Name
+                    cameras_names[count] = new_camera
+                    count += 1
 
-        self.logger.info('Found ' + str(len(cameras_names)) + ' camera(s):')
-        for number in range(0,len(cameras_names)):
-            self.logger.info(cameras_names[number])
-        return  cameras_names
+            self.logger.info('Found ' + str(len(cameras_names)) + ' camera(s):')
+            if len(cameras_names) > 0:
+                for number in range(0,len(cameras_names)):
+                    self.logger.info(cameras_names[number])
+            return  cameras_names
 
+        elif sys.platform.startswith('linux') or sys.platform.startswith('darwin'):
+            cameras_count = self.get_number_of_cameras()
+            if cameras_count > 0:
+                for camera_number in range(1, cameras_count):
+                    cameras_names[camera_number - 1] = 'Camera ' + str(camera_number)
 
-class CameraImageSender(threading.Thread):
+            self.logger.info('Found ' + str(len(cameras_names)) + ' camera(s):')
+            if len(cameras_names) > 0:
+                for number in range(0,len(cameras_names)):
+                    self.logger.info(cameras_names[number])
+            return  cameras_names
 
-    '''
-    @staticmethod
     def get_number_of_cameras():
-        logger = logging.getLogger("app." + __name__)
         cameras_count = 0
         while True:
             cap = cv2.VideoCapture(cameras_count)
@@ -52,10 +61,10 @@ class CameraImageSender(threading.Thread):
             if not is_opened:
                 break
             cameras_count += 1
-        logger.info("Found %i cameras" % cameras_count)
         return cameras_count
-    '''
 
+
+class CameraImageSender(threading.Thread):
     def __init__(self, token, camera_finder, camera_number = 0 ):
         self.logger = logging.getLogger("app." + __name__)
         self.stop_flag = False
