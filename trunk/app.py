@@ -60,6 +60,7 @@ class App():
             #self.gui_module = gui_module
             self.notify = notify
         self.detected_printers = []
+        self.selected_printer = None
         self.printer_interfaces = []
         self.token_related_s()
         #self.kill_makerbot_conveyor()
@@ -143,17 +144,11 @@ class App():
         while not self.stop_flag:
             before = time.time()
             currently_detected = self.detect_printers()
-            # if self.gui:
-            #     print 'GUI'
-            # print str(currently_detected)
-            # print len(self.detected_printers)
-            if self.gui and len(currently_detected) > 0 and len(self.detected_printers) == 0:
-                print 'currently_detected : ' + str(currently_detected[0])
-                self.detected_printers.append(currently_detected[0])
-                self.gui.set_printer()
-            #self.detect_and_connect(currently_detected)
+            if self.gui:
+                self.gui.update_detected()
+            self.detect_and_connect(currently_detected)
             time.sleep(0.5)
-            #self.do_things_with_connected(currently_detected)
+            self.do_things_with_connected(currently_detected)
             elapsed = time.time() - before
             if elapsed < self.MIN_LOOP_TIME:
                 time.sleep(self.MIN_LOOP_TIME - elapsed)
@@ -196,7 +191,7 @@ class App():
         return report
 
     def connect_printer(self, printer_profile):
-        if printer_profile['name'] == self.printer_name_by_token:
+        if printer_profile['name'] == self.printer_name_by_token and printer_profile == self.selected_printer:
             new_pi = printer_interface.PrinterInterface(printer_profile)
             self.printer_interfaces.append(new_pi)
         else:

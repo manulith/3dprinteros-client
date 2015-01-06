@@ -93,7 +93,7 @@ def get_printers():
     printers = sort_and_add_profile(devices)
     if len(printers) == 0:
         printers = get_unknown_printers(devices)
-    #logger.info('Detected USB printers: ' + str(printers))
+    logger.info('Detected USB printers: ' + str(printers))
     return printers
 
 

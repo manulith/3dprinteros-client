@@ -25,7 +25,7 @@ class GuiTrayThread(QtCore.QThread):
     show_token_request = QtCore.Signal()
     show_tray = QtCore.Signal()
     show_login = QtCore.Signal()
-    set_printer = QtCore.Signal()
+    update_detected = QtCore.Signal()
     #quit = QtCore.Signal()
     running_flag = True
 
@@ -193,6 +193,7 @@ class TDPrinterOSTray(QtGui.QSystemTrayIcon):
         self.init_additional_windows()
         self.set_status()
         self._running_flag = True
+        self.printers = []
         self._notifying = threading.Thread(target=self._notificate_thread)
         self._notifying.start()
         # self.show()
@@ -210,10 +211,12 @@ class TDPrinterOSTray(QtGui.QSystemTrayIcon):
                     time.sleep(interval)
             time.sleep(0.05)
 
-    def set_printer(self):
-        profile = self.app.detected_printers[0]
-        self.printer = Printer(profile, self)
-        #self.printer.select()
+    def update_detected(self):
+        for printer in self.printers:
+            printer.deselect()
+            self.printers.remove(printer)
+        for profile in self.app.detected_printers:
+            self.printers.append(Printer(profile, self))
 
     def show_tray(self):
         self.show()
@@ -395,7 +398,7 @@ class TDPrinterOSTray(QtGui.QSystemTrayIcon):
                 self.show_notification(str(printer_amount) + ' printers are detected!')
 
     # earlier version of show_detected_printers for one printer
-    # def set_printer(self, printer_name):
+    # def update_detected(self, printer_name):
     #     self.printer = printer_name
     #     self.show_notification('Printer ' + printer_name + ' is online!')
     #     self.set_status('online')
@@ -509,7 +512,7 @@ class App_Stub():
         self.qt_thread.show_login.connect(self.login_window.show, QtCore.Qt.QueuedConnection)
         self.qt_thread.show_tray.connect(self.tray.show_tray, QtCore.Qt.QueuedConnection)
         #self.qt_thread.quit.connect(self.quit, QtCore.Qt.QueuedConnection)
-        self.qt_thread.set_printer.connect(self.tray.set_printer, QtCore.Qt.QueuedConnection)
+        self.qt_thread.update_detected.connect(self.tray.update_detected, QtCore.Qt.QueuedConnection)
         #self.qt_thread.show_notification.connect(self.tray.notificate, QtCore.Qt.QueuedConnection)
         self.qt_thread.start()
 
@@ -529,8 +532,8 @@ class App_Stub():
     def show_login(self):
         self.qt_thread.show_login.emit()
 
-    def set_printer(self):
-        self.qt_thread.set_printer.emit()
+    def update_detected(self):
+        self.qt_thread.update_detected.emit()
 
     # def notificate(self):
     #     self.qt_thread.show_notification.emit()
