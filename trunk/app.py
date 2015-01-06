@@ -144,6 +144,7 @@ class App():
         while not self.stop_flag:
             before = time.time()
             currently_detected = self.detect_printers()
+            self.detected_printers = currently_detected
             if self.gui:
                 self.gui.update_detected()
             self.detect_and_connect(currently_detected)
@@ -191,7 +192,7 @@ class App():
         return report
 
     def connect_printer(self, printer_profile):
-        if printer_profile['name'] == self.printer_name_by_token and printer_profile == self.selected_printer:
+        if printer_profile['name'] == self.printer_name_by_token and  printer_profile == self.selected_printer:
             new_pi = printer_interface.PrinterInterface(printer_profile)
             self.printer_interfaces.append(new_pi)
         else:

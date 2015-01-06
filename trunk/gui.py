@@ -212,6 +212,7 @@ class TDPrinterOSTray(QtGui.QSystemTrayIcon):
             time.sleep(0.05)
 
     def update_detected(self):
+        print "!!!"
         for printer in self.printers:
             printer.deselect()
             self.printers.remove(printer)
