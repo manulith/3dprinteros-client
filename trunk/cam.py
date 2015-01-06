@@ -129,6 +129,18 @@ class CameraImageSender(threading.Thread):
         cv2.destroyAllWindows()
 
 
+class Streamer():
+    #for UI
+    def enable_streaming(self):
+        import utils
+        cf = CameraFinder()
+        self.cis = CameraImageSender(utils.read_token(), cf.get_camera())
+        self.cis.start()
+
+    def disable_streaming(self):
+        if self.cis:
+            self.cis.close()
+
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
     import utils
