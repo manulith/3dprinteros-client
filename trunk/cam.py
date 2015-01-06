@@ -8,8 +8,9 @@ import http_client
 
 
 class CameraFinder():
-    def __init__(self):
+    def __init__(self, camera_number = 0):
         self.logger = logging.getLogger("app." + __name__)
+        self.camera_number = camera_number
 
     def get_cameras_names(self):
         cameras_names = {}
@@ -63,18 +64,24 @@ class CameraFinder():
             if not is_opened:
                 break
             cameras_count += 1
+        self.cameras_count = cameras_count
         return cameras_count
+
+    def get_camera(self):
+        if self.camera_number < self.cameras_count:
+            cam = cv2.VideoCapture(self.camera_number)
+            if cam.isOpened():
+                return cam
+        self.logger.info("Error while getting camera.")
 
 
 class CameraImageSender(threading.Thread):
-    def __init__(self, token, cameras_count, camera_number):
+    def __init__(self, token, camera):
         self.logger = logging.getLogger("app." + __name__)
         self.stop_flag = False
         self.token = token
         self.url = 'https://acorn.3dprinteros.com/oldliveview/setLiveView/'
-        self.cap = None
-        self.camera_number = camera_number
-        self.cameras_count = cameras_count
+        self.cap = camera
         self.image_ready_lock = threading.Lock()
         super(CameraImageSender, self).__init__()
 
@@ -82,11 +89,6 @@ class CameraImageSender(threading.Thread):
     def init_camera(self):
         if self.cap:
             self.cap.release()
-        if self.camera_number < self.cameras_count:
-            cap = cv2.VideoCapture(self.camera_number)
-            if cap.isOpened():
-                self.cap = cap
-                return cap
         self.logger.info("Error while initializing camera.")
 
     def take_a_picture(self):
@@ -134,9 +136,7 @@ if __name__ == '__main__':
     import utils
     cf = CameraFinder()
     cf.get_cameras_names() #for debug
-    cameras_count = cf.get_number_of_cameras()
-    camera_number = 0 #for example
-    cis = CameraImageSender(utils.read_token(), cameras_count, camera_number)
+    cis = CameraImageSender(utils.read_token(), cf.get_camera())
     cis.start()
     while True:
         try:
