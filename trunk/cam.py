@@ -8,9 +8,8 @@ import http_client
 
 
 class CameraFinder():
-    def __init__(self, camera_number = 0):
+    def __init__(self):
         self.logger = logging.getLogger("app." + __name__)
-        self.camera_number = camera_number
 
     def get_cameras_names(self):
         cameras_names = {}
@@ -66,9 +65,9 @@ class CameraFinder():
             cameras_count += 1
         return cameras_count
 
-    def get_camera(self):
-        if self.camera_number < self.get_number_of_cameras():
-            cam = cv2.VideoCapture(self.camera_number)
+    def get_camera(self, camera_number = 0):
+        if camera_number < self.get_number_of_cameras():
+            cam = cv2.VideoCapture(camera_number)
             if cam.isOpened():
                 return cam
         self.logger.info("Error while getting camera.")
