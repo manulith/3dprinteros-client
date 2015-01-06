@@ -64,11 +64,10 @@ class CameraFinder():
             if not is_opened:
                 break
             cameras_count += 1
-        self.cameras_count = cameras_count
         return cameras_count
 
     def get_camera(self):
-        if self.camera_number < self.cameras_count:
+        if self.camera_number < self.get_number_of_cameras():
             cam = cv2.VideoCapture(self.camera_number)
             if cam.isOpened():
                 return cam
