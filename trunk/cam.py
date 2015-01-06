@@ -67,7 +67,7 @@ class CameraFinder():
 
 
 class CameraImageSender(threading.Thread):
-    def __init__(self, token, cameras_count, camera_number = 0 ):
+    def __init__(self, token, cameras_count, camera_number):
         self.logger = logging.getLogger("app." + __name__)
         self.stop_flag = False
         self.token = token
@@ -135,7 +135,8 @@ if __name__ == '__main__':
     cf = CameraFinder()
     cf.get_cameras_names() #for debug
     cameras_count = cf.get_number_of_cameras()
-    cis = CameraImageSender(utils.read_token(), cameras_count)
+    camera_number = 0 #for example
+    cis = CameraImageSender(utils.read_token(), cameras_count, camera_number)
     cis.start()
     while True:
         try:
