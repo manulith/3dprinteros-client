@@ -42,8 +42,8 @@ class CameraFinder():
         elif sys.platform.startswith('linux') or sys.platform.startswith('darwin'):
             cameras_count = self.get_number_of_cameras()
             if cameras_count > 0:
-                for camera_number in range(1, cameras_count):
-                    cameras_names[camera_number - 1] = 'Camera ' + str(camera_number)
+                for camera_id in range(0, cameras_count):
+                    cameras_names[camera_id] = 'Camera ' + str(camera_id + 1)
 
             self.logger.info('Found ' + str(len(cameras_names)) + ' camera(s):')
             if len(cameras_names) > 0:
@@ -58,9 +58,9 @@ class CameraFinder():
     def get_number_of_cameras(self):
         cameras_count = 0
         while True:
-            cap = cv2.VideoCapture(cameras_count)
-            is_opened = cap.isOpened()
-            cap.release()
+            cam = cv2.VideoCapture(cameras_count)
+            is_opened = cam.isOpened()
+            cam.release()
             if not is_opened:
                 break
             cameras_count += 1
@@ -134,7 +134,7 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
     import utils
     cf = CameraFinder()
-    cf.get_cameras_names() #for debug
+    cf.get_cameras_names() #for clarity
     cis = CameraImageSender(utils.read_token(), cf.get_camera())
     cis.start()
     while True:
