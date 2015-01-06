@@ -447,17 +447,15 @@ class TDPrinterOSTray(QtGui.QSystemTrayIcon):
         self.cameraDisableAction.setEnabled(True)
 
     def _printersDisableMethod(self):
-        for printer in self.printers:
-            printer.disable()
-        # if self.printers:
-        #     self.printersDisableAction.setEnabled(False)
-        #     self.set_status('disconnected')
-        #     self.statusAction.setText('Printer offline')
-        #     self.show_notification(self.printer.profile['name'] + ' is off now!')
-        #     self._deselect_all_printers()
-        #     self.selected_printer = None
-        #     #self.statusAction.setIconVisibleInMenu(False)
-        #     # TODO: printer disable logic here
+        if self.printers:
+            self.printersDisableAction.setEnabled(False)
+            self.set_status('disconnected')
+            self.statusAction.setText('Printer offline')
+            self.show_notification(self.printers[0].profile['name'] + ' is off now!')
+            self._deselect_all_printers()
+            self.selected_printer = None
+            #self.statusAction.setIconVisibleInMenu(False)
+            # TODO: printer disable logic here
 
     def _webcamsDisableMethod(self):
         if self.camera_action:
