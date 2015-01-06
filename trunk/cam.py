@@ -10,8 +10,6 @@ import http_client
 class CameraFinder():
     def __init__(self):
         self.logger = logging.getLogger("app." + __name__)
-        self.cameras_names = self.get_cameras_names()
-        self.cameras_count = len(self.cameras_names)
 
     def get_cameras_names(self):
         cameras_names = {}
@@ -52,7 +50,11 @@ class CameraFinder():
                     self.logger.info(cameras_names[number])
             return  cameras_names
 
-    def get_number_of_cameras():
+        else:
+            self.logger.info('Unable to get cameras names on your platform.')
+            return cameras_names
+
+    def get_number_of_cameras(self):
         cameras_count = 0
         while True:
             cap = cv2.VideoCapture(cameras_count)
@@ -65,16 +67,14 @@ class CameraFinder():
 
 
 class CameraImageSender(threading.Thread):
-    def __init__(self, token, camera_finder, camera_number = 0 ):
+    def __init__(self, token, cameras_count, camera_number = 0 ):
         self.logger = logging.getLogger("app." + __name__)
         self.stop_flag = False
         self.token = token
         self.url = 'https://acorn.3dprinteros.com/oldliveview/setLiveView/'
         self.cap = None
         self.camera_number = camera_number
-        self.camera_finder = camera_finder
-        self.cameras_count = self.camera_finder.cameras_count
-        self.cameras_names = self.camera_finder.cameras_names
+        self.cameras_count = cameras_count
         self.image_ready_lock = threading.Lock()
         super(CameraImageSender, self).__init__()
 
@@ -132,11 +132,14 @@ class CameraImageSender(threading.Thread):
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
     import utils
-    c = CameraImageSender(utils.read_token(), CameraFinder())
-    c.start()
+    cf = CameraFinder()
+    cf.get_cameras_names() #for debug
+    cameras_count = cf.get_number_of_cameras()
+    cis = CameraImageSender(utils.read_token(), cameras_count)
+    cis.start()
     while True:
         try:
             time.sleep(0.1)
         except KeyboardInterrupt:
-            c.close()
+            cis.close()
             break
