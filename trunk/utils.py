@@ -65,7 +65,9 @@ def read_token():
         path = os.path.join(abs_path_to_users_home, "Library", "Application Support", token_file_name)
     else:
         raise EnvironmentError('Could not detect OS. Only GNU/LINUX, MAC OS X and MS WIN VISTA/7/8 are supported.')
-    paths = [os.path.join('./', token_file_name)]
+    local_path = os.path.dirname(os.path.abspath(__file__))
+    local_path = os.path.join(local_path, token_file_name)
+    paths = [local_path]
     paths.append(path)
     for path in paths:
         logger.debug("Searching for token-file in %s" % path)

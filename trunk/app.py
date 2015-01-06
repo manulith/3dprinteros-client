@@ -69,7 +69,7 @@ class App():
     def token_related_s(self):
         self.token = None
         token = utils.read_token()
-        token = None
+        #token = None
         if not token and config.config['gui']:
             #self.gui_module.show_login_window(self)
             self.gui.show_login()
