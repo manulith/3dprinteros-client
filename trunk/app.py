@@ -97,9 +97,6 @@ class App():
             self.exit()
 
     def token_login(self, token):
-        if token == '123':
-            self.printer_name_by_token = 'Ultimaker 2'
-            return True
         answer = http_client.send(http_client.token_login, token)
         if answer:
             printer_alias_by_token = answer.get('printer_type_name', None)
@@ -145,8 +142,10 @@ class App():
             before = time.time()
             currently_detected = self.detect_printers()
             self.detected_printers = currently_detected
-            if self.gui:
+            if config.config['gui']:
                 self.gui.update_detected()
+            else:
+                self.selected_printer = currently_detected[0]
             self.detect_and_connect(currently_detected)
             time.sleep(0.5)
             self.do_things_with_connected(currently_detected)
