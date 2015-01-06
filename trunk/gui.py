@@ -62,7 +62,12 @@ class Printer():
 
     def deselect(self):
         self.action.setEnabled(True)
+        self.gui.app.disconnect_printer(self.profile)
 
+    def disable(self):
+        self.gui.printersMenu.removeAction(self.action)
+        self.gui = None
+        self.action = None
 
 class LoginWindow(QtGui.QMainWindow):
     def __init__(self, app_stub, app):
@@ -212,9 +217,8 @@ class TDPrinterOSTray(QtGui.QSystemTrayIcon):
             time.sleep(0.05)
 
     def update_detected(self):
-        print "!!!"
         for printer in self.printers:
-            printer.deselect()
+            printer.disable()
             self.printers.remove(printer)
         for profile in self.app.detected_printers:
             self.printers.append(Printer(profile, self))
