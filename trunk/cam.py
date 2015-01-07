@@ -1,5 +1,5 @@
 import numpy as np
-import cv2
+from opencv import cv2
 import time
 import base64
 import threading
