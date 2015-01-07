@@ -18,7 +18,11 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
     def do_GET(self):
         self.logger.info("Server GET")
-        if self.path.find('cam') >= 0:
+        if self.server.token_was_reset_flag:
+            self.send_response(200)
+            self.end_headers()
+            self.wfile.write("Token was reset\nPlease restart 3DPrinterOS and re-login")
+        elif self.path.find('cam') >= 0:
             self.logger.info('Camera')
             self.send_response(503)
             self.end_headers()
@@ -36,7 +40,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     def do_POST(self):
         if self.path.find('write_token') >= 0:
             self.process_write_token()
-        if self.path.find('clear_token') >= 0:
+        elif self.path.find('clear_token') >= 0:
             self.process_clear_token()
         else:
             self.send_response(404)
@@ -47,6 +51,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         result = utils.write_token('')
         if result:
             message = "Token was reset\nPlease restart 3DPrinterOS and re-login"
+            self.server.token_was_reset_flag = True
         else:
             message = "Error writing token"
         self.send_response(200)
@@ -94,12 +99,12 @@ class WebInterface(threading.Thread):
             self.logger.info("Web server started")
             self.server = BaseHTTPServer.HTTPServer(("127.0.0.1", 8008), WebInterfaceHandler)
             self.server.app = self.app
+            self.server.token_was_reset_flag = False
         except Exception as e:
             self.logger.error(e)
         else:
-            while not self.stop_flag:
-                self.server.handle_request(timeout=1)
-            self.server.server_close()
+            self.server.serve_forever()
+            #self.server.server_close()
             self.server.app = None
             self.app = None
             self.logger.info("Web server stopped")

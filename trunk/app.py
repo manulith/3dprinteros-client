@@ -51,9 +51,9 @@ class App():
         self.printer_interfaces = []
         self.token_login()
         self.init_interface()
-        self.wait_for_login()
-        self.kill_makerbot_conveyor()
         self.stop_flag = False
+        self.wait_for_login()
+        #self.kill_makerbot_conveyor()
         self.main_loop()
 
     def init_interface(self):
@@ -101,7 +101,7 @@ class App():
         self.logger.error("Login rejected")
 
     def wait_for_login(self):
-        while not self.token:
+        while not self.token or self.stop_flag:
             self.token_login()
             time.sleep(0.1)
 
@@ -226,7 +226,7 @@ class App():
             pi.close()
         time.sleep(0.1) #to reduce logging spam in next
         self.logger.info("Waiting for driver modules to close...")
-        self.web_interface.close()
+
         while True:
             ready_flag = True
             for pi in self.printer_interfaces:
@@ -240,6 +240,8 @@ class App():
                 break
             time.sleep(0.1)
         self.logger.debug("Waiting web interface server to shutdown")
+        self.web_interface.close()
+        self.web_interface.server.shutdown()
         self.web_interface.join()
         self.logger.info("...everything correctly closed.")
         self.logger.info("Goodbye ;-)")
