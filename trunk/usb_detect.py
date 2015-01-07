@@ -51,7 +51,7 @@ def get_devices():
         device_dct['Product'] = product
         device_dct['COM'] = get_port_by_vid_pid_snr(device_dct['VID'], device_dct['PID'], SNR)
         device_data_dcts.append(device_dct)
-        #dev.close()
+        dev.close()
         #logger.debug(device_dct)
     return device_data_dcts
 
@@ -93,7 +93,10 @@ def get_printers():
     printers = sort_and_add_profile(devices)
     if len(printers) == 0:
         printers = get_unknown_printers(devices)
-    logger.info('Detected USB printers: ' + str(printers))
+    logger.info('Detected USB printers: ')
+    for printer in printers:
+        logger.info(str(printer))
+    logger.info('-'*16)
     return printers
 
 

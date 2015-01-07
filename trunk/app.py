@@ -23,21 +23,20 @@ class App():
 
     @staticmethod
     def get_logger():
-        #logging.basicConfig(level=logging.DEBUG)
         logger = logging.getLogger('app')
         logger.setLevel(logging.DEBUG)
         #formatter = logging.Formatter('%(levelname)s\t%(asctime)s\t%(threadName)s/%(funcName)s\t%(message)s')
-        formatter = logging.Formatter('%(asctime)s\t%(threadName)s/%(funcName)s\t%(message)s')
+        #formatter = logging.Formatter('%(asctime)s\t%(threadName)s/%(funcName)s\t%(message)s')
         stderr_handler = logging.StreamHandler()
         stderr_handler.setLevel(logging.DEBUG)
-        stderr_handler.setFormatter(formatter)
-        logger.addHandler(stderr_handler)
+        #stderr_handler.setFormatter(formatter)
+        #logger.addHandler(stderr_handler)
         log_file = config.config['log_file']
         if log_file:
             try:
                 file_handler = logging.handlers.RotatingFileHandler(log_file, maxBytes=1024*1024*100, backupCount=1)
                 file_handler.setLevel(logging.DEBUG)
-                file_handler.setFormatter(formatter)
+                #file_handler.setFormatter(formatter)
                 logger.addHandler(file_handler)
             except Exception as e:
                 logger.debug('Could not create log file because' + e.message + '\n.No log mode.')
@@ -48,38 +47,48 @@ class App():
         self.logger.info("Welcome to 3DPrinterOS Client version %s_%s" % (version.version, version.build))
         signal.signal(signal.SIGINT, self.intercept_signal)
         signal.signal(signal.SIGTERM, self.intercept_signal)
+        self.detected_printers = []
+        self.printer_interfaces = []
+        self.token_login()
+        self.init_interface()
+        self.wait_for_login()
+        self.kill_makerbot_conveyor()
+        self.stop_flag = False
+        self.main_loop()
+
+    def init_interface(self):
         if config.config['gui']:
             self.gui_exchange_in = ""
             self.gui_exchange_out = ""
             self.selected_printer_number = None
             import gui as gui_module
             self.gui_module = gui_module
-        self.detected_printers = []
-        self.printer_interfaces = []
-        self.token_related_s()
-        #self.kill_makerbot_conveyor()
-        self.stop_flag = False
-        self.main_loop()
+            if self.token:
+                self.show_tray()
+            else:
+                self.show_login_window()
 
-    def token_related_s(self):
-        self.token = None
-        token = utils.read_token()
-        if not token and config.config['gui']:
-            self.gui_module.show_login_window(self)
-            token = self.gui_exchange_in.get('token', None)
-        if self.token_login(token):
-            if config.config['gui']:
-                self.tray_wrapper = self.gui_module.AppStub(self)
-                self.tray_wrapper.show()
-        else:
-            self.logger.error("Invalid token")
-            if config.config['gui']:
-                pass
-                #self.tray_wrapper.show_notification('Invalid token')
-            self.exit(0)
+        if config.config['web_interface']:
+            import webbrowser
+            from web_interface import WebInterface
+            self.web_interface = WebInterface(self)
+            self.web_interface.start()
+            webbrowser.open("http://127.0.0.1:8008", 2, True)
+
+    def show_login_window(self):
+        self.gui_module.show_login_window(self)
+        token = self.gui_exchange_in.get('token', None)
+        utils.write_token(token)
+
+    def show_tray(self):
+        self.tray_wrapper = self.gui_module.AppStub(self)
+        self.tray_wrapper.show()
 
     #token_s
-    def token_login(self, token):
+    def token_login(self):
+        self.logger.debug("Waiting for correct login")
+        self.token = None
+        token = utils.read_token()
         answer = http_client.send(http_client.token_login, token)
         if answer:
             printer_alias_by_token = answer.get('printer_type_name', None)
@@ -89,6 +98,12 @@ class App():
                 self.printer_name_by_token = self.get_name_by_alias(printer_alias_by_token)
                 self.token = token
                 return True
+        self.logger.error("Login rejected")
+
+    def wait_for_login(self):
+        while not self.token:
+            self.token_login()
+            time.sleep(0.1)
 
     # token s
     def get_name_by_alias(self, printer_alias):
@@ -142,7 +157,7 @@ class App():
                     time.sleep(1) #remove me in release
                     continue
             else:
-                self.logger.warning("Printer %s %s no longer detected!" % (pi.profile['name'], pi.profile['SNR']))
+                self.logger.warning(  "Printer %s %s no longer detected!" % (pi.profile['name'], pi.profile['SNR']))
             self.disconnect_printer(pi)
 
     def report_state_and_execute_new_job(self, printer):
@@ -174,8 +189,8 @@ class App():
     def kill_makerbot_conveyor(self):
         self.logger.info('Stopping third party software...')
         try:
-            import birdwing.conveyor_from_egg
-            birdwing.conveyor_from_egg.kill_existing_conveyor()
+            from birdwing.conveyor_from_egg import kill_existing_conveyor
+            kill_existing_conveyor()
         except ImportError as e:
             self.logger.debug(e.message)
         else:
@@ -211,6 +226,7 @@ class App():
             pi.close()
         time.sleep(0.1) #to reduce logging spam in next
         self.logger.info("Waiting for driver modules to close...")
+        self.web_interface.close()
         while True:
             ready_flag = True
             for pi in self.printer_interfaces:
@@ -223,7 +239,9 @@ class App():
             if ready_flag:
                 break
             time.sleep(0.1)
-        self.logger.info("...all closed.")
+        self.logger.debug("Waiting web interface server to shutdown")
+        self.web_interface.join()
+        self.logger.info("...everything correctly closed.")
         self.logger.info("Goodbye ;-)")
         sys.exit(0)
 

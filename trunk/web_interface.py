@@ -1,5 +1,4 @@
-import time
-import json
+import threading
 import logging
 import BaseHTTPServer
 
@@ -26,58 +25,88 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         else:
             self.send_response(200)
             self.end_headers()
-
-            with open('web_interface/loginform.html') as f:
-                login_page = f.read()
-            self.wfile.write(login_page)
+            if self.server.app.token:
+                name = 'web_interface/main_loop_form.html'
+            else:
+                name = 'web_interface/token_form.html'
+            with open(name) as f:
+                page = f.read()
+            self.wfile.write(page)
 
     def do_POST(self):
-        if self.path.find('token') >= 0:
-            content_length = self.headers.getheader('Content-Length')
-            if content_length:
-                length = int(content_length)
-                body = self.rfile.read(length)
-                prefix = "token="
-                if prefix in body:
-                    token = body.replace(prefix, "")
-                    result = utils.write_token(token)
-                    if result:
-                        message = "Success"
-                    else:
-                        message = "Error writing token"
-                    self.send_response(200)
-                    self.end_headers()
-                    self.wfile.write(message)
-                else:
-                    self.send_response(400)
-                    self.end_headers()
-                    self.wfile.write('Invalid body content for this request')
-            else:
-                self.send_response(411)
-                self.end_headers()
-                self.wfile.write('Zero Content-Length')
-
+        if self.path.find('write_token') >= 0:
+            self.process_write_token()
+        if self.path.find('clear_token') >= 0:
+            self.process_clear_token()
         else:
             self.send_response(404)
             self.end_headers()
             self.wfile.write('Unknown path')
 
+    def process_clear_token(self):
+        result = utils.write_token('')
+        if result:
+            message = "Token was reset\nPlease restart 3DPrinterOS and re-login"
+        else:
+            message = "Error writing token"
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(message)
 
-class WebInterface:
-    def __init__(self):
+    def process_write_token(self):
+        content_length = self.headers.getheader('Content-Length')
+        if content_length:
+            length = int(content_length)
+            body = self.rfile.read(length)
+            prefix = "token="
+            if prefix in body:
+                token = body.replace(prefix, "")
+                result = utils.write_token(token)
+                if result:
+                    message = "Success"
+                else:
+                    message = "Error writing token"
+                self.send_response(200)
+                self.end_headers()
+                self.wfile.write(message)
+            else:
+                self.send_response(400)
+                self.end_headers()
+                self.wfile.write('Invalid body content for this request')
+        else:
+            self.send_response(411)
+            self.end_headers()
+            self.wfile.write('Zero Content-Length')
+
+
+class WebInterface(threading.Thread):
+    def __init__(self, app):
         self.stop_flag = False
         self.logger = logging.getLogger('app.' + __name__)
+        self.app = app
+        threading.Thread.__init__(self)
+
+    def close(self):
+        self.stop_flag = True
+
+    def run(self):
         try:
-            self.logger.info("Web server start")
+            self.logger.info("Web server started")
             self.server = BaseHTTPServer.HTTPServer(("127.0.0.1", 8008), WebInterfaceHandler)
+            self.server.app = self.app
         except Exception as e:
             self.logger.error(e)
         else:
             while not self.stop_flag:
-                self.server.handle_request()
+                self.server.handle_request(timeout=1)
             self.server.server_close()
-            self.logger.info("Web server stop")
+            self.server.app = None
+            self.app = None
+            self.logger.info("Web server stopped")
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
-    w = WebInterface()
+    class A:
+        pass
+    a = A()
+    w = WebInterface(a)

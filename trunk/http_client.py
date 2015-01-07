@@ -97,6 +97,7 @@ def request(connection, payload, path, method, headers):
         resp = connection.getresponse()
     except Exception as e:
         logger.info(("Error during HTTP request:" + str(e)))
+        logger.debug("...failed }")
     else:
         logger.debug("Request status: %s %s" % (resp.status , resp.reason))
         if resp.status == httplib.OK and resp.reason == "OK":
@@ -109,13 +110,12 @@ def request(connection, payload, path, method, headers):
                 connection.close()
                 logger.debug("...success }")
                 return received
-    logger.debug("...failed }")
+    logger.debug("...nothing to do }")
 
 def send(packager, payloads):
     if type(payloads) != tuple:
         payloads = [ payloads ]
     connection = connect(URL)
-    print payloads
     if connection:
         request_body, path = packager(*payloads)
         json_answer = post_request(connection, request_body, path)
