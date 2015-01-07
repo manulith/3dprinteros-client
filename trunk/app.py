@@ -49,18 +49,12 @@ class App():
         signal.signal(signal.SIGINT, self.intercept_signal)
         signal.signal(signal.SIGTERM, self.intercept_signal)
         if config.config['gui']:
-            self.gui_exchange_in = dict()
-            self.gui_exchange_in['token'] = None
-            self.gui_exchange_out = dict()
+            self.gui_exchange_in = ""
+            self.gui_exchange_out = ""
             self.selected_printer_number = None
-            #import gui as gui_module
-            from gui import App_Stub
-            self.gui = App_Stub(self)
-            import notification as notify
-            #self.gui_module = gui_module
-            self.notify = notify
+            import gui as gui_module
+            self.gui_module = gui_module
         self.detected_printers = []
-        self.selected_printer = None
         self.printer_interfaces = []
         self.token_related_s()
         #self.kill_makerbot_conveyor()
@@ -70,32 +64,21 @@ class App():
     def token_related_s(self):
         self.token = None
         token = utils.read_token()
-        #token = None
         if not token and config.config['gui']:
-            #self.gui_module.show_login_window(self)
-            self.gui.show_login()
-            while not self.gui_exchange_in['token']:
-                time.sleep(0.05)
-            try:
-                token = self.gui_exchange_in['token']
-                print 'token : ' + token
-            except KeyError:
-                # It seems user has exited token window
-                self.exit()
+            self.gui_module.show_login_window(self)
+            token = self.gui_exchange_in.get('token', None)
         if self.token_login(token):
             if config.config['gui']:
-                #self.tray_wrapper = self.gui_module.App_Stub(self)
-                #self.tray_wrapper.show()
-                self.gui.show()
-                time.sleep(0.01)
-                self.notify.program_started()
+                self.tray_wrapper = self.gui_module.AppStub(self)
+                self.tray_wrapper.show()
         else:
             self.logger.error("Invalid token")
             if config.config['gui']:
                 pass
                 #self.tray_wrapper.show_notification('Invalid token')
-            self.exit()
+            self.exit(0)
 
+    #token_s
     def token_login(self, token):
         answer = http_client.send(http_client.token_login, token)
         if answer:
@@ -123,29 +106,11 @@ class App():
             if printer_name == profiles[profile_alias]['name']:
                 return profile_alias
 
-    # def main_loop(self):
-    #     self.stop_flag = False
-    #     while not self.stop_flag:
-    #         before = time.time()
-    #         currently_detected = self.detect_printers()
-    #         self.detect_and_connect(currently_detected)
-    #         time.sleep(0.5)
-    #         self.do_things_with_connected(currently_detected)
-    #         elapsed = time.time() - before
-    #         if elapsed < self.MIN_LOOP_TIME:
-    #             time.sleep(self.MIN_LOOP_TIME - elapsed)
-    #         self.logger.debug("loop_time: %f" % elapsed)
-
     def main_loop(self):
         self.stop_flag = False
         while not self.stop_flag:
             before = time.time()
             currently_detected = self.detect_printers()
-            self.detected_printers = currently_detected
-            if config.config['gui']:
-                self.gui.update_detected()
-            else:
-                self.selected_printer = currently_detected[0]
             self.detect_and_connect(currently_detected)
             time.sleep(0.5)
             self.do_things_with_connected(currently_detected)
@@ -191,7 +156,7 @@ class App():
         return report
 
     def connect_printer(self, printer_profile):
-        if printer_profile['name'] == self.printer_name_by_token and  printer_profile == self.selected_printer:
+        if printer_profile['name'] == self.printer_name_by_token:
             new_pi = printer_interface.PrinterInterface(printer_profile)
             self.printer_interfaces.append(new_pi)
         else:

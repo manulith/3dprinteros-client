@@ -98,8 +98,11 @@ class Printer:
                 raise RuntimeError("Printrun: no more baudrates to try for %s" % self._profile['name'])
             self._logger.info("Trying to connect with baudrate %i" % baudrates[baudrate_count])
             try:
+                self._logger.debug("Reseting")
                 self._printer.reset()
+                self._logger.debug("Disconnecting")
                 self._printer.disconnect()
+                self._logger.debug("Done reseting and disconnecting.")
             except:
                 pass
             try:
