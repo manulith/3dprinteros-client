@@ -9,6 +9,13 @@ import zipfile
 import logging
 import threading
 
+from hashlib import md5
+
+def md5_hash(text):
+    hash = md5(text)
+    hex_str_hash = hash.hexdigest()
+    return hex_str_hash
+
 def singleton(cls):
     instances = {}
     lock = threading.Lock()

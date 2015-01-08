@@ -3,10 +3,9 @@ import json
 import httplib
 import logging
 import requests
-from hashlib import md5
 
 CONNECTION_TIMEOUT = 6
-URL = "service1.3dprinteros.com"
+URL = "service.acorn.3dprinteros.com"
 user_login_path = "/user_login"
 printer_login_path = "/printer_login"
 command_path = "/command"
@@ -30,10 +29,7 @@ def load_json(jdata):
         else:
             logger.error("Data should be dictionary: " + str(data))
 
-def md5_hash(text):
-    hash = md5(text)
-    hex_str_hash = hash.hexdigest()
-    return hex_str_hash
+# old protocol
 
 def token_login(token):
     data = { 'token': token }
@@ -47,26 +43,28 @@ def token_job_request(token, state):
 
 def token_camera_request(token, jpg_image):
     # right now images are base64 encoded. don't ask me why.
-    data = { 'token': token, 'image': jpg_image } #TODO get info about fullbuffers
+    data = { 'user_token': token, 'image': jpg_image } #TODO get info about fullbuffers
     return json.dumps(data), token_camera_path
 
+# new protocol
+
 def package_users_login(username, password, error=[None,None]):
-    user_hash = md5_hash(username)
-    pass_hash = md5_hash(password)
-    data = { 'login': {'user': user_hash, 'password': pass_hash}, 'error': error}
+    data = {'login': {'user': username, 'password': password}, 'error': error}
     return json.dumps(data), user_login_path
 
-def package_printer_login(login_hash, printer_profile, error=[None,None]):
-    data = { 'login_hash': login_hash, 'printer': printer_profile, 'error': error }
+def package_printer_login(user_token, printer_profile, error=[None,None]):
+    data = { 'user_token': user_token, 'printer': printer_profile, 'error': error }
     return json.dumps(data), printer_login_path
 
-def package_command_request(printer_session_hash, state, error=[None,None]):
-    data = { 'printer_session_hash': printer_session_hash, 'state': state, 'error': error }
+def package_command_request(printer_token, state, error=[None,None]):
+    data = { 'printer_token': printer_token, 'state': state, 'error': error }
     return json.dumps(data), command_path
 
 def package_cloud_sync_upload(token, file_data, file_name):
-    data = { 'token': token, 'file_data': file_data, 'file_name': file_name }
+    data = { 'user_token': token, 'file_data': file_data}
     return json.dumps(data), cloudsync_path
+
+# end of new protocol
 
 #TODO turn on https
 def connect(URL):
@@ -151,9 +149,9 @@ if __name__ == '__main__':
     password = "qwert"
     profile = json.loads('{"extruder_count": 1, "baudrate": [250000, 115200], "vids_pids": [["16C0", "0483"], ["2341", "0042"]], "name": "Marlin Firmware", "VID": "2341", "PID": "0042", "end_gcodes": [], "driver": "printrun_printer", "reconnect_on_cancel": false, "Product": null, "SNR": null, "COM": "/dev/ttyACM0", "Manufacturer": null, "force_port_close": false, "print_from_binary": false}')
     pr_int = printer_interface.PrinterInterface(profile)
+    user_login = ""
+    printer_login = ""
     while True:
-        user_login = ""
-        printer_login = ""
         user_choice = raw_input('Welcome to test menu:\n' \
                                 'Type 1 for - User login\n' \
                                 'Type 2 for - Printer login\n' \

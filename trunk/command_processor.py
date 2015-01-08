@@ -14,7 +14,7 @@ def check_from_errors(data_dict):
         return error[0]
 
 def process_user_login(data_dict):
-    login = data_dict.get('login_hash', None)
+    login = data_dict.get('user_token', None)
     if not check_from_errors(data_dict):
         if login:
             return login
@@ -22,7 +22,12 @@ def process_user_login(data_dict):
     logger.warning("Error processing user_login response: " + str(data_dict))
 
 def process_printer_login(data_dict):
-    pass
+    login = data_dict.get('printer_token', None)
+    if not check_from_errors(data_dict):
+        if login:
+            return login
+    logger = logging.getLogger('app.' + __name__)
+    logger.warning("Error processing user_login response: " + str(data_dict))
 
 def process_command_request(printer_interface, data_dict):
     logger = logging.getLogger("app." + __name__)
