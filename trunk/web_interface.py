@@ -35,9 +35,9 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 name = 'web_interface/token_form.html'
             with open(name) as f:
                 page = f.read()
-            printers_list = [printer['name'] + " " + str(printer['SNR']) for printer in self.server.app.detected_printers]
-            printers = "".join(map(lambda x: "<p>" + x + "</p>", printers_list))
-            page = page.replace("!!!PRINTERS!!!", printers)
+            printers_list = [printer['name'] + ": " + str(printer['SNR']) for printer in self.server.app.detected_printers]
+            printers = '<table class="printers_table">'.join(map(lambda x: "<tr><td>" + x + "</td></tr>", printers_list))
+            page = page.replace('<table class="printers_table">', printers)
             self.wfile.write(page)
 
     def do_POST(self):

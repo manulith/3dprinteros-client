@@ -10,7 +10,7 @@
 		font-family: "Trebuchet MS", Helvetica, sans-serif;
 		color: #009999;
 		font-weight: bold;
-		font-size: 20px;
+		font-size: 18px;
 		text-align: center;
 
 		position:absolute;
@@ -21,7 +21,7 @@
 		}
 
 		.block2 { 
-		width: 100%px;
+		width: 100%;
 		height: 50px;
 		padding-top: 20px;
 		background: #009999; 
@@ -31,6 +31,21 @@
 		font-weight: bolder;
 		font-size: 30px;
 		}
+
+		.printers_table { 
+		width: 80%;
+		margin-left: 10%;
+		margin-top: 10px;
+		margin-bottom: 15px;
+		padding: none; 
+		border: none;		    
+		color: #009999;
+		font-weight: bolder;
+		font-size: 12px;
+		text-align: center;
+
+		border: dotted grey 1px;
+		}
 		</style>
 	</head>
 	<body bgcolor=#003333>
@@ -39,22 +54,26 @@
 				3DPrinterOS
 			</div>
 			<p>
-				Running Client
+				<h3>Running Client</h3>
 			</p>
 			<div style="margin-left: 125px; margin-bottom: 20px;">
-			<div id="movingBallG">
-			<div class="movingBallLineG">
+				<div id="movingBallG">
+					<div class="movingBallLineG"></div>
+					<div id="movingBallG_1" class="movingBallG"></div>
+				</div>
 			</div>
-			<div id="movingBallG_1" class="movingBallG">
-			</div>
-			</div>
-			</div>
+
+			<center>Printers</center>
+			<table class="printers_table">
+			</table>
+
 
 			<form action="/clear_token" method="post">
 				<input type="submit" value="Clear token" style='background: #FF9900; border: none; width: 150px; height: 50px; text-indent: 5px; font-family: "Trebuchet MS", Helvetica, sans-serif; color: #ffffff; font-weight: bold; font-size: 20px; margin-top: 5px;'>
 			</form>
+
 			<form action="/quit" method="post">
-				<input type="submit" value="Quit">
+				<input type="submit" value="Quit" style='background: #FF9900; border: none; width: 150px; height: 50px; text-indent: 5px; font-family: "Trebuchet MS", Helvetica, sans-serif; color: #ffffff; font-weight: bold; font-size: 20px; margin-top: 5px;'>
 			</form>
 		</div>
 	</body>
