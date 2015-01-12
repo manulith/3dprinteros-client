@@ -36,7 +36,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             with open(name) as f:
                 page = f.read()
             printers_list = [printer['name'] + " " + str(printer['SNR']) for printer in self.server.app.detected_printers]
-            printers = "".join(map(lambda x: "<p>"+x+"</p>" ,printers_list ))
+            printers = "".join(map(lambda x: "<p>" + x + "</p>", printers_list))
             page = page.replace("!!!PRINTERS!!!", printers)
             self.wfile.write(page)
 
@@ -58,6 +58,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.wfile.write('Goodbye ;-)')
         self.server.app.stop_flag = True
         self.server.app.quit_flag = True
+
 
     def process_clear_token(self):
         result = utils.write_token('')
