@@ -512,7 +512,7 @@ class App_Stub():
         #     time.sleep(0.001)
         self.qt_thread = GuiTrayThread()
         while not self.qt_thread:
-            time.sleep(0.01)
+            time.sleep(0.1)
         #self.qt_thread.show_token_request.connect(self.tray.show_tray, QtCore.Qt.QueuedConnection)
         self.qt_thread.show_login.connect(self.login_window.show, QtCore.Qt.QueuedConnection)
         self.qt_thread.show_tray.connect(self.tray.show_tray, QtCore.Qt.QueuedConnection)
@@ -552,14 +552,14 @@ class App_Stub():
         try:
             self.qt_thread.running_flag = False
             QtGui.qApp.exit()
-            # When using QtGui.qApp.quit there are floating bug when thread freeze up while this operation
+            # When using QtGui.qApp.quit there are floating bug when thread freeze up while th
             #QtGui.qApp.quit()
-            # TODO: these threads are not join correctly. Now application is crashing after exiting.
             #self.gui_thread.join()
             #self.qt_thread.wait()
             self.main_app.exit()
         except RuntimeError:
             pass
+            # TODO: Found why gui_thread does not exit correctly from qt_app.exec_()
 
 
 # def show_tray_app(app):
