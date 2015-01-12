@@ -5,7 +5,7 @@ import logging
 import requests
 
 CONNECTION_TIMEOUT = 6
-URL = "service.acorn.3dprinteros.com"
+URL = "service1.3dprinteros.com"
 user_login_path = "/user_login"
 printer_login_path = "/printer_login"
 command_path = "/command"
@@ -66,7 +66,6 @@ def package_cloud_sync_upload(token, file_data, file_name):
 
 # end of new protocol
 
-#TODO turn on https
 def connect(URL):
     logger = logging.getLogger('app.' +__name__)
     logger.debug("{ Connecting...")

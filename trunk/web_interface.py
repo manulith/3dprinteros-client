@@ -35,6 +35,9 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 name = 'web_interface/token_form.html'
             with open(name) as f:
                 page = f.read()
+            printers_list = [printer['name'] + " " + str(printer['SNR']) for printer in self.server.app.detected_printers]
+            printers = "".join(map(lambda x: "<p>"+x+"</p>" ,printers_list ))
+            page = page.replace("!!!PRINTERS!!!", printers)
             self.wfile.write(page)
 
     def do_POST(self):
@@ -42,10 +45,19 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.process_write_token()
         elif self.path.find('clear_token') >= 0:
             self.process_clear_token()
+        elif self.path.find('quit') >= 0:
+            self.quit_main_app()
         else:
             self.send_response(404)
             self.end_headers()
-            self.wfile.write('Unknown path')
+            self.wfile.write('Not found')
+
+    def quit_main_app(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write('Goodbye ;-)')
+        self.server.app.stop_flag = True
+        self.server.app.quit_flag = True
 
     def process_clear_token(self):
         result = utils.write_token('')
@@ -95,16 +107,15 @@ class WebInterface(threading.Thread):
         self.stop_flag = True
 
     def run(self):
+        self.logger.info("Web server started")
         try:
-            self.logger.info("Web server started")
             self.server = BaseHTTPServer.HTTPServer(("127.0.0.1", 8008), WebInterfaceHandler)
-            self.server.app = self.app
-            self.server.token_was_reset_flag = False
         except Exception as e:
             self.logger.error(e)
         else:
+            self.server.app = self.app
+            self.server.token_was_reset_flag = False
             self.server.serve_forever()
-            #self.server.server_close()
             self.server.app = None
             self.app = None
             self.logger.info("Web server stopped")

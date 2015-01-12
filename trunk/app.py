@@ -30,7 +30,7 @@ class App():
         stderr_handler = logging.StreamHandler()
         stderr_handler.setLevel(logging.DEBUG)
         #stderr_handler.setFormatter(formatter)
-        #logger.addHandler(stderr_handler)
+        logger.addHandler(stderr_handler)
         log_file = config.config['log_file']
         if log_file:
             try:
@@ -52,6 +52,7 @@ class App():
         self.token_login()
         self.init_interface()
         self.stop_flag = False
+        self.quit_flag = False
         self.wait_for_login()
         #self.kill_makerbot_conveyor()
         self.main_loop()
@@ -104,6 +105,8 @@ class App():
         while not self.token or self.stop_flag:
             self.token_login()
             time.sleep(0.1)
+            if self.quit_flag:
+                self.quit()
 
     # token s
     def get_name_by_alias(self, printer_alias):
@@ -122,10 +125,10 @@ class App():
                 return profile_alias
 
     def main_loop(self):
-        self.stop_flag = False
         while not self.stop_flag:
             before = time.time()
             currently_detected = self.detect_printers()
+            self.detected_printers = currently_detected # for gui
             self.detect_and_connect(currently_detected)
             time.sleep(0.5)
             self.do_things_with_connected(currently_detected)
@@ -133,6 +136,9 @@ class App():
             if elapsed < self.MIN_LOOP_TIME:
                 time.sleep(self.MIN_LOOP_TIME - elapsed)
             self.logger.debug("loop_time: %f" % elapsed)
+        # this is for quit from web interface(to release server's thread and quit)
+        if self.quit_flag:
+            self.quit()
 
     def detect_and_connect(self, currently_detected):
         currently_connected_profiles = [pi.profile for pi in self.printer_interfaces]
@@ -192,7 +198,7 @@ class App():
             from birdwing.conveyor_from_egg import kill_existing_conveyor
             kill_existing_conveyor()
         except ImportError as e:
-            self.logger.debug(e.message)
+            self.logger.debug(e)
         else:
             self.logger.info('...done.')
 
@@ -208,7 +214,7 @@ class App():
                 return detected[0]
             else:
                 self.logger.critical("Can't detect printer. Exiting")
-                self.exit()
+                self.quit()
 
     def detect_printers(self):
         usb_results = usb_detect.get_printers()
@@ -218,15 +224,14 @@ class App():
     def intercept_signal(self, signal_code, frame):
         self.logger.warning("SIGINT or SIGTERM received. Closing 3DPrinterOS Client version %s_%s" % \
                 (version.version, version.build))
-        self.exit()
+        self.quit()
 
-    def exit(self):
+    def quit(self):
         self.stop_flag = True
         for pi in self.printer_interfaces:
             pi.close()
         time.sleep(0.1) #to reduce logging spam in next
         self.logger.info("Waiting for driver modules to close...")
-
         while True:
             ready_flag = True
             for pi in self.printer_interfaces:
@@ -242,7 +247,7 @@ class App():
         self.logger.debug("Waiting web interface server to shutdown")
         self.web_interface.close()
         self.web_interface.server.shutdown()
-        self.web_interface.join()
+        self.web_interface.join(1)
         self.logger.info("...everything correctly closed.")
         self.logger.info("Goodbye ;-)")
         sys.exit(0)

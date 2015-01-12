@@ -98,7 +98,7 @@ def write_token(token_data):
         with open(path, "w") as token_file:
             token_file.write(token_data)
     except IOError as e:
-        logger.warning(e)
+        logger.warning("Error then writing token" + str(e))
     else:
         logger.debug('Token was writen to ' + path)
         return True
