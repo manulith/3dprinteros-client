@@ -129,7 +129,7 @@ class CameraImageSender(threading.Thread):
         cv2.destroyAllWindows()
 
 
-class Streamer():
+class CameraStreamManager():
     #for UI
     def enable_streaming(self):
         import utils
