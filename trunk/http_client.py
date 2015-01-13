@@ -5,7 +5,7 @@ import logging
 import requests
 
 CONNECTION_TIMEOUT = 6
-URL = "service1.3dprinteros.com"
+URL = "service.acorn.3dprinteros.com"
 user_login_path = "/user_login"
 printer_login_path = "/printer_login"
 command_path = "/command"
@@ -70,7 +70,7 @@ def connect(URL):
     logger = logging.getLogger('app.' +__name__)
     logger.debug("{ Connecting...")
     try:
-        connection = httplib.HTTPSConnection(URL, port = 443, timeout = CONNECTION_TIMEOUT)#, cert_file=utils.cert_file_path)
+        connection = httplib.HTTPConnection(URL, port = 80, timeout = CONNECTION_TIMEOUT)#, cert_file=utils.cert_file_path)
     except httplib.error as e:
         logger.info("Error during HTTP connection: " + str(e))
         logger.debug("...failed }")
@@ -193,5 +193,3 @@ if __name__ == '__main__':
             print 'Processed answer: ' + str(result)
         except:
             pass
-
-
