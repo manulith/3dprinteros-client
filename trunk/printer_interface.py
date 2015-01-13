@@ -2,6 +2,8 @@ import time
 import logging
 import serial
 
+import cam
+
 # Warning any modification to profile will cause errors. profiles are used for identification. need to fix this somehow.
 class PrinterInterface(object):
 
@@ -27,6 +29,7 @@ class PrinterInterface(object):
 
     def __init__(self, profile):
         self.printer = None
+        self.camera = cam.CameraStreamManager()
         self.creation_time = time.time()
         self.logger = logging.getLogger('app.' + __name__)
         self.profile = profile
@@ -43,6 +46,13 @@ class PrinterInterface(object):
         else:
             self.printer = printer
             self.logger.info("Successful connection to %s!" % (self.profile['name']))
+
+        try:
+            self.camera.enable_streaming()
+        except Exception as e:
+            self.logger.warning("Cannot start camera streaming : \n" + e.message)
+        else:
+            self.logger.info("Camera streaming started")
 
     def wait_operational(self, timeout=30):
         elapsed = 0
@@ -75,6 +85,13 @@ class PrinterInterface(object):
             self.printer.close()
             self.logger.info('...closed.')
             self.printer = None
+            try:
+                self.camera.disable_streaming()
+            except Exception as e:
+                self.logger.warning("Error while closing camera streaming : \n" + e.message)
+            else:
+                self.logger.info('Streaming ended')
+            self.camera = None
         else:
             self.logger.debug('Nothing to close')
 

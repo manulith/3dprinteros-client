@@ -8,8 +8,12 @@ import uuid
 import zipfile
 import logging
 import threading
+import platform
 
 from hashlib import md5
+
+LIBS_FOLDER = 'libraries'
+ALL_LIBS = ['opencv']
 
 def md5_hash(text):
     hash = md5(text)
@@ -38,24 +42,43 @@ def elapse_stretcher(looptime):
         return idec
     return edec
 
+def init_path_to_libs():
+    if sys.platform.startswith('win'):
+        folder_name = "win"
+    elif sys.platform.startswith('linux'):
+        folder_name = "linux"
+    elif sys.platform.startswith('darwin'):
+        folder_name = "mac"
+    else:
+        raise RuntimeError('Cannot define operating system')
+    our_dir = os.path.dirname(os.path.abspath(__file__))
+    platform_dir = os.path.join(our_dir, LIBS_FOLDER, folder_name)
+    for lib in ALL_LIBS:
+        lib_path = os.path.join(platform_dir, lib)
+        print lib_path
+        sys.path.append(lib_path)
+
+
 def get_libusb_path(lib):
     logger = logging.getLogger('app.' + __name__)
-    logger.info("Using: " + lib)
+    logger.info('Using: ' + lib)
     if sys.platform.startswith('win'):
-        # We are using x32 python in our software which cannot handle with x64 dll
-        # if 'PROGRAMFILES(X86)' in os.environ:
-        #     libusb_name = 'libusb-1.0-64.dll'
-        # else:
-        #     libusb_name = 'libusb-1.0.dll'
-        libusb_name = 'libusb-1.0.dll'
+        folder_name = "win"
+        python_version = platform.architecture()[0]
+        if '64' in python_version:
+            libusb_name = 'libusb-1.0-64.dll'
+        else:
+            libusb_name = 'libusb-1.0.dll'
     elif sys.platform.startswith('linux'):
+        folder_name = "linux"
         libusb_name = 'libusb-1.0.so'
     elif sys.platform.startswith('darwin'):
+        folder_name = "mac"
         libusb_name = 'libusb-1.0.dylib'
     else:
         raise EnvironmentError('Could not detect OS. Only GNU/LINUX, MAC OS X and MS WIN VISTA/7/8 are supported.')
     our_dir = os.path.dirname(os.path.abspath(__file__))
-    backend_path = os.path.join(our_dir, libusb_name)
+    backend_path = os.path.join(our_dir, LIBS_FOLDER, folder_name, 'libusb', libusb_name)
     logger.info('Using: ' + backend_path)
     return backend_path
 
@@ -123,5 +146,7 @@ def zip_data_into_file(data):
     return zf
 
 if __name__ == "__main__":
-    write_token("TEST")
-    print read_token()
+    print get_libusb_path()
+    print get_libusb_path1()
+    #init_path_to_libs()
+    #import cv2

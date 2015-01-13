@@ -43,6 +43,7 @@ class App():
         return logger
 
     def __init__(self):
+        utils.init_path_to_libs()
         self.logger = self.get_logger()
         self.logger.info("Welcome to 3DPrinterOS Client version %s_%s" % (version.version, version.build))
         signal.signal(signal.SIGINT, self.intercept_signal)

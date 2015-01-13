@@ -27,7 +27,8 @@ class Printer(printrun_printer.Printer):
         firmware_dir = os.path.join(os.getcwd(), "beeverycreative", "firmware")
         for file_name in os.listdir(firmware_dir):
             if self.profile['name'].lower() in file_name.lower():
-                return os.path.join(firmware_dir, file_name)
+                firmware = os.path.join(firmware_dir, file_name)
+                return firmware
 
     def reset(self):
         self._printer.send_now("M609")
@@ -67,7 +68,7 @@ class Printer(printrun_printer.Printer):
         self.dev = dev
         self.ep_in = ep_in
         self.ep_out = ep_out
-        return not ep_in or not ep_out
+        return ep_in and ep_out
 
     #used only in raw usb mode, which we use only to flash firmware in printer
     def dispatch(self, message):
