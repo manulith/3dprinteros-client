@@ -34,6 +34,7 @@ def get_devices():
         }
         try:
             SNR = str(usb.util.get_string(dev, dev.iSerialNumber)) #originaly it's unicode, but this provoke bugs
+            print SNR
             if "x" in SNR:
                  SNR = None
         except:
@@ -47,6 +48,7 @@ def get_devices():
         except (usb.core.USBError, AttributeError):
             product = None
         device_dct['SNR'] = SNR
+        print SNR
         device_dct['Manufacturer'] = manufacturer
         device_dct['Product'] = product
         device_dct['COM'] = get_port_by_vid_pid_snr(device_dct['VID'], device_dct['PID'], SNR)
@@ -117,3 +119,6 @@ if __name__ == '__main__':
     import json
     printers = get_printers()
     print json.dumps(printers)
+    for printer in printers:
+        print "\n"
+        print printer

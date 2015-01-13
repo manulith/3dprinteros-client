@@ -44,7 +44,7 @@ class App():
 
     def __init__(self):
         self.logger = self.get_logger()
-        self.logger.info("Welcome to 3DPrinterOS Client version %s_%s" % (version.version, version.build))
+        self.logger.info("Welcome to 3DPrinterOS Client version %s_%s_%s" % (version.version, version.build, version.commit))
         signal.signal(signal.SIGINT, self.intercept_signal)
         signal.signal(signal.SIGTERM, self.intercept_signal)
         self.detected_printers = []

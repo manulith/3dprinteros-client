@@ -59,6 +59,19 @@ def get_libusb_path(lib):
     logger.info('Using: ' + backend_path)
     return backend_path
 
+def read_user_token():
+    logger = logging.getLogger('app.' + __name__)
+    path = "3dposut.bin"
+    logger.debug("Searching for token-file in %s" % path)
+    try:
+        with open(path) as token_file:
+            token = token_file.read()
+            logger.debug('Token loaded from ' + path)
+    except IOError:
+        logger.debug('Error while loading users token in paths: %s' % str(path))
+    else:
+        return token.strip()
+
 def get_paths_to_token():
     token_file_name = "3DPrinterOS-Key"
     abs_path_to_users_home = os.path.abspath(os.path.expanduser("~"))
@@ -102,7 +115,6 @@ def write_token(token_data):
     else:
         logger.debug('Token was writen to ' + path)
         return True
-
 
 def zip_file(file_obj_or_path):
     if type(file_obj_or_path) == str:
