@@ -79,11 +79,11 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             prefix = "token="
             if prefix in body:
                 token = body.replace(prefix, "")
-                result = utils.write_token(token)
+                result = utils.write_token(token)                
                 if result:
-                    message = "Success"
+                    message = '<html><head><meta http-equiv="refresh" content="2; url=/" /></head><body>Token was updated</body></html>'
                 else:
-                    message = "Error writing token"
+                    message = '<html><head><meta http-equiv="refresh" content="2; url=/" /></head><body>Error while writing token</body></html>'
                 self.send_response(200)
                 self.end_headers()
                 self.wfile.write(message)
