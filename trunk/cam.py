@@ -1,4 +1,6 @@
 import numpy as np
+import utils
+utils.init_path_to_libs()
 import cv2
 import time
 import base64
