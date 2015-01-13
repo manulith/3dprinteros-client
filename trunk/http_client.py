@@ -137,6 +137,7 @@ def multipart_upload(url, payload, file_obj=None):
         r = requests.post(url, data=payload, files=f)
     else:
         r = requests.post(url, data=payload)
+    print 'Response: ' + r.text
     return r.status_code == 200
 
 if __name__ == '__main__':
