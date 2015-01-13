@@ -55,7 +55,8 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     def quit_main_app(self):
         self.send_response(200)
         self.end_headers()
-        self.wfile.write('Goodbye ;-)')
+        page = open('web_interface/goodbye.html', 'r').read()
+        self.wfile.write(page)
         self.server.app.stop_flag = True
         self.server.app.quit_flag = True
 
@@ -63,7 +64,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     def process_clear_token(self):
         result = utils.write_token('')
         if result:
-            message = "Token was reset\nPlease restart 3DPrinterOS and re-login"
+            message = open('web_interface/token_reset.html', 'r').read()
             self.server.token_was_reset_flag = True
         else:
             message = "Error writing token"
@@ -81,9 +82,9 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 token = body.replace(prefix, "")
                 result = utils.write_token(token)                
                 if result:
-                    message = '<html><head><meta http-equiv="refresh" content="2; url=/" /></head><body>Token was updated</body></html>'
+                    message = open('web_interface/success.html', 'r').read()
                 else:
-                    message = '<html><head><meta http-equiv="refresh" content="2; url=/" /></head><body>Error while writing token</body></html>'
+                    message = 'Error while writing token'
                 self.send_response(200)
                 self.end_headers()
                 self.wfile.write(message)
