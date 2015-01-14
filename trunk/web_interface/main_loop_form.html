@@ -33,13 +33,13 @@
 
 		.printers_table { 
 		width: 70%;
-		margin-left: 10%;
 		margin-top: 10px;
 		margin-bottom: 15px;
-		padding: none;
 		text-align: center;
-
-		border: 1px dotted grey;
+		font-size: 13px;
+		font-variant: inherit;
+		border: 1 dotted #c8c8c8;
+		border-collapse: collapse;
 		}
 		</style>
 	</head>
@@ -53,17 +53,18 @@
 			</p>
 
 			<font color='grey'>
-			<center>Printers<hr width="70%"></center><i>
-			<table class="printers_table">
+			<center>Printers
+			<table class="printers_table" border="1">
+				<tr><td>Printer name</td><td>Serial number</td></tr>
 			</table><br>
-			</i></font>
+			</font></center>
 
 			<form action="/clear_token" method="post" style='display: inline'>
 				<input type="submit" value="Clear token" style='background: #FF9900; border: none; width: 150px; height: 50px; text-indent: 5px; font-family: "Trebuchet MS", Helvetica, sans-serif; color: #ffffff; font-weight: bold; font-size: 20px; margin-top: 20px; margin-right: 20px;'>
 			</form>
 
 			<form action="/quit" method="post" style='display: inline'>
-				<input type="submit" value="Quit" style='background: #FF9900; border: none; width: 150px; height: 50px; text-indent: 5px; font-family: "Trebuchet MS", Helvetica, sans-serif; color: #ffffff; font-weight: bold; font-size: 20px; margin-top: 20px; margin-bottom: 20px'>
+				<input type="submit" value="Close Client" style='background: #FF9900; border: none; width: 150px; height: 50px; text-indent: 5px; font-family: "Trebuchet MS", Helvetica, sans-serif; color: #ffffff; font-weight: bold; font-size: 20px; margin-top: 20px; margin-bottom: 20px'>
 			</form>
 		</div>
 	</body>
