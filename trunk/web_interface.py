@@ -84,7 +84,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 if result:
                     message = open('web_interface/success.html', 'r').read()
                 else:
-                    message = 'Error while writing token'
+                    message = open('web_interface/unsuccess.html', 'r').read()
                 self.send_response(200)
                 self.end_headers()
                 self.wfile.write(message)

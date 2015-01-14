@@ -9,7 +9,6 @@
 		float: left;
 		font-family: "Trebuchet MS", Helvetica, sans-serif;
 		color: #009999;
-		font-weight: bold;
 		font-size: 18px;
 		text-align: center;
 
@@ -33,18 +32,14 @@
 		}
 
 		.printers_table { 
-		width: 80%;
+		width: 70%;
 		margin-left: 10%;
 		margin-top: 10px;
 		margin-bottom: 15px;
-		padding: none; 
-		border: none;		    
-		color: #009999;
-		font-weight: bolder;
-		font-size: 12px;
+		padding: none;
 		text-align: center;
 
-		border: dotted grey 1px;
+		border: 1px dotted grey;
 		}
 		</style>
 	</head>
@@ -58,10 +53,10 @@
 			</p>
 
 			<font color='grey'>
-			<center>Printers</center>
+			<center>Printers<hr width="70%"></center><i>
 			<table class="printers_table">
-			</table>
-			</font>
+			</table><br>
+			</i></font>
 
 			<form action="/clear_token" method="post" style='display: inline'>
 				<input type="submit" value="Clear token" style='background: #FF9900; border: none; width: 150px; height: 50px; text-indent: 5px; font-family: "Trebuchet MS", Helvetica, sans-serif; color: #ffffff; font-weight: bold; font-size: 20px; margin-top: 20px; margin-right: 20px;'>
