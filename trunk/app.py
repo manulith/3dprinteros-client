@@ -210,19 +210,19 @@ class App():
         else:
             self.logger.info('...done.')
 
-    def check_autoselect(self):
-        autoselect = config.config['autoselect']
-        if autoselect:
-            detected = usb_detect.get_printers() or network_detect.get_printers()
-            if autoselect in config.config["profiles"]: # used for debug
-                self.logger.info("Force load of driver " + str(autoselect))
-                profile = config.config["profiles"][autoselect]
-                return profile
-            elif detected:
-                return detected[0]
-            else:
-                self.logger.critical("Can't detect printer. Exiting")
-                self.quit()
+    # def check_autoselect(self):
+    #     autoselect = config.config['autoselect']
+    #     if autoselect:
+    #         detected = usb_detect.get_printers() or network_detect.get_printers()
+    #         if autoselect in config.config["profiles"]: # used for debug
+    #             self.logger.info("Force load of driver " + str(autoselect))
+    #             profile = config.config["profiles"][autoselect]
+    #             return profile
+    #         elif detected:
+    #             return detected[0]
+    #         else:
+    #             self.logger.critical("Can't detect printer. Exiting")
+    #             self.quit()
 
     def detect_printers(self):
         usb_results = usb_detect.get_printers()

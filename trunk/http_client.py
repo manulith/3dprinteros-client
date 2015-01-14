@@ -4,8 +4,11 @@ import httplib
 import logging
 import requests
 
+import config
+
 CONNECTION_TIMEOUT = 6
-URL = "service1.3dprinteros.com"
+URL = config.config['URL']
+HTTPS_FLAG = config.config['HTTPS']
 user_login_path = "/user_login"
 printer_login_path = "/printer_login"
 command_path = "/command"
@@ -70,7 +73,10 @@ def connect(URL):
     logger = logging.getLogger('app.' +__name__)
     logger.debug("{ Connecting...")
     try:
-        connection = httplib.HTTPConnection(URL, port = 80, timeout = CONNECTION_TIMEOUT)#, cert_file=utils.cert_file_path)
+        if HTTPS_FLAG:
+            connection = httplib.HTTPSConnection(URL, port = 443, timeout = CONNECTION_TIMEOUT)
+        else:
+            connection = httplib.HTTPConnection(URL, port = 80, timeout = CONNECTION_TIMEOUT)
     except httplib.error as e:
         logger.info("Error during HTTP connection: " + str(e))
         logger.debug("...failed }")
@@ -193,3 +199,5 @@ if __name__ == '__main__':
             print 'Processed answer: ' + str(result)
         except:
             pass
+
+
