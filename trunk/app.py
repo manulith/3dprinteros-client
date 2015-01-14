@@ -136,6 +136,8 @@ class App():
         while not self.stop_flag:
             before = time.time()
             currently_detected = self.filter_by_token_type(self.detect_printers())
+            if not currently_detected:
+                http_client.send(http_client.token_job_request, (self.token, {'status': 'no_printer'}))
             self.detected_printers = currently_detected # for gui
             self.detect_and_connect(currently_detected)
             time.sleep(0.5)
@@ -195,8 +197,10 @@ class App():
         if not printer_interface:
             printer_interface = self.printer_interfaces[0]
         self.logger.info('Disconnecting %s' % printer_interface.profile['name'])
+        answer = False
         self.printer_interfaces.remove(printer_interface)
         printer_interface.close()
+        http_client.send(http_client.token_job_request, (self.token, self.get_report(printer_interface)))
         # if config.config['gui']:
         #     self.tray_wrapper.qt_thread.show_notification('Closing ' + printer_interface.profile['name'])
 

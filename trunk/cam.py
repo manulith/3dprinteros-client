@@ -89,7 +89,7 @@ class CameraImageSender(threading.Thread):
     def init_camera(self):
         if self.cap:
             self.cap.release()
-        self.logger.info("Error while initializing camera.")
+        #self.logger.info("Error while initializing camera.")
 
     def take_a_picture(self):
         cap_ret, frame = self.cap.read()
