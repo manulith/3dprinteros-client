@@ -5,7 +5,7 @@ import logging
 import requests
 
 CONNECTION_TIMEOUT = 6
-URL = "service.acorn.3dprinteros.com"
+URL = "service1.3dprinteros.com"
 user_login_path = "/user_login"
 printer_login_path = "/printer_login"
 command_path = "/command"

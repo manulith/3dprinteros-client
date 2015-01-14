@@ -1,6 +1,6 @@
 import numpy as np
 import utils
-utils.init_path_to_libs()
+
 import cv2
 import time
 import base64
@@ -112,7 +112,7 @@ class CameraImageSender(threading.Thread):
 
     def wait_for_camera(self):
         self.logger.debug("Waiting for camera...")
-        while not self.cap:
+        while not self.cap and not self.stop_flag:
             self.init_camera()
             time.sleep(1)
         self.logger.debug("Got working camera!")
@@ -127,7 +127,8 @@ class CameraImageSender(threading.Thread):
             else:
                 time.sleep(1)
                 self.init_camera()
-        self.cap.release()
+        if self.cap:
+            self.cap.release()
         cv2.destroyAllWindows()
 
 
@@ -142,10 +143,12 @@ class CameraStreamManager():
     def disable_streaming(self):
         if self.cis:
             self.cis.close()
+        self.cis.join(1)
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
     import utils
+    utils.init_path_to_libs()
     cf = CameraFinder()
     cf.get_cameras_names() #for clarity
     cis = CameraImageSender(utils.read_token(), cf.get_camera())

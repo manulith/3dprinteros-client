@@ -8,10 +8,11 @@ import logging
 import logging.handlers
 
 import utils
+utils.init_path_to_libs()
+import cam
 import config
 import version
 import usb_detect
-import network_detect
 import http_client
 import printer_interface
 import command_processor
@@ -43,7 +44,6 @@ class App():
         return logger
 
     def __init__(self):
-        utils.init_path_to_libs()
         self.logger = self.get_logger()
         self.logger.info("Welcome to 3DPrinterOS Client version %s_%s" % (version.version, version.build))
         signal.signal(signal.SIGINT, self.intercept_signal)
@@ -55,38 +55,40 @@ class App():
         self.stop_flag = False
         self.quit_flag = False
         self.wait_for_login()
+        self.camera = cam.CameraStreamManager()
+        self.camera.enable_streaming()
         #self.kill_makerbot_conveyor()
         self.main_loop()
 
     def init_interface(self):
-        if config.config['gui']:
-            self.gui_exchange_in = ""
-            self.gui_exchange_out = ""
-            self.selected_printer_number = None
-            import gui as gui_module
-            self.gui_module = gui_module
-            if self.token:
-                self.show_tray()
-            else:
-                self.show_login_window()
-
         if config.config['web_interface']:
             import webbrowser
             from web_interface import WebInterface
             self.web_interface = WebInterface(self)
             self.web_interface.start()
             webbrowser.open("http://127.0.0.1:8008", 2, True)
+        # if config.config['gui']:
+        #     self.gui_exchange_in = ""
+        #     self.gui_exchange_out = ""
+        #     self.selected_printer_number = None
+        #     import gui as gui_module
+        #     self.gui_module = gui_module
+        #     if self.token:
+        #         self.show_tray()
+        #     else:
+        #         self.show_login_window()
 
-    def show_login_window(self):
-        self.gui_module.show_login_window(self)
-        token = self.gui_exchange_in.get('token', None)
-        utils.write_token(token)
 
-    def show_tray(self):
-        self.tray_wrapper = self.gui_module.AppStub(self)
-        self.tray_wrapper.show()
 
-    #token_s
+    # def show_login_window(self):
+    #     self.gui_module.show_login_window(self)
+    #     token = self.gui_exchange_in.get('token', None)
+    #     utils.write_token(token)
+    #
+    # def show_tray(self):
+    #     self.tray_wrapper = self.gui_module.AppStub(self)
+    #     self.tray_wrapper.show()
+
     def token_login(self):
         self.logger.debug("Waiting for correct login")
         self.token = None
@@ -109,7 +111,6 @@ class App():
             if self.quit_flag:
                 self.quit()
 
-    # token s
     def get_name_by_alias(self, printer_alias):
         try:
             printer_type_name = config.config['profiles'][printer_alias]['name']
@@ -118,17 +119,23 @@ class App():
         else:
             return printer_type_name
 
-    # token s
     def get_alias_by_name(self, printer_name):
         profiles = config.config['profiles']
         for profile_alias in profiles:
             if printer_name == profiles[profile_alias]['name']:
                 return profile_alias
 
+    def filter_by_token_type(self, printers_profiles):
+        for profile in printers_profiles:
+            if profile['name'] != self.printer_name_by_token:
+                printers_profiles.remove(profile)
+        return printers_profiles
+
+
     def main_loop(self):
         while not self.stop_flag:
             before = time.time()
-            currently_detected = self.detect_printers()
+            currently_detected = self.filter_by_token_type(self.detect_printers())
             self.detected_printers = currently_detected # for gui
             self.detect_and_connect(currently_detected)
             time.sleep(0.5)
@@ -190,8 +197,8 @@ class App():
         self.logger.info('Disconnecting %s' % printer_interface.profile['name'])
         self.printer_interfaces.remove(printer_interface)
         printer_interface.close()
-        if config.config['gui']:
-            self.tray_wrapper.qt_thread.show_notification('Closing ' + printer_interface.profile['name'])
+        # if config.config['gui']:
+        #     self.tray_wrapper.qt_thread.show_notification('Closing ' + printer_interface.profile['name'])
 
     def kill_makerbot_conveyor(self):
         self.logger.info('Stopping third party software...')
@@ -249,6 +256,7 @@ class App():
         self.web_interface.close()
         self.web_interface.server.shutdown()
         self.web_interface.join(1)
+        self.camera.disable_streaming()
         self.logger.info("...everything correctly closed.")
         self.logger.info("Goodbye ;-)")
         sys.exit(0)

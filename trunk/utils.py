@@ -79,7 +79,7 @@ def get_libusb_path(lib):
         raise EnvironmentError('Could not detect OS. Only GNU/LINUX, MAC OS X and MS WIN VISTA/7/8 are supported.')
     our_dir = os.path.dirname(os.path.abspath(__file__))
     backend_path = os.path.join(our_dir, LIBS_FOLDER, folder_name, 'libusb', libusb_name)
-    logger.info('Using: ' + backend_path)
+    logger.info('Libusb from: ' + backend_path)
     return backend_path
 
 def get_paths_to_token():
@@ -147,6 +147,3 @@ def zip_data_into_file(data):
 
 if __name__ == "__main__":
     print get_libusb_path()
-    print get_libusb_path1()
-    #init_path_to_libs()
-    #import cv2
