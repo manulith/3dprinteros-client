@@ -13,7 +13,7 @@ import platform
 from hashlib import md5
 
 LIBS_FOLDER = 'libraries'
-ALL_LIBS = ['opencv']
+ALL_LIBS = ['opencv', 'numpy']
 
 def md5_hash(text):
     hash = md5(text)
@@ -43,8 +43,10 @@ def elapse_stretcher(looptime):
     return edec
 
 def init_path_to_libs():
+    logger = logging.getLogger('app.' + __name__)
     if sys.platform.startswith('win'):
         folder_name = "win"
+        ALL_LIBS.append('pywin')
     elif sys.platform.startswith('linux'):
         folder_name = "linux"
     elif sys.platform.startswith('darwin'):
@@ -55,7 +57,7 @@ def init_path_to_libs():
     platform_dir = os.path.join(our_dir, LIBS_FOLDER, folder_name)
     for lib in ALL_LIBS:
         lib_path = os.path.join(platform_dir, lib)
-        print lib_path
+        logger.info('Using library: ' + lib_path)
         sys.path.append(lib_path)
 
 
