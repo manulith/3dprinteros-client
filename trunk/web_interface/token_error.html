@@ -1,6 +1,5 @@
 <html>
 	<head>
-        <meta http-equiv="refresh" content="2; url=/" />
     	<title>3DPrinterOS</title>
     	<link rel="stylesheet" type="text/css" href="style.css">
     	<style>
@@ -33,21 +32,6 @@
 		font-weight: bolder;
 		font-size: 30px;
 		}
-
-		.printers_table { 
-		width: 80%;
-		margin-left: 10%;
-		margin-top: 10px;
-		margin-bottom: 15px;
-		padding: none; 
-		border: none;		    
-		color: #009999;
-		font-weight: bolder;
-		font-size: 12px;
-		text-align: center;
-
-		border: dotted grey 1px;
-		}
 		</style>
 	</head>
 	<body bgcolor=#003333>
@@ -57,7 +41,12 @@
 			</div>
 
 			<p>Error while writing token</p>
-            <p>Returning...</p><br>
+			<p>That may be caused by wrong access rights</p>
+			<p>If you are using MacOS please make sure<br>that you put Client into Applications during install<br>and running it exactly from Applications</p>
+
+			<form action="/" method="post">
+				<input type="submit" value="Return" style='background: #FF9900; border: none; width: 150px; height: 50px; text-indent: 5px; font-family: "Trebuchet MS", Helvetica, sans-serif; color: #ffffff; font-weight: bold; font-size: 20px; margin-top: 10px;'>
+			</form>
 
 		</div>
 	</body>

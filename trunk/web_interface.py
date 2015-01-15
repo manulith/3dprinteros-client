@@ -95,7 +95,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 if result:
                     message = open('web_interface/success.html', 'r').read()
                 else:
-                    message = open('web_interface/unsuccess.html', 'r').read()
+                    message = open('web_interface/token_error.html', 'r').read()
                 self.send_response(200)
                 self.end_headers()
                 self.write_with_autoreplace(message)
