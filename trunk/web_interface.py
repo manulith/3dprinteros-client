@@ -3,6 +3,7 @@ import logging
 import BaseHTTPServer
 
 import utils
+import version
 
 class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
@@ -17,13 +18,9 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.logger.debug("Incoming from %s:%i" % (host, port))
         return host
 
-    def write_version(self):
-        import version
-        import os
-        for filename in os.listdir('web_interface'):
-            page = open('web_interface/' + filename, 'r').read()
-            page = page.replace('3DPrinterOS', '3DPrinterOS Client v.' + version.version)
-            self.wfile.write(page)
+    def write_with_autoreplace(self, page):
+        page = page.replace('3DPrinterOS', '3DPrinterOS Client v.' + version.version)
+        self.write_with_autoreplace(page)
 
     def do_GET(self):
         self.write_version()
@@ -31,13 +28,12 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         if self.server.token_was_reset_flag:
             self.send_response(200)
             self.end_headers()
-            self.wfile.write("Token was reset\nPlease restart 3DPrinterOS and re-login")
+            self.write_with_autoreplace("Token was reset\nPlease restart 3DPrinterOS and re-login")
         elif self.path.find('cam') >= 0:
             self.logger.info('Camera')
             self.send_response(503)
             self.end_headers()
         else:
-
             self.send_response(200)
             self.end_headers()
             if self.server.app.token:
@@ -55,7 +51,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 printers_list.append('<b>' + printer['name'] + "</b> -- <i>s/n: " + printer_snr + "</i>")
             printers = ''.join(map(lambda x: "<p>" + x + "</p>", printers_list))
             page = page.replace('<hr width="150px">', '<hr width="150px">' + printers)
-            self.wfile.write(page)
+            self.write_with_autoreplace(page)
 
     def do_POST(self):
         if self.path.find('write_token') >= 0:
@@ -67,13 +63,13 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         else:
             self.send_response(404)
             self.end_headers()
-            self.wfile.write('Not found')
+            self.write_with_autoreplace('Not found')
 
     def quit_main_app(self):
         self.send_response(200)
         self.end_headers()
         page = open('web_interface/goodbye.html', 'r').read()
-        self.wfile.write(page)
+        self.write_with_autoreplace(page)
         self.server.app.stop_flag = True
         self.server.app.quit_flag = True
 
@@ -87,7 +83,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             message = "Error writing token"
         self.send_response(200)
         self.end_headers()
-        self.wfile.write(message)
+        self.write_with_autoreplace(message)
 
     def process_write_token(self):
         content_length = self.headers.getheader('Content-Length')
@@ -104,15 +100,15 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                     message = open('web_interface/unsuccess.html', 'r').read()
                 self.send_response(200)
                 self.end_headers()
-                self.wfile.write(message)
+                self.write_with_autoreplace(message)
             else:
                 self.send_response(400)
                 self.end_headers()
-                self.wfile.write('Invalid body content for this request')
+                self.write_with_autoreplace('Invalid body content for this request')
         else:
             self.send_response(411)
             self.end_headers()
-            self.wfile.write('Zero Content-Length')
+            self.write_with_autoreplace('Zero Content-Length')
 
 
 class WebInterface(threading.Thread):
