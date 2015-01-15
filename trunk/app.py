@@ -24,20 +24,17 @@ class App():
 
     @staticmethod
     def get_logger():
-        logger = logging.getLogger('app')
+        logger = logging.getLogger("app")
+        logger.propagate = False
         logger.setLevel(logging.DEBUG)
-        #formatter = logging.Formatter('%(levelname)s\t%(asctime)s\t%(threadName)s/%(funcName)s\t%(message)s')
-        #formatter = logging.Formatter('%(asctime)s\t%(threadName)s/%(funcName)s\t%(message)s')
         stderr_handler = logging.StreamHandler()
         stderr_handler.setLevel(logging.DEBUG)
-        #stderr_handler.setFormatter(formatter)
         logger.addHandler(stderr_handler)
         log_file = config.config['log_file']
         if log_file:
             try:
-                file_handler = logging.handlers.RotatingFileHandler(log_file, maxBytes=1024*1024*100, backupCount=1)
+                file_handler = logging.handlers.RotatingFileHandler(log_file, maxBytes=1024*1024*4, backupCount=1)
                 file_handler.setLevel(logging.DEBUG)
-                #file_handler.setFormatter(formatter)
                 logger.addHandler(file_handler)
             except Exception as e:
                 logger.debug('Could not create log file because' + e.message + '\n.No log mode.')
@@ -46,6 +43,7 @@ class App():
     def __init__(self):
         self.logger = self.get_logger()
         self.logger.info("Welcome to 3DPrinterOS Client version %s_%s" % (version.version, version.build))
+        self.time_stamp()
         signal.signal(signal.SIGINT, self.intercept_signal)
         signal.signal(signal.SIGTERM, self.intercept_signal)
         self.detected_printers = []
@@ -134,6 +132,7 @@ class App():
 
     def main_loop(self):
         while not self.stop_flag:
+            self.time_stamp()
             before = time.time()
             currently_detected = self.filter_by_token_type(self.detect_printers())
             if not currently_detected:
@@ -149,6 +148,9 @@ class App():
         # this is for quit from web interface(to release server's thread and quit)
         if self.quit_flag:
             self.quit()
+
+    def time_stamp(self):
+        self.logger.debug("Time stamp:" + time.strftime("%d %b %Y %H:%M:%S", time.localtime()))
 
     def detect_and_connect(self, currently_detected):
         currently_connected_profiles = [pi.profile for pi in self.printer_interfaces]
@@ -252,6 +254,7 @@ class App():
         for pi in self.printer_interfaces:
             pi.close()
         time.sleep(0.1) #to reduce logging spam in next
+        self.time_stamp()
         self.logger.info("Waiting for driver modules to close...")
         while True:
             ready_flag = True
@@ -270,8 +273,10 @@ class App():
         self.web_interface.server.shutdown()
         self.web_interface.join(1)
         self.camera.disable_streaming()
+        self.time_stamp()
         self.logger.info("...everything correctly closed.")
         self.logger.info("Goodbye ;-)")
+        logging.shutdown()
         sys.exit(0)
 
 if __name__ == '__main__':
