@@ -150,7 +150,7 @@ class App():
             self.quit()
 
     def time_stamp(self):
-        self.logger.debug("Time stamp:" + time.strftime("%d %b %Y %H:%M:%S", time.localtime()))
+        self.logger.debug("Time stamp: " + time.strftime("%d %b %Y %H:%M:%S", time.localtime()))
 
     def detect_and_connect(self, currently_detected):
         currently_connected_profiles = [pi.profile for pi in self.printer_interfaces]
@@ -269,9 +269,11 @@ class App():
                 break
             time.sleep(0.1)
         self.logger.debug("Waiting web interface server to shutdown")
-        self.web_interface.close()
-        self.web_interface.server.shutdown()
-        self.web_interface.join(1)
+        try:
+            self.web_interface.server.shutdown()
+            self.web_interface.join(1)
+        except Exception as e:
+            print e
         self.camera.disable_streaming()
         self.time_stamp()
         self.logger.info("...everything correctly closed.")
