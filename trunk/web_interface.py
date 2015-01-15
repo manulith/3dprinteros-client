@@ -11,7 +11,6 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.logger = logging.getLogger('app.' + __name__)
         BaseHTTPServer.BaseHTTPRequestHandler.setup(self)
         self.request.settimeout(120)
-        self.write_version()
 
     def address_string(self):
         host, port = self.client_address[:2]
@@ -20,10 +19,9 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
     def write_with_autoreplace(self, page):
         page = page.replace('3DPrinterOS', '3DPrinterOS Client v.' + version.version)
-        self.write_with_autoreplace(page)
+        self.wfile.write(page)
 
     def do_GET(self):
-        self.write_version()
         self.logger.info("Server GET")
         if self.server.token_was_reset_flag:
             self.send_response(200)
