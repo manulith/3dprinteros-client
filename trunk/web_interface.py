@@ -10,13 +10,23 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.logger = logging.getLogger('app.' + __name__)
         BaseHTTPServer.BaseHTTPRequestHandler.setup(self)
         self.request.settimeout(120)
+        self.write_version()
 
     def address_string(self):
         host, port = self.client_address[:2]
         self.logger.debug("Incoming from %s:%i" % (host, port))
         return host
 
+    def write_version(self):
+        import version
+        import os
+        for filename in os.listdir('web_interface'):
+            page = open('web_interface/' + filename, 'r').read()
+            page = page.replace('3DPrinterOS', '3DPrinterOS Client v.' + version.version)
+            self.wfile.write(page)
+
     def do_GET(self):
+        self.write_version()
         self.logger.info("Server GET")
         if self.server.token_was_reset_flag:
             self.send_response(200)
@@ -27,6 +37,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.send_response(503)
             self.end_headers()
         else:
+
             self.send_response(200)
             self.end_headers()
             if self.server.app.token:
@@ -37,7 +48,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 page = f.read()
             printers_list = []
             for printer in self.server.app.detected_printers:
-                if str(printer['SNR']) == 'Null':
+                if str(printer['SNR']) == 'None':
                     printer_snr = 'Unknown serial number'
                 else:
                     printer_snr = str(printer['SNR'])
