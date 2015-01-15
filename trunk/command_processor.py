@@ -52,7 +52,7 @@ def process_command_request(printer_interface, data_dict):
 def process_job_request(printer_interface, data_dict):
     logger = logging.getLogger("app." + __name__)
     job = data_dict.get('job', None)
-    logger.debug("Job=%s" % job)
+    #logger.debug("Job=%s" % job)
     if job:
         if 'begin' in job or 'reset' in job:
             match = re.match('.+gcode_count=(\d+)', job)
