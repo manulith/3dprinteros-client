@@ -106,13 +106,9 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
 class WebInterface(threading.Thread):
     def __init__(self, app):
-        self.stop_flag = False
         self.logger = logging.getLogger('app.' + __name__)
         self.app = app
         threading.Thread.__init__(self)
-
-    def close(self):
-        self.stop_flag = True
 
     def run(self):
         self.logger.info("Web server started")
