@@ -31,63 +31,6 @@
 		text-align: center;
 		}
 
-
-		ul {
-		  text-align: left;
-		  display: inline;
-		  margin: 0;
-		  padding: 15px 4px 17px 0;
-		  list-style: none;
-		}
-		ul li {
-		  font-family: "Trebuchet MS", Helvetica, sans-serif;
-		  font-weight: bold;
-		  color: #fff;
-		  display: inline-block;
-		  margin-right: -4px;
-		  position: relative;
-		  padding: 10px 15px;
-		  background: #ff6600;
-		  cursor: pointer;
-		  -webkit-transition: all 0.2s;
-		  -moz-transition: all 0.2s;
-		  -ms-transition: all 0.2s;
-		  -o-transition: all 0.2s;
-		  transition: all 0.2s;
-		}
-		ul li:hover {
-		  background: #ff9900;
-		  color: #fff;
-		}
-		ul li ul {
-		  padding: 0;
-		  position: absolute;
-		  top: 38px;
-		  left: 0;
-		  width: 200px;
-		  -webkit-box-shadow: none;
-		  -moz-box-shadow: none;
-		  box-shadow: none;
-		  display: none;
-		  opacity: 0;
-		  visibility: hidden;
-		  -webkit-transiton: opacity 0.2s;
-		  -moz-transition: opacity 0.2s;
-		  -ms-transition: opacity 0.2s;
-		  -o-transition: opacity 0.2s;
-		  -transition: opacity 0.2s;
-		}
-		ul li ul li {
-		  background: #ff6600;
-		  display: block;
-		  color: #fff;
-		}
-		ul li ul li:hover { background: #ff9900; }
-		ul li:hover ul {
-		  display: block;
-		  opacity: 1;
-		  visibility: visible;
-		}
 		</style>
 	</head>
 	<body bgcolor=#003333 link="#fff" vlink="#fff" alink="#fff">
@@ -95,18 +38,9 @@
 			<div class="block2">
 				3DPrinterOS
 			</div>
-			<ul display='inline'>
-			  <li>
-				Logs
-				<ul>
-				  <li><a href='/snapshot_log' style='text-decoration: none; text-color='white';'>Snapshot log</a></li>
-				  <li><a href='/send_log_snapshots' style='text-decoration: none; text-color='white';'>Send log snapshots</a></li>
-				</ul>
-			  </li>
-			</ul>
 			<center>
 			<div display='inline'>
-			<b>Connected printers</b><font color='grey'>
+			<h4><b>Connected printers</b></h4><font color='grey'>
 				<hr width="150px">
 
 			<br>
@@ -120,6 +54,15 @@
 				<input type="submit" value="Quit" style='background: #FF9900; border: none; width: 150px; height: 50px; text-indent: 5px; font-family: "Trebuchet MS", Helvetica, sans-serif; color: #ffffff; font-weight: bold; font-size: 20px; margin-bottom: 20px'>
 			</form>
 		</center>
+		</div>
+
+		<div style="margin-top:520px; margin-left: 10px;">
+			<form action="/snapshot_log" method="post" display='inline'>
+				<input type="submit" value="Snapshot log" style='background: #009999; border: none; width: 200px; height: 50px; font-family: "Trebuchet MS", Helvetica, sans-serif; color: #ffffff; font-weight: bold; font-size: 20px; margin-top: 20px; display:inline;'>
+			</form>
+			<form action="/send_log_snapshots" method="post" display='inline'>
+				<input type="submit" value="Send log snapshots" style='background: #009999; border: none; width: 200px; height: 50px; font-family: "Trebuchet MS", Helvetica, sans-serif; color: #ffffff; font-weight: bold; font-size: 20px; display:inline;'>
+			</form>
 		</div>
 	</body>
 </html>
