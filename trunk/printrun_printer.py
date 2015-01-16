@@ -294,6 +294,7 @@ class Printer:
         gcode = 'G1 Z' + str(self._printer.pauseZ + self._pause_lift_height) + \
                 ' E' + str(self._printer.pauseE - self._pause_extrude_length)
         self._printer.send_now(gcode)
+        self._logger.info("Paused successfully")
 
     def resume(self):
         self.unpause()
@@ -304,11 +305,13 @@ class Printer:
             gcode = 'G1 Z' + str(self._printer.pauseZ) + ' E' + str(self._printer.pauseE)
             self._printer.send_now(gcode)
             self._printer.resume()
+            self._logger.info("Unpaused successfully")
 
     def cancel(self):
         self.stop()
         self._printer.reset()
         self._printer.disconnect()
+        self._logger.info("Cancelled successfully")
 
     def stop(self):
         self._logger.debug(self._debug_info())
