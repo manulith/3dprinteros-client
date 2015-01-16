@@ -133,18 +133,24 @@ class App():
     def main_loop(self):
         while not self.stop_flag:
             self.time_stamp()
-            before = time.time()
+            #before = time.time()
+            self.logger.debug("START detect_printers")
             currently_detected = self.filter_by_token_type(self.detect_printers())
+            self.logger.debug("DONE detect_printers")
             if not currently_detected:
                 http_client.send(http_client.token_job_request, (self.token, {'status': 'no_printer'}))
             self.detected_printers = currently_detected # for gui
+            self.logger.debug("START detect_and_connect")
             self.detect_and_connect(currently_detected)
+            self.logger.debug("DONE of detect_and_connect")
             time.sleep(0.5)
+            self.logger.debug("START do_things_with_connected")
             self.do_things_with_connected(currently_detected)
-            elapsed = time.time() - before
-            if elapsed < self.MIN_LOOP_TIME:
-                time.sleep(self.MIN_LOOP_TIME - elapsed)
-            self.logger.debug("loop_time: %f" % elapsed)
+            self.logger.debug("DONE do_things_with_connected")
+            #elapsed = time.time() - before
+            #if elapsed < self.MIN_LOOP_TIME:
+            #    time.sleep(self.MIN_LOOP_TIME - elapsed)
+            #self.logger.debug("loop_time: %f" % elapsed)
         # this is for quit from web interface(to release server's thread and quit)
         if self.quit_flag:
             self.quit()
@@ -162,6 +168,7 @@ class App():
                 else:
                     self.logger.warning("Wrong token for printer type. \
                                             Expecting %s but got %s" % (self.printer_name_by_token, name))
+
 
     def do_things_with_connected(self, currently_detected):
         for pi in self.printer_interfaces:
@@ -182,6 +189,7 @@ class App():
         answer = http_client.send(http_client.token_job_request, (self.token, self.get_report(printer)))
         if answer:
             command_processor.process_job_request(printer, answer)
+        self.logger.debug("DONE report_state_and_execute_new_job")
 
     def get_report(self, printer_interface):
         report = printer_interface.report()
