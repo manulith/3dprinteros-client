@@ -46,7 +46,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                     printer_snr = 'Unknown serial number'
                 else:
                     printer_snr = str(printer['SNR'])
-                printers_list.append('<b>' + printer['name'] + "</b> -- <i>s/n: " + printer_snr + "</i>")
+                printers_list.append('<b>' + printer['name'] + "</b><br><i>s/n: " + printer_snr + "</i>")
             printers = ''.join(map(lambda x: "<p>" + x + "</p>", printers_list))
             page = page.replace('<hr width="150px">', '<hr width="150px">' + printers)
             self.write_with_autoreplace(page)
@@ -95,7 +95,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 if result:
                     message = open('web_interface/success.html', 'r').read()
                 else:
-                    message = open('web_interface/unsuccess.html', 'r').read()
+                    message = open('web_interface/token_error.html', 'r').read()
                 self.send_response(200)
                 self.end_headers()
                 self.write_with_autoreplace(message)
