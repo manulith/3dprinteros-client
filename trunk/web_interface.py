@@ -58,10 +58,20 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.process_clear_token()
         elif self.path.find('quit') >= 0:
             self.quit_main_app()
+        elif self.path.find('snapshot_log') >= 0:
+            self.snapshot_log()
+        elif self.path.find('send_log_snapshots') >= 0:
+            self.send_log_snapshots()
         else:
             self.send_response(404)
             self.end_headers()
             self.write_with_autoreplace('Not found')
+
+    def snapshot_log(self):
+        pass
+
+    def send_log_snapshots(self):
+        pass
 
     def quit_main_app(self):
         self.send_response(200)
