@@ -248,15 +248,6 @@ class App():
                 (version.version, version.build))
         self.quit()
 
-    def send_logs(self):
-        try:
-            f = open("3dprinteros.log")
-        except:
-            pass
-        else:
-            http_client.multipart_upload({"token": self.token}, f)
-            f.close()
-
     def quit(self):
         self.stop_flag = True
         for pi in self.printer_interfaces:

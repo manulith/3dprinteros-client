@@ -9,6 +9,7 @@ import zipfile
 import logging
 import threading
 import platform
+import http_client
 
 from hashlib import md5
 
@@ -147,5 +148,13 @@ def zip_data_into_file(data):
     zf.close()
     return zf
 
+def send_logs(self):
+    ziped_log = zip_file("3dprinteros.log")
+    if ziped_log:
+        url = http_client.URL + http_client.token_send_logs_path,
+        http_client.multipart_upload(url, {"token": self.token}, ziped_log)
+
+
+
 if __name__ == "__main__":
-    print get_libusb_path()
+    send_logs()
