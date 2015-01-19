@@ -200,8 +200,13 @@ def compress_and_send(log_file_name=None, server_path=http_client.token_send_log
         os.remove(zip_file_name)
 
 def send_all_snapshots():
-    for file_name in os.listdir(LOG_SNAPSHOTS_DIR):
-        compress_and_send(file_name)
+    try:
+        dir = os.listdir(LOG_SNAPSHOTS_DIR)
+    except OSError:
+        logging.info("No logs snapshots to send")
+    else:
+        for file_name in dir:
+            compress_and_send(file_name)
 
 if __name__ == "__main__":
     make_log_snapshot()
