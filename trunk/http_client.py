@@ -138,13 +138,17 @@ def download(url):
             return post_request(connection, "", path)
 
 def multipart_upload(url, payload, file_obj=None):
+    logger = logging.getLogger('app.' +__name__)
+    kwarg = {"data": payload}
     if file_obj:
-        f = {"file": file_obj}
-        r = requests.post(url, data=payload, files=f)
+        kwarg.update({"file": file_obj})
+    try:
+        r = requests.post(url, **kwarg)
+    except Exception as e:
+        logger.debug("Warning while uploading to server: %s" % str(e))
     else:
-        r = requests.post(url, data=payload)
-    print 'Response: ' + r.text
-    return r.status_code == 200
+        print 'Response: ' + r.text
+        return r.status_code == 200
 
 if __name__ == '__main__':
     import command_processor
