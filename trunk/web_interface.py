@@ -50,9 +50,9 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                     printer_snr = 'Unknown serial number'
                 else:
                     printer_snr = str(printer['SNR'])
-                printers_list.append('<b>' + printer['name'] + "</b><br>s/n: " + printer_snr)
+                printers_list.append('<b>' + printer['name'] + "</b><br>(s/n: " + printer_snr + ')')
             printers = ''.join(map(lambda x: "<p>" + x + "</p>", printers_list))
-            page = page.replace('<hr width="150px">', '<hr width="150px">' + printers)
+            page = page.replace('!!!PRINTERS!!!', printers)
             self.write_with_autoreplace(page)
 
     def do_POST(self):
@@ -85,7 +85,6 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.server.app.stop_flag = True
         self.server.app.quit_flag = True
         time.sleep(0.5)
-        os._exit()
 
 
     def process_clear_token(self):
