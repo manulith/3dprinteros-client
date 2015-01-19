@@ -53,8 +53,7 @@ class App():
         self.stop_flag = False
         self.quit_flag = False
         self.wait_for_login()
-        self.camera = cam.CameraStreamManager()
-        self.camera.enable_streaming()
+        self.camera = cam.CameraImageSender()
         #self.kill_makerbot_conveyor()
         self.main_loop()
 
@@ -273,7 +272,7 @@ class App():
             self.web_interface.join(1)
         except Exception as e:
             print e
-        self.camera.disable_streaming()
+        self.camera.close()
         self.time_stamp()
         self.logger.info("...everything correctly closed.")
         self.logger.info("Goodbye ;-)")

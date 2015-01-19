@@ -1,19 +1,19 @@
 import numpy as np
-import utils
-
 import cv2
 import time
 import base64
 import threading
 import logging
+
 import http_client
+import utils
 
 
 class CameraFinder():
-    def __init__(self):
-        self.logger = logging.getLogger("app." + __name__)
 
-    def get_cameras_names(self):
+    @staticmethod
+    def get_cameras_names():
+        logger = logging.getLogger("app." + __name__)
         cameras_names = {}
         import sys
         if sys.platform.startswith('win'):
@@ -34,29 +34,30 @@ class CameraFinder():
                     cameras_names[count] = new_camera
                     count += 1
 
-            self.logger.info('Found ' + str(len(cameras_names)) + ' camera(s):')
+            logger.info('Found ' + str(len(cameras_names)) + ' camera(s):')
             if len(cameras_names) > 0:
                 for number in range(0,len(cameras_names)):
-                    self.logger.info(cameras_names[number])
+                    logger.info(cameras_names[number])
             return  cameras_names
 
         elif sys.platform.startswith('linux') or sys.platform.startswith('darwin'):
-            cameras_count = self.get_number_of_cameras()
+            cameras_count = CameraFinder.get_number_of_cameras()
             if cameras_count > 0:
                 for camera_id in range(0, cameras_count):
                     cameras_names[camera_id] = 'Camera ' + str(camera_id + 1)
 
-            self.logger.info('Found ' + str(len(cameras_names)) + ' camera(s):')
+            logger.info('Found ' + str(len(cameras_names)) + ' camera(s):')
             if len(cameras_names) > 0:
                 for number in range(0,len(cameras_names)):
-                    self.logger.info(cameras_names[number])
+                    logger.info(cameras_names[number])
             return  cameras_names
 
         else:
-            self.logger.info('Unable to get cameras names on your platform.')
+            logger.info('Unable to get cameras names on your platform.')
             return cameras_names
 
-    def get_number_of_cameras(self):
+    @staticmethod
+    def get_number_of_cameras():
         cameras_count = 0
         while True:
             cam = cv2.VideoCapture(cameras_count)
@@ -67,28 +68,33 @@ class CameraFinder():
             cameras_count += 1
         return cameras_count
 
-    def get_camera(self, camera_number = 0):
-        if camera_number < self.get_number_of_cameras():
+    @staticmethod
+    def get_camera(camera_number = 0):
+        logger = logging.getLogger("app." + __name__)
+        if camera_number < CameraFinder.get_number_of_cameras():
             cam = cv2.VideoCapture(camera_number)
             if cam.isOpened():
                 return cam
-        self.logger.info("Error while getting camera.")
+        logger.info("Error while getting camera.")
 
 
 class CameraImageSender(threading.Thread):
-    def __init__(self, token, camera):
+    def __init__(self):
         self.logger = logging.getLogger("app." + __name__)
         self.stop_flag = False
-        self.token = token
+        self.token = utils.read_token()
         self.url = 'https://acorn.3dprinteros.com/oldliveview/setLiveView/'
-        self.cap = camera
+        self.cap = None
         self.image_ready_lock = threading.Lock()
         super(CameraImageSender, self).__init__()
-
 
     def init_camera(self):
         if self.cap:
             self.cap.release()
+            self.cap = None
+        number = CameraFinder.get_number_of_cameras()
+        if number:
+            self.cap = CameraFinder(number - 1)
         #self.logger.info("Error while initializing camera.")
 
     def take_a_picture(self):
@@ -108,13 +114,14 @@ class CameraImageSender(threading.Thread):
         http_client.multipart_upload(self.url, data)
 
     def close(self):
+        self.logger.info("Closing camera image sender...")
         self.stop_flag = True
 
     def wait_for_camera(self):
         self.logger.debug("Waiting for camera...")
         while not self.cap:
             self.init_camera()
-            time.sleep(1)
+            time.sleep(10)
             if self.stop_flag:
                 return
         self.logger.debug("Got working camera!")
@@ -127,37 +134,20 @@ class CameraImageSender(threading.Thread):
                 if picture != '':
                     self.send_picture(picture)
             else:
-                time.sleep(1)
+                time.sleep(3)
                 self.init_camera()
         if self.cap:
             self.cap.release()
-        cv2.destroyAllWindows()
-
-
-class CameraStreamManager():
-    #for UI
-    def enable_streaming(self):
-        import utils
-        cf = CameraFinder()
-        self.cis = CameraImageSender(utils.read_token(), cf.get_camera())
-        self.cis.start()
-
-    def disable_streaming(self):
-        if self.cis:
-            self.cis.close()
-        self.cis.join()
+        self.logger.info("...camera image sender is closed.")
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
-    import utils
     utils.init_path_to_libs()
-    cf = CameraFinder()
-    cf.get_cameras_names() #for clarity
-    cis = CameraImageSender(utils.read_token(), cf.get_camera())
-    cis.start()
+    c = CameraImageSender()
     while True:
         try:
             time.sleep(0.1)
         except KeyboardInterrupt:
-            cis.close()
+            c.close()
+            time.sleep(5)
             break
