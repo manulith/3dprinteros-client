@@ -54,6 +54,7 @@ class App():
         self.quit_flag = False
         self.wait_for_login()
         self.camera = cam.CameraImageSender()
+        self.camera.start()
         #self.kill_makerbot_conveyor()
         self.main_loop()
 
