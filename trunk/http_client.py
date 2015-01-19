@@ -145,7 +145,7 @@ def multipart_upload(url, payload, file_obj=None):
     try:
         r = requests.post(url, **kwarg)
     except Exception as e:
-        logger.debug("Warning while uploading to server: %s" % str(e))
+        logger.debug("Error while uploading to server: %s" % str(e))
     else:
         print 'Response: ' + r.text
         return r.status_code == 200
