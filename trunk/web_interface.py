@@ -84,8 +84,6 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.write_with_autoreplace(page)
         self.server.app.stop_flag = True
         self.server.app.quit_flag = True
-        time.sleep(0.5)
-
 
     def process_clear_token(self):
         result = utils.write_token('')
