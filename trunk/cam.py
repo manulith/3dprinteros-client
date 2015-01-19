@@ -121,7 +121,7 @@ class CameraImageSender(threading.Thread):
         self.logger.debug("Waiting for camera...")
         while not self.cap:
             self.init_camera()
-            time.sleep(10)
+            time.sleep(2)
             if self.stop_flag:
                 return
         self.logger.debug("Got working camera!")
