@@ -5,7 +5,6 @@ import os
 import ctypes
 import time
 import threading
-import winshell
 import traceback
 
 import requests
@@ -13,7 +12,11 @@ import requests
 from os.path import join
 from subprocess import Popen, PIPE
 
-HOME_PATH = os.environ.get('HOMEPATH')
+if sys.platform.startswith('linux'):
+    HOME_PATH = os.environ.get('HOME')
+else:
+    HOME_PATH = os.environ.get('HOMEPATH')
+
 PATH = join(HOME_PATH, 'Cloudsync')
 TEMP_PATH = join(PATH, '.temp')
 BIG_FILES_PATH = join(TEMP_PATH, 'big')
@@ -99,6 +102,7 @@ def create_shortcuts_win():
     Add icons and links
     :param path: Path to dropfolder dir root
     """
+    import winshell
     favourites_path = join(HOME_PATH, "links\Cloudsync.lnk")
     sendto_path = join(HOME_PATH, "AppData\Roaming\Microsoft\Windows\SendTo\Cloudsync.lnk")
     desktop_path = join(HOME_PATH, "desktop\CloudSync Folder.lnk")
@@ -208,7 +212,7 @@ def prepare_to_send(files_to_send):
 
 def send_file(file_path):
     #send file
-    url = 'https://acorn.3dprinteros.com/autoupload/' #TODO: replace with http_client variables when http-https switch will be fixed
+    url = 'https://acorn.3dprinteros.com/autoupload/'
     token = {"printer_token": utils.read_token()}
     f = {"file": open(file_path)}
     r = requests.post(url, data=token, files=f)
