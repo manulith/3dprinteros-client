@@ -112,9 +112,11 @@ class CameraImageSender(threading.Thread):
 
     def wait_for_camera(self):
         self.logger.debug("Waiting for camera...")
-        while not (self.cap and not self.stop_flag):
+        while not self.cap:
             self.init_camera()
             time.sleep(1)
+            if self.stop_flag:
+                return
         self.logger.debug("Got working camera!")
 
     def run(self):
@@ -143,7 +145,7 @@ class CameraStreamManager():
     def disable_streaming(self):
         if self.cis:
             self.cis.close()
-        self.cis.join(1)
+        self.cis.join()
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
