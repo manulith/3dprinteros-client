@@ -9,12 +9,16 @@ import zipfile
 import logging
 import threading
 import platform
-import http_client
-
 from hashlib import md5
+
+import config
+import http_client
 
 LIBS_FOLDER = 'libraries'
 ALL_LIBS = ['opencv', 'numpy']
+LOG_SNAPSHOTS_DIR = "log_snapshots"
+
+LOG_SNAPSHOT_LINES = 200 # TODO: implement
 
 def md5_hash(text):
     hash = md5(text)
@@ -129,32 +133,73 @@ def write_token(token_data):
         logger.debug('Token was writen to ' + path)
         return True
 
+def tail(f, lines=200):
+    total_lines_wanted = lines
+    BLOCK_SIZE = 1024
+    f.seek(0, 2)
+    block_end_byte = f.tell()
+    lines_to_go = total_lines_wanted
+    block_number = -1
+    blocks = [] # blocks of size BLOCK_SIZE, in reverse order starting
+                # from the end of the file
+    while lines_to_go > 0 and block_end_byte > 0:
+        if (block_end_byte - BLOCK_SIZE > 0):
+            # read the last block we haven't yet read
+            f.seek(block_number*BLOCK_SIZE, 2)
+            blocks.append(f.read(BLOCK_SIZE))
+        else:
+            # file too small, start from begining
+            f.seek(0,0)
+            # only read what was not read
+            blocks.append(f.read(block_end_byte))
+        lines_found = blocks[-1].count('\n')
+        lines_to_go -= lines_found
+        block_end_byte -= BLOCK_SIZE
+        block_number -= 1
+    all_read_text = ''.join(reversed(blocks))
+    return '\n'.join(all_read_text.splitlines()[-total_lines_wanted:])
 
-def zip_file(file_obj_or_path):
-    if type(file_obj_or_path) == str:
+def make_log_snapshot():
+    logger = logging.getLogger("app." + __name__)
+    with open(config.config['log_file']) as log_file:
+        lines = tail(log_file, LOG_SNAPSHOT_LINES)
+    if not os.path.exists(LOG_SNAPSHOTS_DIR):
         try:
-            file_obj = open(file_obj_or_path, "rb")
-            data = file_obj.read()
-            file_obj.close()
-        except IOError:
-            logging.debug("Error zipping file %s" % str(file_obj_or_path))
-            return False
-    return zip_data_into_file(data)
+            os.mkdir(LOG_SNAPSHOTS_DIR)
+        except Exception as e:
+            logger.warning("Can't create directory %s" % LOG_SNAPSHOTS_DIR)
+            return
+    filename = time.strftime("%Y_%m_%d___%H_%M_%S", time.localtime()) + ".log"
+    while True:
+        path = os.path.join(LOG_SNAPSHOTS_DIR, filename)
+        if os.path.exists(path):
+            filename = filename + ".1"
+        else:
+            break
+    with open(path, "w") as log_snap_file:
+        log_snap_file.write(lines)
+    return path
 
-def zip_data_into_file(data):
-    zip_file_name = uuid.uuid1()
-    zf = zipfile.ZipFile(zip_file_name, mode='w')
-    zf.write(data, compress_type=zipfile.ZIP_DEFLATED)
-    zf.close()
-    return zf
 
-def send_logs(self):
-    ziped_log = zip_file("3dprinteros.log")
-    if ziped_log:
+def send_log(log_file_name=None):
+    logger = logging.getLogger('app.' + __name__)
+    if not log_file_name:
+        log_file_name = config.config['log_file']
+    zip_file_name = log_file_name + ".zip"
+    print zip_file_name
+    try:
+        zf = zipfile.ZipFile(zip_file_name, mode='w')
+        zf.write(log_file_name, os.path.basename(log_file_name), compress_type=zipfile.ZIP_DEFLATED)
+        zf.close()
+    except Exception as e:
+        logger.warning("Error while creating logs archive " + zip_file_name)
+    else:
         url = http_client.URL + http_client.token_send_logs_path,
-        http_client.multipart_upload(url, {"token": self.token}, ziped_log)
-
+        if http_client.multipart_upload(url, {"token": read_token()}, zf):
+            os.remove(zip_file_name)
+            os.remove(log_file_name)
 
 
 if __name__ == "__main__":
-    send_logs()
+    path = make_log_snapshot()
+    send_log(path)
