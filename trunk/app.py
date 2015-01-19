@@ -250,6 +250,7 @@ class App():
 
     def quit(self):
         self.stop_flag = True
+        self.camera.close()
         for pi in self.printer_interfaces:
             pi.close()
         time.sleep(0.1) #to reduce logging spam in next
@@ -273,7 +274,7 @@ class App():
             self.web_interface.join(1)
         except Exception as e:
             print e
-        self.camera.close()
+        self.camera.join()
         self.time_stamp()
         self.logger.info("...everything correctly closed.")
         self.logger.info("Goodbye ;-)")
