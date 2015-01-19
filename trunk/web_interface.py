@@ -5,6 +5,10 @@ import BaseHTTPServer
 import utils
 import version
 
+#temporary imports
+import os
+import time
+
 class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
     def setup(self):
@@ -80,6 +84,8 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.write_with_autoreplace(page)
         self.server.app.stop_flag = True
         self.server.app.quit_flag = True
+        time.sleep(0.5)
+        os._exit()
 
 
     def process_clear_token(self):
