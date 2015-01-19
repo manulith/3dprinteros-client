@@ -169,11 +169,11 @@ def make_log_snapshot():
         except Exception as e:
             logger.warning("Can't create directory %s" % LOG_SNAPSHOTS_DIR)
             return
-    filename = time.strftime("%Y_%m_%d___%H_%M_%S", time.localtime()) + ".log"
     while True:
+        filename = time.strftime("%Y_%m_%d___%H_%M_%S", time.localtime()) + ".log"
         path = os.path.join(LOG_SNAPSHOTS_DIR, filename)
         if os.path.exists(path):
-            filename = filename + ".1"
+            time.sleep(1)
         else:
             break
     with open(path, "w") as log_snap_file:
@@ -181,7 +181,7 @@ def make_log_snapshot():
     return path
 
 
-def send_log(log_file_name=None):
+def compress_and_send(log_file_name=None, server_path=http_client.token_send_logs_path):
     logger = logging.getLogger('app.' + __name__)
     if not log_file_name:
         log_file_name = config.config['log_file']
@@ -194,12 +194,15 @@ def send_log(log_file_name=None):
     except Exception as e:
         logger.warning("Error while creating logs archive " + zip_file_name)
     else:
-        url = http_client.URL + http_client.token_send_logs_path,
+        url = http_client.URL + server_path
         if http_client.multipart_upload(url, {"token": read_token()}, zf):
-            os.remove(zip_file_name)
             os.remove(log_file_name)
+        os.remove(zip_file_name)
 
+def send_all_snapshots():
+    for file_name in os.listdir(LOG_SNAPSHOTS_DIR):
+        compress_and_send(file_name)
 
 if __name__ == "__main__":
-    path = make_log_snapshot()
-    send_log(path)
+    make_log_snapshot()
+    send_all_snapshots()
