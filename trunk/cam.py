@@ -94,7 +94,7 @@ class CameraImageSender(threading.Thread):
             self.cap = None
         number = CameraFinder.get_number_of_cameras()
         if number:
-            self.cap = CameraFinder(number - 1)
+            self.cap = CameraFinder.get_camera(number - 1)
         #self.logger.info("Error while initializing camera.")
 
     def take_a_picture(self):
