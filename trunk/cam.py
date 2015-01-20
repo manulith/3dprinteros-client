@@ -68,6 +68,7 @@ class CameraFinder():
             cameras_count += 1
         return cameras_count
 
+    @staticmethod
     def get_camera(camera_number = 0):
         logger = logging.getLogger("app." + __name__)
         if camera_number < CameraFinder.get_number_of_cameras():
@@ -91,8 +92,9 @@ class CameraImageSender(threading.Thread):
         if self.cap:
             self.cap.release()
             self.cap = None
-        self.cap = CameraFinder.get_camera(0)
-        #self.logger.info("Error while initializing camera.")
+        cam = cv2.VideoCapture(0)
+        if cam.isOpened():
+            self.cap = cam
 
     def take_a_picture(self):
         cap_ret, frame = self.cap.read()
