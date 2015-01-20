@@ -1,11 +1,12 @@
 import utils
-
+utils.init_path_to_libs()
 import numpy as np
 import cv2
 import time
 import base64
 import threading
 import logging
+import sys
 
 import http_client
 
@@ -15,7 +16,6 @@ class CameraFinder():
     def get_cameras_names():
         logger = logging.getLogger("app." + __name__)
         cameras_names = {}
-        import sys
         if sys.platform.startswith('win'):
             import win32com.client
             str_computer = "."
@@ -83,8 +83,10 @@ class CameraImageSender(threading.Thread):
         self.logger = logging.getLogger("app." + __name__)
         self.stop_flag = False
         self.token = utils.read_token()
-        self.url = 'https://acorn.3dprinteros.com/oldliveview/setLiveView/'
+        self.url = 'http://acorn.3dprinteros.com/oldliveview/setLiveView/'
         self.cap = None
+        if sys.platform.startswith('darwin'):
+            self.wait_for_mac_camera()
         self.image_ready_lock = threading.Lock()
         super(CameraImageSender, self).__init__()
 
@@ -98,6 +100,7 @@ class CameraImageSender(threading.Thread):
 
     def take_a_picture(self):
         cap_ret, frame = self.cap.read()
+        frame = cv2.resize(frame, (640, 480))
         encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 90]
         result, image_encode = cv2.imencode('.jpg', frame, encode_param)
         if cap_ret and result:
@@ -116,6 +119,19 @@ class CameraImageSender(threading.Thread):
         self.logger.info("Closing camera image sender...")
         self.stop_flag = True
 
+    def wait_for_mac_camera(self, time_to_wait=5):
+        self.logger.debug("Waiting for camera on mac...")
+        elapsed_time = 0
+        timeout = 1
+        while not self.cap:
+            self.init_camera()
+            time.sleep(timeout)
+            elapsed_time += timeout
+            if elapsed_time > time_to_wait:
+                self.logger.debug("Could not detect camera!")
+                return
+        self.logger.debug("Got working camera on mac!")
+
     def wait_for_camera(self):
         self.logger.debug("Waiting for camera...")
         while not self.cap:
@@ -126,7 +142,8 @@ class CameraImageSender(threading.Thread):
         self.logger.debug("Got working camera!")
 
     def run(self):
-        self.wait_for_camera()
+        if not self.cap:
+            self.wait_for_camera()
         while not self.stop_flag:
             if self.cap.isOpened():
                 picture = self.take_a_picture()
