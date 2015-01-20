@@ -1,3 +1,5 @@
+import utils
+
 import numpy as np
 import cv2
 import time
@@ -6,8 +8,6 @@ import threading
 import logging
 
 import http_client
-import utils
-
 
 class CameraFinder():
 
@@ -68,7 +68,6 @@ class CameraFinder():
             cameras_count += 1
         return cameras_count
 
-    @staticmethod
     def get_camera(camera_number = 0):
         logger = logging.getLogger("app." + __name__)
         if camera_number < CameraFinder.get_number_of_cameras():
@@ -92,9 +91,7 @@ class CameraImageSender(threading.Thread):
         if self.cap:
             self.cap.release()
             self.cap = None
-        number = CameraFinder.get_number_of_cameras()
-        if number:
-            self.cap = CameraFinder.get_camera(number - 1)
+        self.cap = CameraFinder.get_camera(0)
         #self.logger.info("Error while initializing camera.")
 
     def take_a_picture(self):
@@ -142,8 +139,10 @@ class CameraImageSender(threading.Thread):
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
+
     utils.init_path_to_libs()
     c = CameraImageSender()
+    c.start()
     while True:
         try:
             time.sleep(0.1)
