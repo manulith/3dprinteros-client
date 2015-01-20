@@ -194,7 +194,7 @@ def compress_and_send(log_file_name=None, server_path=http_client.token_send_log
         logger.warning("Error while creating logs archive " + zip_file_name)
     else:
         url = 'http://' + http_client.URL + server_path
-        file = open(LOG_SNAPSHOTS_DIR + '/' + log_file_name).read()
+        file = open(zip_file_name).read()
         if http_client.multipart_upload(url, {"token": read_token(), 'file': file}):
             os.remove(log_file_name)
         os.remove(zip_file_name)
