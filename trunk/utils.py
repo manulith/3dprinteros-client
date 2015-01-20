@@ -186,16 +186,16 @@ def compress_and_send(log_file_name=None, server_path=http_client.token_send_log
     if not log_file_name:
         log_file_name = config.config['log_file']
     zip_file_name = log_file_name + ".zip"
-    print zip_file_name
     try:
         zf = zipfile.ZipFile(zip_file_name, mode='w')
-        zf.write(log_file_name, os.path.basename(log_file_name), compress_type=zipfile.ZIP_DEFLATED)
+        zf.write(LOG_SNAPSHOTS_DIR + '/' + log_file_name, os.path.basename(log_file_name), compress_type=zipfile.ZIP_DEFLATED)
         zf.close()
     except Exception as e:
         logger.warning("Error while creating logs archive " + zip_file_name)
     else:
-        url = http_client.URL + server_path
-        if http_client.multipart_upload(url, {"token": read_token()}, zf):
+        url = 'http://' + http_client.URL + server_path
+        file = open(LOG_SNAPSHOTS_DIR + '/' + log_file_name).read()
+        if http_client.multipart_upload(url, {"token": read_token(), 'file': file}):
             os.remove(log_file_name)
         os.remove(zip_file_name)
 

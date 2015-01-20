@@ -72,10 +72,26 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.write_with_autoreplace('Not found')
 
     def snapshot_log(self):
-        pass
+        result = utils.make_log_snapshot()
+        message = open('web_interface/success_message.html'). read()
+        if result:
+            message.replace('!!!MESSAGE!!!', '<p>Log successfully created</p>')
+        else:
+            message.replace('!!!MESSAGE!!!', '<p>Error while creating log</p>')
+        self.send_response(200)
+        self.end_headers()
+        self.write_with_autoreplace(message)
+
 
     def send_log_snapshots(self):
-        pass
+        result = utils.send_all_snapshots()
+        if result:
+            message = open('web_interface/success_message.html'). read()
+        else:
+            message = open('web_interface/error_message.html'). read()
+        self.send_response(200)
+        self.end_headers()
+        self.write_with_autoreplace(message)
 
     def quit_main_app(self):
         self.send_response(200)
@@ -106,7 +122,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 token = body.replace(prefix, "")
                 result = utils.write_token(token)                
                 if result:
-                    message = open('web_interface/success.html', 'r').read()
+                    message = open('web_interface/token_success.html', 'r').read()
                 else:
                     message = open('web_interface/token_error.html', 'r').read()
                 self.send_response(200)
