@@ -127,8 +127,10 @@ class CameraImageSender(threading.Thread):
             self.init_camera()
             time.sleep(timeout)
             elapsed_time += timeout
-            if elapsed_time > time_to_wait:
+            if elapsed_time >= time_to_wait:
                 self.logger.debug("Could not detect camera!")
+                self.close()
+                time.sleep(0.1)
                 return
         self.logger.debug("Got working camera on mac!")
 
