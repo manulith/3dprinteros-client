@@ -73,11 +73,10 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
     def snapshot_log(self):
         result = utils.make_log_snapshot()
-        message = open('web_interface/success_message.html'). read()
         if result:
-            message.replace('!!!MESSAGE!!!', '<p>Log successfully created</p>')
+            message = open('web_interface/success_message.html').read()
         else:
-            message.replace('!!!MESSAGE!!!', '<p>Error while creating log</p>')
+            message = open('web_interface/error_message.html').read()
         self.send_response(200)
         self.end_headers()
         self.write_with_autoreplace(message)
@@ -86,9 +85,9 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     def send_log_snapshots(self):
         result = utils.send_all_snapshots()
         if result:
-            message = open('web_interface/success_message.html'). read()
+            message = open('web_interface/success_message.html').read()
         else:
-            message = open('web_interface/error_message.html'). read()
+            message = open('web_interface/error_message.html').read()
         self.send_response(200)
         self.end_headers()
         self.write_with_autoreplace(message)
