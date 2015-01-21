@@ -34,6 +34,7 @@ class App():
         if log_file:
             try:
                 file_handler = logging.handlers.RotatingFileHandler(log_file, maxBytes=1024*1024*4, backupCount=1)
+                file_handler.setFormatter(logging.Formatter('%(levelname)s\t%(asctime)s\t%(threadName)s/%(funcName)s\t%(message)s'))
                 file_handler.setLevel(logging.DEBUG)
                 logger.addHandler(file_handler)
             except Exception as e:
@@ -55,7 +56,6 @@ class App():
         self.wait_for_login()
         self.camera = cam.CameraImageSender()
         self.camera.start()
-        #self.kill_makerbot_conveyor()
         self.main_loop()
 
     def init_interface(self):
@@ -65,27 +65,6 @@ class App():
             self.web_interface = WebInterface(self)
             self.web_interface.start()
             webbrowser.open("http://127.0.0.1:8008", 2, True)
-        # if config.config['gui']:
-        #     self.gui_exchange_in = ""
-        #     self.gui_exchange_out = ""
-        #     self.selected_printer_number = None
-        #     import gui as gui_module
-        #     self.gui_module = gui_module
-        #     if self.token:
-        #         self.show_tray()
-        #     else:
-        #         self.show_login_window()
-
-
-
-    # def show_login_window(self):
-    #     self.gui_module.show_login_window(self)
-    #     token = self.gui_exchange_in.get('token', None)
-    #     utils.write_token(token)
-    #
-    # def show_tray(self):
-    #     self.tray_wrapper = self.gui_module.AppStub(self)
-    #     self.tray_wrapper.show()
 
     def token_login(self):
         self.logger.debug("Waiting for correct login")
@@ -129,11 +108,9 @@ class App():
                 printers_profiles.remove(profile)
         return printers_profiles
 
-
     def main_loop(self):
         while not self.stop_flag:
             self.time_stamp()
-            #before = time.time()
             self.logger.debug("START detect_printers")
             currently_detected = self.filter_by_token_type(self.detect_printers())
             self.logger.debug("DONE detect_printers")
@@ -147,10 +124,6 @@ class App():
             self.logger.debug("START do_things_with_connected")
             self.do_things_with_connected(currently_detected)
             self.logger.debug("DONE do_things_with_connected")
-            #elapsed = time.time() - before
-            #if elapsed < self.MIN_LOOP_TIME:
-            #    time.sleep(self.MIN_LOOP_TIME - elapsed)
-            #self.logger.debug("loop_time: %f" % elapsed)
         # this is for quit from web interface(to release server's thread and quit)
         if self.quit_flag:
             self.quit()
@@ -168,7 +141,6 @@ class App():
                 else:
                     self.logger.warning("Wrong token for printer type. \
                                             Expecting %s but got %s" % (self.printer_name_by_token, name))
-
 
     def do_things_with_connected(self, currently_detected):
         for pi in self.printer_interfaces:
@@ -207,12 +179,9 @@ class App():
         if not printer_interface:
             printer_interface = self.printer_interfaces[0]
         self.logger.info('Disconnecting %s' % printer_interface.profile['name'])
-        answer = False
         self.printer_interfaces.remove(printer_interface)
         printer_interface.close()
         http_client.send(http_client.token_job_request, (self.token, self.get_report(printer_interface)))
-        # if config.config['gui']:
-        #     self.tray_wrapper.qt_thread.show_notification('Closing ' + printer_interface.profile['name'])
 
     def kill_makerbot_conveyor(self):
         self.logger.info('Stopping third party software...')
@@ -223,20 +192,6 @@ class App():
             self.logger.debug(e)
         else:
             self.logger.info('...done.')
-
-    # def check_autoselect(self):
-    #     autoselect = config.config['autoselect']
-    #     if autoselect:
-    #         detected = usb_detect.get_printers() or network_detect.get_printers()
-    #         if autoselect in config.config["profiles"]: # used for debug
-    #             self.logger.info("Force load of driver " + str(autoselect))
-    #             profile = config.config["profiles"][autoselect]
-    #             return profile
-    #         elif detected:
-    #             return detected[0]
-    #         else:
-    #             self.logger.critical("Can't detect printer. Exiting")
-    #             self.quit()
 
     def detect_printers(self):
         usb_results = usb_detect.get_printers()
