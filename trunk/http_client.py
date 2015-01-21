@@ -8,6 +8,7 @@ import config
 
 CONNECTION_TIMEOUT = 6
 URL = config.config['URL']
+AUX_URL = config.config['AUX_URL']
 HTTPS_FLAG = config.config['HTTPS']
 user_login_path = "/user_login"
 printer_login_path = "/printer_login"
@@ -15,8 +16,8 @@ command_path = "/command"
 cloudsync_path = "/autoupload"
 token_jobs_path = "/getJobs"
 token_login_path = "/sendRequestToken" #json['token': token]
-token_camera_path = "/image" #json['image': basebase64_image ]
-token_send_logs_path = "/sendLogs"
+token_camera_path = "/oldliveview/setLiveView" #json['image': basebase64_image ]
+token_send_logs_path = "/oldliveview/sendLogs"
 
 domain_path_re = re.compile("https?:\/\/(.+)(\/.*)")
 
