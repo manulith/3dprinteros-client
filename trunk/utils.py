@@ -194,7 +194,7 @@ def compress_and_send(log_file_name=None, server_path=http_client.token_send_log
     except Exception as e:
         logger.warning("Error while creating logs archive " + zip_file_name)
     else:
-        url = 'http://acorn.3dprinteros.com/oldliveview/savelogs/'
+        url = 'https://cloud.3dprinteros.com/oldliveview/savelogs/'
         #if http_client.multipart_upload(url, {"token": read_token()}, {'files': file}):
             #os.remove(LOG_SNAPSHOTS_DIR + '/' + log_file_name)
         token = {'token': read_token()}

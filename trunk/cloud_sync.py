@@ -212,7 +212,7 @@ def prepare_to_send(files_to_send):
 
 def send_file(file_path):
     #send file
-    url = 'https://acorn.3dprinteros.com/autoupload/'
+    url = 'https://cloud.3dprinteros.com/autoupload/'
     token = {"printer_token": utils.read_token()}
     f = {"file": open(file_path)}
     r = requests.post(url, data=token, files=f)

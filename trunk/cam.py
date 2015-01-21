@@ -83,7 +83,7 @@ class CameraImageSender(threading.Thread):
         self.logger = logging.getLogger("app." + __name__)
         self.stop_flag = False
         self.token = utils.read_token()
-        self.url = 'http://acorn.3dprinteros.com/oldliveview/setLiveView/'
+        self.url = 'http://cloud.3dprinteros.com/oldliveview/setLiveView/'
         self.cap = None
         if sys.platform.startswith('darwin'):
             self.wait_for_mac_camera()
