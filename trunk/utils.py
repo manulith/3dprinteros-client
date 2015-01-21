@@ -13,6 +13,7 @@ from hashlib import md5
 
 import config
 import http_client
+import requests
 
 LIBS_FOLDER = 'libraries'
 ALL_LIBS = ['opencv', 'numpy']
@@ -193,10 +194,16 @@ def compress_and_send(log_file_name=None, server_path=http_client.token_send_log
     except Exception as e:
         logger.warning("Error while creating logs archive " + zip_file_name)
     else:
-        url = 'http://' + http_client.URL + server_path
-        file = open(zip_file_name).read()
-        if http_client.multipart_upload(url, {"token": read_token(), 'file': file}):
-            os.remove(log_file_name)
+        url = 'http://acorn.3dprinteros.com/oldliveview/savelogs/'
+        #if http_client.multipart_upload(url, {"token": read_token()}, {'files': file}):
+            #os.remove(LOG_SNAPSHOTS_DIR + '/' + log_file_name)
+        token = {'token': read_token()}
+        files = {'file_data': open(zip_file_name).read()}
+        r = requests.post(url, data = token, files = files)
+        result = r.text
+        print "Log sending response: " + result
+        if '"success":true' in result:
+            os.remove(LOG_SNAPSHOTS_DIR + '/' + log_file_name)
         os.remove(zip_file_name)
 
 def send_all_snapshots():
@@ -207,6 +214,7 @@ def send_all_snapshots():
     else:
         for file_name in dir:
             compress_and_send(file_name)
+        return  True
 
 if __name__ == "__main__":
     make_log_snapshot()
