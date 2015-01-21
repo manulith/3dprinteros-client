@@ -9,6 +9,7 @@ import logging
 import sys
 
 import http_client
+import requests
 
 class CameraFinder():
 
@@ -83,7 +84,8 @@ class CameraImageSender(threading.Thread):
         self.logger = logging.getLogger("app." + __name__)
         self.stop_flag = False
         self.token = utils.read_token()
-        self.url = 'http://cloud.3dprinteros.com/oldliveview/setLiveView/'
+        self.url = 'http://' + http_client.AUX_URL + http_client.token_camera_path
+        print self.url
         self.cap = None
         if sys.platform.startswith('darwin'):
             self.wait_for_mac_camera()
