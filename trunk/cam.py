@@ -84,8 +84,7 @@ class CameraImageSender(threading.Thread):
         self.logger = logging.getLogger("app." + __name__)
         self.stop_flag = False
         self.token = utils.read_token()
-        self.url = 'http://' + http_client.AUX_URL + http_client.token_camera_path
-        print self.url
+        self.url = 'https://' + http_client.AUX_URL + http_client.token_camera_path
         self.cap = None
         if sys.platform.startswith('darwin'):
             self.wait_for_mac_camera()
