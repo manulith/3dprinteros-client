@@ -40,11 +40,11 @@ def get_devices():
             SNR = None
         try:
             manufacturer = dev.manufacturer  # can provoke PIPE ERROR
-        except (usb.core.USBError, AttributeError):
+        except (usb.core.USBError, AttributeError, NotImplemented):
             manufacturer = None
         try:
             product = dev.product  # can provoke PIPE ERROR
-        except (usb.core.USBError, AttributeError):
+        except (usb.core.USBError, AttributeError, NotImplemented):
             product = None
         device_dct['SNR'] = SNR
         device_dct['Manufacturer'] = manufacturer
