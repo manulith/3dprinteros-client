@@ -51,7 +51,6 @@ def get_devices():
         device_dct['Product'] = product
         device_dct['COM'] = get_port_by_vid_pid_snr(device_dct['VID'], device_dct['PID'], SNR)
         device_data_dcts.append(device_dct)
-        dev.close()
         #logger.debug(device_dct)
     return device_data_dcts
 
