@@ -3,6 +3,11 @@ import logging
 import BaseHTTPServer
 
 import utils
+import version
+
+#temporary imports
+import os
+import time
 
 class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
@@ -16,12 +21,16 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.logger.debug("Incoming from %s:%i" % (host, port))
         return host
 
+    def write_with_autoreplace(self, page):
+        page = page.replace('3DPrinterOS', '3DPrinterOS Client v.' + version.version)
+        self.wfile.write(page)
+
     def do_GET(self):
         self.logger.info("Server GET")
         if self.server.token_was_reset_flag:
             self.send_response(200)
             self.end_headers()
-            self.wfile.write("Token was reset\nPlease restart 3DPrinterOS and re-login")
+            self.write_with_autoreplace("Token was reset\nPlease restart 3DPrinterOS and re-login")
         elif self.path.find('cam') >= 0:
             self.logger.info('Camera')
             self.send_response(503)
@@ -35,10 +44,16 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 name = 'web_interface/token_form.html'
             with open(name) as f:
                 page = f.read()
-            printers_list = [printer['name'] + ": " + str(printer['SNR']) for printer in self.server.app.detected_printers]
-            printers = '<table class="printers_table">'.join(map(lambda x: "<tr><td>" + x + "</td></tr>", printers_list))
-            page = page.replace('<table class="printers_table">', printers)
-            self.wfile.write(page)
+            printers_list = []
+            for printer in self.server.app.detected_printers:
+                if str(printer['SNR']) == 'None':
+                    printer_snr = 'Unknown serial number'
+                else:
+                    printer_snr = str(printer['SNR'])
+                printers_list.append('<b>' + printer['name'] + "</b><br>(s/n: " + printer_snr + ')')
+            printers = ''.join(map(lambda x: "<p>" + x + "</p>", printers_list))
+            page = page.replace('!!!PRINTERS!!!', printers)
+            self.write_with_autoreplace(page)
 
     def do_POST(self):
         if self.path.find('write_token') >= 0:
@@ -47,29 +62,54 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.process_clear_token()
         elif self.path.find('quit') >= 0:
             self.quit_main_app()
+        elif self.path.find('snapshot_log') >= 0:
+            self.snapshot_log()
+        elif self.path.find('send_log_snapshots') >= 0:
+            self.send_log_snapshots()
         else:
             self.send_response(404)
             self.end_headers()
-            self.wfile.write('Not found')
+            self.write_with_autoreplace('Not found')
+
+    def snapshot_log(self):
+        result = utils.make_log_snapshot()
+        if result:
+            message = open('web_interface/success_message.html').read()
+        else:
+            message = open('web_interface/error_message.html').read()
+        self.send_response(200)
+        self.end_headers()
+        self.write_with_autoreplace(message)
+
+
+    def send_log_snapshots(self):
+        result = utils.send_all_snapshots()
+        if result:
+            message = open('web_interface/success_message.html').read()
+        else:
+            message = open('web_interface/error_message.html').read()
+        self.send_response(200)
+        self.end_headers()
+        self.write_with_autoreplace(message)
 
     def quit_main_app(self):
         self.send_response(200)
         self.end_headers()
-        self.wfile.write('Goodbye ;-)')
+        page = open('web_interface/goodbye.html', 'r').read()
+        self.write_with_autoreplace(page)
         self.server.app.stop_flag = True
         self.server.app.quit_flag = True
-
 
     def process_clear_token(self):
         result = utils.write_token('')
         if result:
-            message = "Token was reset\nPlease restart 3DPrinterOS and re-login"
+            message = open('web_interface/token_reset.html', 'r').read()
             self.server.token_was_reset_flag = True
         else:
             message = "Error writing token"
         self.send_response(200)
         self.end_headers()
-        self.wfile.write(message)
+        self.write_with_autoreplace(message)
 
     def process_write_token(self):
         content_length = self.headers.getheader('Content-Length')
@@ -79,33 +119,29 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             prefix = "token="
             if prefix in body:
                 token = body.replace(prefix, "")
-                result = utils.write_token(token)
+                result = utils.write_token(token)                
                 if result:
-                    message = "Success"
+                    message = open('web_interface/token_success.html', 'r').read()
                 else:
-                    message = "Error writing token"
+                    message = open('web_interface/token_error.html', 'r').read()
                 self.send_response(200)
                 self.end_headers()
-                self.wfile.write(message)
+                self.write_with_autoreplace(message)
             else:
                 self.send_response(400)
                 self.end_headers()
-                self.wfile.write('Invalid body content for this request')
+                self.write_with_autoreplace('Invalid body content for this request')
         else:
             self.send_response(411)
             self.end_headers()
-            self.wfile.write('Zero Content-Length')
+            self.write_with_autoreplace('Zero Content-Length')
 
 
 class WebInterface(threading.Thread):
     def __init__(self, app):
-        self.stop_flag = False
         self.logger = logging.getLogger('app.' + __name__)
         self.app = app
         threading.Thread.__init__(self)
-
-    def close(self):
-        self.stop_flag = True
 
     def run(self):
         self.logger.info("Web server started")

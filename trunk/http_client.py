@@ -4,16 +4,20 @@ import httplib
 import logging
 import requests
 
+import config
+
 CONNECTION_TIMEOUT = 6
-URL = "service1.3dprinteros.com"
+URL = config.config['URL']
+AUX_URL = config.config['AUX_URL']
+HTTPS_FLAG = config.config['HTTPS']
 user_login_path = "/user_login"
 printer_login_path = "/printer_login"
 command_path = "/command"
-cloudsync_path = "/cloudsync_upload"
+cloudsync_path = "/autoupload"
 token_jobs_path = "/getJobs"
 token_login_path = "/sendRequestToken" #json['token': token]
-token_camera_path = "/image" #json['image': basebase64_image ]
-token_send_logs_path = "/sendLogs"
+token_camera_path = "/oldliveview/setLiveView" #json['image': basebase64_image ]
+token_send_logs_path = "/oldliveview/sendLogs"
 
 domain_path_re = re.compile("https?:\/\/(.+)(\/.*)")
 
@@ -70,7 +74,10 @@ def connect(URL):
     logger = logging.getLogger('app.' +__name__)
     logger.debug("{ Connecting...")
     try:
-        connection = httplib.HTTPSConnection(URL, port = 443, timeout = CONNECTION_TIMEOUT)#, cert_file=utils.cert_file_path)
+        if HTTPS_FLAG:
+            connection = httplib.HTTPSConnection(URL, port = 443, timeout = CONNECTION_TIMEOUT)
+        else:
+            connection = httplib.HTTPConnection(URL, port = 80, timeout = CONNECTION_TIMEOUT)
     except httplib.error as e:
         logger.info("Error during HTTP connection: " + str(e))
         logger.debug("...failed }")
@@ -132,13 +139,17 @@ def download(url):
             return post_request(connection, "", path)
 
 def multipart_upload(url, payload, file_obj=None):
+    logger = logging.getLogger('app.' +__name__)
+    kwarg = {"data": payload}
     if file_obj:
-        f = {"file": file_obj}
-        r = requests.post(url, data=payload, files=f)
+        kwarg.update({"file": file_obj})
+    try:
+        r = requests.post(url, **kwarg)
+    except Exception as e:
+        logger.debug("Error while uploading to server: %s" % str(e))
     else:
-        r = requests.post(url, data=payload)
-    print 'Response: ' + r.text
-    return r.status_code == 200
+        print 'Response: ' + r.text
+        return r.status_code == 200
 
 if __name__ == '__main__':
     import command_processor

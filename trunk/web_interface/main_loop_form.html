@@ -1,5 +1,6 @@
 <html>
 	<head>
+        <meta http-equiv="refresh" content="5; url=/" />
     	<title>3DPrinterOS</title>
     	<link rel="stylesheet" type="text/css" href="style.css">
     	<style>
@@ -9,15 +10,14 @@
 		float: left;
 		font-family: "Trebuchet MS", Helvetica, sans-serif;
 		color: #009999;
-		font-weight: bold;
-		font-size: 18px;
-		text-align: center;
+		font-size: 15px;
 
 		position:absolute;
 		z-index:15;
 		top:250px;
 		left:50%;
 		margin:-100px 0 0 -200px;
+		display: inline;
 		}
 
 		.block2 { 
@@ -30,51 +30,45 @@
 		color: #ffffff;
 		font-weight: bolder;
 		font-size: 30px;
-		}
-
-		.printers_table { 
-		width: 80%;
-		margin-left: 10%;
-		margin-top: 10px;
-		margin-bottom: 15px;
-		padding: none; 
-		border: none;		    
-		color: #009999;
-		font-weight: bolder;
-		font-size: 12px;
 		text-align: center;
-
-		border: dotted grey 1px;
 		}
+
 		</style>
 	</head>
-	<body bgcolor=#003333>
+	<body bgcolor=#003333 link="#fff" vlink="#fff" alink="#fff">
 		<div class="block1">
 			<div class="block2">
 				3DPrinterOS
 			</div>
-			<p>
-				<h3>Running Client</h3>
-			</p>
-			<div style="margin-left: 125px; margin-bottom: 20px;">
-				<div id="movingBallG">
-					<div class="movingBallLineG"></div>
-					<div id="movingBallG_1" class="movingBallG"></div>
-				</div>
-			</div>
+			<center>
+			<div display='inline'>
+			<h3><b>Printer connected to cloud.3dprinteros.com</b></h3><font color='grey'>
+				<hr width="240px">
+				!!!PRINTERS!!!
 
-			<center>Printers</center>
-			<table class="printers_table">
-			</table>
+			<br>
+			</font>
 
+			<form action="https://cloud.3dprinteros.com/" method="post" target="_blank" >
+			<input type="submit" value="Go to your account now!" style='background: #ff9900; border: none; width: 240px; height: 50px; font-family: "Trebuchet MS", Helvetica, sans-serif; color: #ffffff; font-weight: bold; font-size: 16px; margin-top: 20px;'>
+			</form>
+			<br>
 
-			<form action="/clear_token" method="post">
-				<input type="submit" value="Clear token" style='background: #FF9900; border: none; width: 150px; height: 50px; text-indent: 5px; font-family: "Trebuchet MS", Helvetica, sans-serif; color: #ffffff; font-weight: bold; font-size: 20px; margin-top: 5px;'>
+			<form action="/clear_token" method="post" style="display:inline;">
+				<input type="submit" value="Change printer token" style='background: #009999; border: none; width: 160px; height: 30px; font-family: "Trebuchet MS", Helvetica, sans-serif; color: #ffffff; font-weight: bold; font-size: 14px;margin-right: 30px; margin-bottom: 20px;'>
 			</form>
 
-			<form action="/quit" method="post">
-				<input type="submit" value="Quit" style='background: #FF9900; border: none; width: 150px; height: 50px; text-indent: 5px; font-family: "Trebuchet MS", Helvetica, sans-serif; color: #ffffff; font-weight: bold; font-size: 20px; margin-top: 5px;'>
+			<form action="/quit" method="post" style="display:inline;">
+				<input type="submit" value="End application" style='background: #009999; border: none; width: 160px; height: 30px; font-family: "Trebuchet MS", Helvetica, sans-serif; color: #ffffff; font-weight: bold; font-size: 14px;'>
 			</form>
+		</center>
 		</div>
+
+		<form action="/snapshot_log" method="post">
+				<input type="submit" value="Snapshot log" style='background: #009999; border: none; width: 160px; height: 30px; font-family: "Trebuchet MS", Helvetica, sans-serif; color: #fff; font-weight: bold; font-size: 14px; margin-top: 10px; margin-left: 10px;'>
+		</form>
+		<form action="/send_log_snapshots" method="post">
+				<input type="submit" value="Send log snapshots" style='background: #009999; border: none; width: 160px; height: 30px; font-family: "Trebuchet MS", Helvetica, sans-serif; color: #fff; font-weight: bold; font-size: 14px; margin-left: 10px;'>
+		</form>	
 	</body>
 </html>

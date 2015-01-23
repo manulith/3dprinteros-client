@@ -97,8 +97,11 @@ def get_conveyor_pid():
     return conveyor_pid
 
 def kill_existing_conveyor():
+    # TODO: change logger name
+    logger = logging.getLogger('main')
     pid = get_conveyor_pid()
     if pid:
+        logger.info('Makerbot conveyor service is running. Shutting down...')
         if sys.platform.startswith('win'):
             os.popen('taskkill /f /pid ' + pid)
         elif sys.platform.startswith('linux'):
@@ -107,3 +110,8 @@ def kill_existing_conveyor():
         elif sys.platform.startswith('darwin'):
             makerware_path = detect_makerware_paths()
             os.popen(os.path.join(makerware_path, 'stop_conveyor_service'))
+        time.sleep(0.5)
+        if get_conveyor_pid():
+            logger.info('Could not kill Makerbot Conveyor Service. Please stop it manually and restart program.')
+        else:
+            logger.info('Makerbot Conveyor Service successfully killed.')

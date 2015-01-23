@@ -8,10 +8,11 @@ import logging
 import logging.handlers
 
 import utils
+utils.init_path_to_libs()
+import cam
 import config
 import version
 import usb_detect
-import network_detect
 import http_client
 import printer_interface
 import command_processor
@@ -23,20 +24,18 @@ class App():
 
     @staticmethod
     def get_logger():
-        logger = logging.getLogger('app')
+        logger = logging.getLogger("app")
+        logger.propagate = False
         logger.setLevel(logging.DEBUG)
-        #formatter = logging.Formatter('%(levelname)s\t%(asctime)s\t%(threadName)s/%(funcName)s\t%(message)s')
-        #formatter = logging.Formatter('%(asctime)s\t%(threadName)s/%(funcName)s\t%(message)s')
         stderr_handler = logging.StreamHandler()
         stderr_handler.setLevel(logging.DEBUG)
-        #stderr_handler.setFormatter(formatter)
         logger.addHandler(stderr_handler)
         log_file = config.config['log_file']
         if log_file:
             try:
-                file_handler = logging.handlers.RotatingFileHandler(log_file, maxBytes=1024*1024*100, backupCount=1)
+                file_handler = logging.handlers.RotatingFileHandler(log_file, maxBytes=1024*1024*4, backupCount=1)
+                file_handler.setFormatter(logging.Formatter('%(levelname)s\t%(asctime)s\t%(threadName)s/%(funcName)s\t%(message)s'))
                 file_handler.setLevel(logging.DEBUG)
-                #file_handler.setFormatter(formatter)
                 logger.addHandler(file_handler)
             except Exception as e:
                 logger.debug('Could not create log file because' + e.message + '\n.No log mode.')
@@ -44,7 +43,8 @@ class App():
 
     def __init__(self):
         self.logger = self.get_logger()
-        self.logger.info("Welcome to 3DPrinterOS Client version %s_%s_%s" % (version.version, version.build, version.commit))
+        self.logger.info("Welcome to 3DPrinterOS Client version %s_%s" % (version.version, version.build))
+        self.time_stamp()
         signal.signal(signal.SIGINT, self.intercept_signal)
         signal.signal(signal.SIGTERM, self.intercept_signal)
         self.detected_printers = []
@@ -54,21 +54,11 @@ class App():
         self.stop_flag = False
         self.quit_flag = False
         self.wait_for_login()
-        #self.kill_makerbot_conveyor()
+        self.camera = cam.CameraImageSender()
+        self.camera.start()
         self.main_loop()
 
     def init_interface(self):
-        if config.config['gui']:
-            self.gui_exchange_in = ""
-            self.gui_exchange_out = ""
-            self.selected_printer_number = None
-            import gui as gui_module
-            self.gui_module = gui_module
-            if self.token:
-                self.show_tray()
-            else:
-                self.show_login_window()
-
         if config.config['web_interface']:
             import webbrowser
             from web_interface import WebInterface
@@ -76,16 +66,6 @@ class App():
             self.web_interface.start()
             webbrowser.open("http://127.0.0.1:8008", 2, True)
 
-    def show_login_window(self):
-        self.gui_module.show_login_window(self)
-        token = self.gui_exchange_in.get('token', None)
-        utils.write_token(token)
-
-    def show_tray(self):
-        self.tray_wrapper = self.gui_module.AppStub(self)
-        self.tray_wrapper.show()
-
-    #token_s
     def token_login(self):
         self.logger.debug("Waiting for correct login")
         self.token = None
@@ -108,7 +88,6 @@ class App():
             if self.quit_flag:
                 self.quit()
 
-    # token s
     def get_name_by_alias(self, printer_alias):
         try:
             printer_type_name = config.config['profiles'][printer_alias]['name']
@@ -117,28 +96,40 @@ class App():
         else:
             return printer_type_name
 
-    # token s
     def get_alias_by_name(self, printer_name):
         profiles = config.config['profiles']
         for profile_alias in profiles:
             if printer_name == profiles[profile_alias]['name']:
                 return profile_alias
 
+    def filter_by_token_type(self, printers_profiles):
+        for profile in printers_profiles:
+            if profile['name'] != self.printer_name_by_token:
+                printers_profiles.remove(profile)
+        return printers_profiles
+
     def main_loop(self):
         while not self.stop_flag:
-            before = time.time()
-            currently_detected = self.detect_printers()
+            self.time_stamp()
+            self.logger.debug("START detect_printers")
+            currently_detected = self.filter_by_token_type(self.detect_printers())
+            self.logger.debug("DONE detect_printers")
+            if not currently_detected:
+                http_client.send(http_client.token_job_request, (self.token, {'status': 'no_printer'}))
             self.detected_printers = currently_detected # for gui
+            self.logger.debug("START detect_and_connect")
             self.detect_and_connect(currently_detected)
+            self.logger.debug("DONE of detect_and_connect")
             time.sleep(0.5)
+            self.logger.debug("START do_things_with_connected")
             self.do_things_with_connected(currently_detected)
-            elapsed = time.time() - before
-            if elapsed < self.MIN_LOOP_TIME:
-                time.sleep(self.MIN_LOOP_TIME - elapsed)
-            self.logger.debug("loop_time: %f" % elapsed)
+            self.logger.debug("DONE do_things_with_connected")
         # this is for quit from web interface(to release server's thread and quit)
         if self.quit_flag:
             self.quit()
+
+    def time_stamp(self):
+        self.logger.debug("Time stamp: " + time.strftime("%d %b %Y %H:%M:%S", time.localtime()))
 
     def detect_and_connect(self, currently_detected):
         currently_connected_profiles = [pi.profile for pi in self.printer_interfaces]
@@ -170,6 +161,7 @@ class App():
         answer = http_client.send(http_client.token_job_request, (self.token, self.get_report(printer)))
         if answer:
             command_processor.process_job_request(printer, answer)
+        self.logger.debug("DONE report_state_and_execute_new_job")
 
     def get_report(self, printer_interface):
         report = printer_interface.report()
@@ -189,8 +181,7 @@ class App():
         self.logger.info('Disconnecting %s' % printer_interface.profile['name'])
         self.printer_interfaces.remove(printer_interface)
         printer_interface.close()
-        if config.config['gui']:
-            self.tray_wrapper.qt_thread.show_notification('Closing ' + printer_interface.profile['name'])
+        http_client.send(http_client.token_job_request, (self.token, self.get_report(printer_interface)))
 
     def kill_makerbot_conveyor(self):
         self.logger.info('Stopping third party software...')
@@ -201,20 +192,6 @@ class App():
             self.logger.debug(e)
         else:
             self.logger.info('...done.')
-
-    def check_autoselect(self):
-        autoselect = config.config['autoselect']
-        if autoselect:
-            detected = usb_detect.get_printers() or network_detect.get_printers()
-            if autoselect in config.config["profiles"]: # used for debug
-                self.logger.info("Force load of driver " + str(autoselect))
-                profile = config.config["profiles"][autoselect]
-                return profile
-            elif detected:
-                return detected[0]
-            else:
-                self.logger.critical("Can't detect printer. Exiting")
-                self.quit()
 
     def detect_printers(self):
         usb_results = usb_detect.get_printers()
@@ -228,9 +205,11 @@ class App():
 
     def quit(self):
         self.stop_flag = True
+        self.camera.close()
         for pi in self.printer_interfaces:
             pi.close()
         time.sleep(0.1) #to reduce logging spam in next
+        self.time_stamp()
         self.logger.info("Waiting for driver modules to close...")
         while True:
             ready_flag = True
@@ -245,11 +224,16 @@ class App():
                 break
             time.sleep(0.1)
         self.logger.debug("Waiting web interface server to shutdown")
-        self.web_interface.close()
-        self.web_interface.server.shutdown()
-        self.web_interface.join(1)
+        try:
+            self.web_interface.server.shutdown()
+            self.web_interface.join(1)
+        except Exception as e:
+            print e
+        self.camera.join()
+        self.time_stamp()
         self.logger.info("...everything correctly closed.")
         self.logger.info("Goodbye ;-)")
+        logging.shutdown()
         sys.exit(0)
 
 if __name__ == '__main__':
