@@ -17,6 +17,9 @@ import http_client
 import printer_interface
 import command_processor
 
+
+class User_Login()
+
 class App():
 
     MIN_LOOP_TIME = 2
@@ -49,13 +52,9 @@ class App():
         signal.signal(signal.SIGTERM, self.intercept_signal)
         self.detected_printers = []
         self.printer_interfaces = []
-        self.token_login()
-        self.init_interface()
         self.stop_flag = False
         self.quit_flag = False
-        self.wait_for_login()
-        self.camera = cam.CameraImageSender()
-        self.camera.start()
+        self.init_interface()
         self.main_loop()
 
     def init_interface(self):
@@ -66,19 +65,19 @@ class App():
             self.web_interface.start()
             webbrowser.open("http://127.0.0.1:8008", 2, True)
 
-    def token_login(self):
-        self.logger.debug("Waiting for correct login")
-        self.token = None
-        token = utils.read_token()
-        answer = http_client.send(http_client.token_login, token)
+    def user_login(self):
+        self.logger.debug("Waiting for correct user login")
+        token = utils.read_user_token()
+        answer = http_client.send(http_client.user_login)
         if answer:
-            printer_alias_by_token = answer.get('printer_type_name', None)
-            if printer_alias_by_token:
-                self.logger.info('Printer type by token: %s' % printer_alias_by_token)
-                self.printer_alias_by_token = printer_alias_by_token
-                self.printer_name_by_token = self.get_name_by_alias(printer_alias_by_token)
-                self.token = token
-                return True
+            login = answer.get('user_token', None)
+            errors = command_processor.check_from_errors(answer)
+            if not errors:
+                if login:
+                    return login
+            else:
+                #TODO
+                self.logger.warning("Error processing user_login " + str(errors))
         self.logger.error("Login rejected")
 
     def wait_for_login(self):
@@ -88,42 +87,24 @@ class App():
             if self.quit_flag:
                 self.quit()
 
-    def get_name_by_alias(self, printer_alias):
-        try:
-            printer_type_name = config.config['profiles'][printer_alias]['name']
-        except KeyError as e:
-            self.logger.error("Wrong printer alias - %s" % printer_alias, exc_info=True)
-        else:
-            return printer_type_name
+    def login_user(self):
+        pass
 
-    def get_alias_by_name(self, printer_name):
-        profiles = config.config['profiles']
-        for profile_alias in profiles:
-            if printer_name == profiles[profile_alias]['name']:
-                return profile_alias
-
-    def filter_by_token_type(self, printers_profiles):
-        for profile in printers_profiles:
-            if profile['name'] != self.printer_name_by_token:
-                printers_profiles.remove(profile)
-        return printers_profiles
+    def local_report(self, data):
+        pass
 
     def main_loop(self):
+        self.user_token = None
         while not self.stop_flag:
             self.time_stamp()
-            self.logger.debug("START detect_printers")
-            currently_detected = self.filter_by_token_type(self.detect_printers())
-            self.logger.debug("DONE detect_printers")
-            if not currently_detected:
-                http_client.send(http_client.token_job_request, (self.token, {'status': 'no_printer'}))
-            self.detected_printers = currently_detected # for gui
-            self.logger.debug("START detect_and_connect")
-            self.detect_and_connect(currently_detected)
-            self.logger.debug("DONE of detect_and_connect")
-            time.sleep(0.5)
-            self.logger.debug("START do_things_with_connected")
-            self.do_things_with_connected(currently_detected)
-            self.logger.debug("DONE do_things_with_connected")
+            if not self.user_token:
+                self.user_token = self.login_user()
+            else:
+                self.logger.debug("START detect_printers")
+                self.detected_printers = self.detect_printers()
+                self.logger.debug("DONE detect_printers")
+                self.check_and_connect()
+
         # this is for quit from web interface(to release server's thread and quit)
         if self.quit_flag:
             self.quit()
@@ -131,16 +112,13 @@ class App():
     def time_stamp(self):
         self.logger.debug("Time stamp: " + time.strftime("%d %b %Y %H:%M:%S", time.localtime()))
 
-    def detect_and_connect(self, currently_detected):
-        currently_connected_profiles = [pi.profile for pi in self.printer_interfaces]
-        for printer_profile in currently_detected:
-            if printer_profile not in currently_connected_profiles:
-                name = printer_profile['name']
-                if name == self.printer_name_by_token:
-                    self.connect_printer(printer_profile)
-                else:
-                    self.logger.warning("Wrong token for printer type. \
-                                            Expecting %s but got %s" % (self.printer_name_by_token, name))
+    def check_and_connect(self):
+        currently_connected_usb_info = [pi.usb_info for pi in self.printer_interfaces]
+        for usb_info in self.detected_printers:
+            if usb_info not in currently_connected_usb_info:
+                pi = printer_interface.PrinterInterface(usb_info, self.user_token)
+                pi.start()
+                self.printer_interfaces.append(pi)
 
     def do_things_with_connected(self, currently_detected):
         for pi in self.printer_interfaces:
@@ -154,7 +132,7 @@ class App():
                     time.sleep(1) #remove me in release
                     continue
             else:
-                self.logger.warning(  "Printer %s %s no longer detected!" % (pi.profile['name'], pi.profile['SNR']))
+                self.logger.warning("Printer %s %s no longer detected!" % (pi.profile['name'], pi.profile['SNR']))
             self.disconnect_printer(pi)
 
     def report_state_and_execute_new_job(self, printer):
@@ -168,19 +146,9 @@ class App():
         self.logger.debug('%s reporting: %s' % (printer_interface.profile['name'], str(report)))
         return report
 
-    def connect_printer(self, printer_profile):
-        if printer_profile['name'] == self.printer_name_by_token:
-            new_pi = printer_interface.PrinterInterface(printer_profile)
-            self.printer_interfaces.append(new_pi)
-        else:
-            self.logger.debug("Wrong token prevent creation of interface")
-
-    def disconnect_printer(self, printer_interface=None):
-        if not printer_interface:
-            printer_interface = self.printer_interfaces[0]
+    def disconnect_printer(self, pi):
         self.logger.info('Disconnecting %s' % printer_interface.profile['name'])
         self.printer_interfaces.remove(printer_interface)
-        printer_interface.close()
         http_client.send(http_client.token_job_request, (self.token, self.get_report(printer_interface)))
 
     def kill_makerbot_conveyor(self):

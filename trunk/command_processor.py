@@ -13,13 +13,13 @@ def check_from_errors(data_dict):
         logger.warning("Server returned error %s:%s" % (error[0], error[1]))
         return error[0]
 
-def process_user_login(data_dict):
-    login = data_dict.get('user_token', None)
-    if not check_from_errors(data_dict):
-        if login:
-            return login
-    logger = logging.getLogger('app.' + __name__)
-    logger.warning("Error processing user_login response: " + str(data_dict))
+# def process_user_login(data_dict):
+#     login = data_dict.get('user_token', None)
+#     if not check_from_errors(data_dict):
+#         if login:
+#             return login
+#     logger = logging.getLogger('app.' + __name__)
+#     logger.warning("Error processing user_login response: " + str(data_dict))
 
 def process_printer_login(data_dict):
     login = data_dict.get('printer_token', None)
@@ -48,51 +48,6 @@ def process_command_request(printer_interface, data_dict):
                     method()
                 return True
     logger.warning("Error processing command: " + str(data_dict))
-
-def process_job_request(printer_interface, data_dict):
-    logger = logging.getLogger("app." + __name__)
-    job = data_dict.get('job', None)
-    #logger.debug("Job=%s" % job)
-    if job:
-        if 'begin' in job or 'reset' in job:
-            match = re.match('.+gcode_count=(\d+)', job)
-            if match is not None:
-                gcode_count = int(match.group(1))
-            else:
-                gcode_count = sys.maxint
-            printer_interface.begin(gcode_count)
-        elif job == '/pause':
-            if printer_interface.is_paused():
-                printer_interface.resume()
-            else:
-                printer_interface.pause()
-        elif job == '/resume':
-            printer_interface.resume()
-        elif job == '/cancel':
-            printer_interface.cancel()
-        elif job == '/emergency_stop':
-            printer_interface.emergency_stop()
-        elif job == '/end':
-            printer_interface.end()
-        else:
-            logger.info('GCodes received')
-            if printer_interface.profile['print_from_binary']:
-                logger.info('Enqueue binary file')
-                printer_interface.enqueue(job)
-            else:
-                try:
-                    data = base64.b64decode(job)
-                    data = remove_illegal_symbols(data)
-                    lines = data.split('\n')
-                    logger.info("GCode count: " + str(len(lines)))
-                    if len(lines) < 5:
-                        logger.info("GCodes:" + str(lines))
-                    lines = remove_corrupted_lines(lines)
-                    printer_interface.enqueue(lines)
-                except TypeError:
-                    logger.critical("Can't decode GCodes, must be base64")
-    else:
-        logger.warning("Error processing job: " + str(data_dict))
 
 def process_login_request(data_dict):
     logger = logging.getLogger("app." + __name__)

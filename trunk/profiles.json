@@ -1,11 +1,6 @@
-{
-  "URL": "aservice.3dprinteros.com",
-  "AUX_URL": "cloud.3dprinteros.com",
-  "HTTPS": true,
-  "log_file": "3dprinteros_client.log",
-  "web_interface": true,
-  "profiles": {
-      "Marlin": {
+[
+      {
+      "alias": "Marlin",
       "name": "Marlin Firmware",
       "driver": "printrun_printer",
       "print_from_binary": false,
@@ -21,7 +16,8 @@
         "M84"
       ]
     },
-    "R2": {
+    {
+      "alias": "R2",
       "name": "Makerbot Replicator 2",
       "driver": "makerbot_printer",
       "print_from_binary": false,
@@ -30,11 +26,11 @@
       "reconnect_on_cancel": false,
       "force_port_close": false,
       "extruder_count": 2,
-      "stop_on_error" : false,
       "end_gcodes": [
       ]
     },
-    "D4": {
+    {
+      "alias": "D4",
       "name": "Duplicator 4",
       "driver": "makerbot_printer",
       "print_from_binary": false,
@@ -43,11 +39,11 @@
       "reconnect_on_cancel": false,
       "force_port_close": false,
       "extruder_count": 2,
-      "stop_on_error" : false,
       "end_gcodes": [
       ]
     },
-    "R2X": {
+    {
+      "alias": "R2X",
       "name": "Makerbot Replicator 2X",
       "driver": "makerbot_printer",
       "print_from_binary": false,
@@ -56,11 +52,10 @@
       "reconnect_on_cancel": false,
       "force_port_close": false,
       "extruder_count": 2,
-      "stop_on_error" : false,
       "end_gcodes": [
       ]
     },
-    "U": {
+    { "alias": "U",
       "name": "Ultimaker",
       "driver": "printrun_printer",
       "print_from_binary": false,
@@ -82,7 +77,8 @@
         "M117 Ultimaker Ready."
       ]
     },
-    "U2": {
+    {
+      "alias": "U2",
       "name": "Ultimaker 2",
       "driver": "printrun_printer",
       "print_from_binary": false,
@@ -103,7 +99,8 @@
         "M25"
       ]
     },
-    "LF": {
+    {
+      "alias": "LF",
       "name": "LeapFrog",
       "driver": "printrun_printer",
       "print_from_binary": false,
@@ -119,7 +116,8 @@
         "M84"
       ]
     },
-    "LFC": {
+    {
+      "alias": "LFC",
       "name": "LeapFrog Creatr",
       "driver": "printrun_printer",
       "print_from_binary": false,
@@ -135,7 +133,8 @@
         "M84"
       ]
     },
-    "LFCHS": {
+    {
+      "alias": "LFCHS",
       "name": "LeapFrog Creatr HS",
       "driver": "printrun_printer",
       "print_from_binary": false,
@@ -151,7 +150,8 @@
         "M84"
       ]
     },
-    "LFCXL": {
+    {
+      "alias": "LFCXL",
       "name": "LeapFrog Creatr XL",
       "driver": "printrun_printer",
       "print_from_binary": false,
@@ -167,7 +167,8 @@
         "M84"
       ]
     },
-    "PrintrBot": {
+    {
+      "alias": "PrintrBot",
       "name": "PrintrBot",
       "driver": "printrun_printer",
       "print_from_binary": false,
@@ -179,7 +180,8 @@
       "end_gcodes": [
       ]
     },
-    "BEETF": {
+    {
+      "alias": "BEETF",
       "name": "BeeTheFirst",
       "driver": "beeverycreative",
       "baudrate": [250000, 115200],
@@ -197,7 +199,8 @@
         "G92 E"
       ]
     },
-    "DREMEL": {
+    {
+      "alias": "DREMEL",
       "name": "Bosch Dremel",
       "driver": "dremel_printer",
       "print_from_binary": false,
@@ -208,7 +211,8 @@
       "end_gcodes": [
       ]
     },
-    "Platypus": {
+    {
+      "alias": "Platypus",
       "name": "Makerbot 5th gen Platypus",
       "driver": "birdwing",
       "print_from_binary": true,
@@ -224,7 +228,8 @@
         "message" : {"command" : "broadcast"}
       }
     },
-    "Mini": {
+    {
+      "alias": "Mini",
       "name": "Makerbot Mini",
       "driver": "birdwing",
       "print_from_binary": true,
@@ -234,7 +239,8 @@
       "end_gcodes": [
       ]
     },
-    "WB": {
+    {
+      "alias": "WB",
       "name": "WitBox",
       "driver": "printrun_printer",
       "print_from_binary": false,
@@ -249,5 +255,4 @@
         "G28 X0 Y0"
       ]
     }
-  }
-}
+]

@@ -1,14 +1,16 @@
 import time
 import logging
 import serial
+import threading
 
-# Warning any modification to profile will cause errors. profiles are used for identification. need to fix this somehow.
-class PrinterInterface(object):
+import http_client
 
-    RESTART_THREAD_SLEEP = 1
-    DEFAULT_TIMEOUT = 15
+# Warning any runtime modification of profile will cause errors. profiles are used for identification. need to fix this somehow.
+class PrinterInterface(threading.Thread):
 
-    def try_protection(func):
+    DEFAULT_TIMEOUT = 45
+
+    def protection(func):
         def decorator(self, *args, **kwargs):
             name = str(func.__name__)
             self.logger.info('[ Executing: ' + name + "...")
@@ -25,15 +27,15 @@ class PrinterInterface(object):
                 return result
         return decorator
 
-    def __init__(self, profile):
+    def __init__(self, usb_info, user_token):
         self.printer = None
         self.creation_time = time.time()
         self.logger = logging.getLogger('app.' + __name__)
-        self.profile = profile
-        self.logger.info('Creating interface with package : ' + profile['driver'])
-        self.connect_printer()
+        self.usb_info = usb_info
+        self.logger.info('New printer interface for %s' + str(usb_info))
 
     def connect_printer(self):
+        http_client.token_login()
         printer_driver = __import__(self.profile['driver'])
         self.logger.info("Connecting with profile: " + str(self.profile))
         try:
@@ -55,20 +57,36 @@ class PrinterInterface(object):
                 elapsed += 0.5
         self.logger.warning('Error. Timeout while waiting for printer to become operational.')
 
-    @try_protection
-    def is_operational(self):
-        if self.printer:
-            return self.printer.is_operational()
-        self.logger.warning("No printer in printer_interface " + str(self.profile['name']))
-        return False
+    def run(self):
+        if not self.printer:
+            self.connect_printer()
+        else:
+            if self.printer.is_operational():
+                self.excecute(self.get_command())
+            else:
+                if time.time() - self.creation_time < self.profile.get('start_timeout', self.DEFAULT_TIMEOUT):
+                    time.sleep(0.1)
+                else:
+                    self.printer()
 
-    @try_protection
+
+    def get_command(self):
+        pass
+
+    # @protection
+    # def is_operational(self):
+    #     if self.printer:
+    #         return self.printer.is_operational()
+    #     self.logger.warning("No printer in printer_interface " + str(self.profile['name']))
+    #     return False
+
+    @protection
     def report(self):
         if self.printer:
             return self.printer.report()
         return {'status': 'no_printer'}
 
-    @try_protection
+    @protection
     def close(self):
         if self.printer:
             self.logger.info('Closing ' + str(self.profile))
@@ -78,7 +96,7 @@ class PrinterInterface(object):
         else:
             self.logger.debug('Nothing to close')
 
-    @try_protection
+    @protection
     def close_hanged_port(self):
         self.logger.info("Trying to force close serial port %s" % self.profile['COM'])
         if self.profile["force_port_close"] and self.profile['COM']:
@@ -96,46 +114,46 @@ class PrinterInterface(object):
             self.logger.info("Force close serial port forbidden: \
                                 not serial printer or force_port_close disabled in config")
 
-    @try_protection
+    @protection
     def binary_file(self, data):
         self.printer.binary_file(data)
 
-    @try_protection
+    @protection
     def gcodes(self, gcodes):
         self.printer.gcodes(gcodes)
 
-    @try_protection
+    @protection
     def pause(self):
         self.printer.pause()
 
-    @try_protection
+    @protection
     def cancel(self):
         self.printer.cancel()
 
-    @try_protection
+    @protection
     def emergency_stop(self):
         self.printer.emergency_stop()
 
-    @try_protection
+    @protection
     def set_total_gcodes(self, length):
         self.printer.set_total_gcodes(length)
 
-    @try_protection
+    @protection
     def begin(self, length):
         self.set_total_gcodes(length)
 
-    @try_protection
+    @protection
     def enqueue(self, gcodes):
         self.printer.enqueue(gcodes)
 
-    @try_protection
+    @protection
     def end(self):
         self.printer.end()
 
-    @try_protection
+    @protection
     def resume(self):
         self.printer.resume()
 
-    @try_protection
+    @protection
     def is_paused(self):
         return self.printer.is_paused()

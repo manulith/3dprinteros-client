@@ -5,7 +5,7 @@ import json
 
 def get_config_file_path():
     config_path = os.path.dirname(os.path.abspath(__file__))
-    return os.path.join(config_path, 'printer.conf')
+    return os.path.join(config_path, 'settings.json')
 
 def load_config():
     with open(get_config_file_path()) as config_file:
