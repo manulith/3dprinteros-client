@@ -21,7 +21,8 @@ class CameraMaster():
 
     def init_cameras(self):
         for num, name in enumerate(self.get_camera_names()):
-            cam = CameraImageSender(num, name)
+            cap = cv2.VideoCapture(num)
+            cam = CameraImageSender(num, name, cap)
             cam.start()
             self.cameras.append(cam)
 
@@ -90,20 +91,19 @@ class CameraMaster():
         return cameras_count
 
 class CameraImageSender(threading.Thread):
-    def __init__(self, camera_number, camera_name):
+    def __init__(self, camera_number, camera_name, cap = None):
         self.logger = logging.getLogger("app." + __name__)
         self.stop_flag = False
-        self.number = camera_number
-        self.name = camera_number
-        self.token = utils.read_user_token()
-        self.url = 'https://acorn.3dprinteros.com/oldliveview/setLiveView/'
-        if self.token:
-            self.get_camera(self.number)
-            self.image_ready_lock = threading.Lock()
-            super(CameraImageSender, self).__init__()
-        else:
+        self.camera_number = camera_number
+        self.camera_name = camera_name
+        self.token = 'dweFzU8sDKg6KdTjRraANVJG0EZoiS8HBYz6i1fGYvsPnWirbzGdIcU6rApSkthe2TTXzaeqoZD5P3W6DyLjIaG8X9WmYmX0bZX8KJPKlkE3mzAIjYdudG7Zl8sHlBsE'
+        self.url = 'https://cloud.3dprinteros.com/oldliveview/setLiveView/'
+        if not self.token:
             self.stop_flag = True
             self.error = 'No_Token'
+        self.cap = cap
+        super(CameraImageSender, self).__init__()
+
 
     def take_a_picture(self):
         cap_ret, frame = self.cap.read()
@@ -118,16 +118,14 @@ class CameraImageSender(threading.Thread):
 
     def send_picture(self, picture):
         picture = base64.b64encode(str(picture))
-        data = {"user_token": self.token, "number": self.number, "name": self.name, "data": picture}
+        data = {"token": self.token, "camera_number": self.camera_number, "camera_name": self.camera_name, "data": picture}
         http_client.multipart_upload(self.url, data)
 
     def close(self):
         self.stop_flag = True
 
     def run(self):
-        while not self.stop_flag:
-            if not self.cap:
-                self.cap = cv2.VideoCapture(self.camera_number)
+        while self.stop_flag != True:
             if self.cap.isOpened():
                 picture = self.take_a_picture()
                 if picture != '':
@@ -137,9 +135,8 @@ class CameraImageSender(threading.Thread):
                     self.cap.release()
                 self.cap = None
                 time.sleep(1)
-        self.logger.info("Closing camera %s" % self.name)
         self.cap.release()
-
+        self.logger.info("Closing camera %s" % self.camera_name)
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
