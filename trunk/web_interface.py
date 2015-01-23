@@ -26,7 +26,6 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.wfile.write(page)
 
     def do_GET(self):
-        self.logger.info("Server GET")
         if self.server.token_was_reset_flag:
             self.send_response(200)
             self.end_headers()
