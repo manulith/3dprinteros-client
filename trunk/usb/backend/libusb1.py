@@ -1,4 +1,4 @@
-# Copyright (C) 2009-2013 Wander Lairson Costa
+# Copyright (C) 2009-2014 Wander Lairson Costa
 #
 # The following terms apply to all files associated
 # with the software unless explicitly disclaimed in individual files.
@@ -32,6 +32,7 @@ import sys
 import logging
 from usb._debug import methodtrace
 import usb._interop as _interop
+import usb._objfinalizer as _objfinalizer
 import errno
 import math
 from usb.core import USBError
@@ -96,7 +97,7 @@ LIBUSB_ERROR_NOT_SUPPORTED = -12
 LIBUSB_ERROR_OTHER = -99
 
 # map return codes to strings
-_str_error = {
+_str_error_map = {
     LIBUSB_SUCCESS:'Success (no error)',
     LIBUSB_ERROR_IO:'Input/output error',
     LIBUSB_ERROR_INVALID_PARAM:'Invalid parameter',
@@ -166,11 +167,13 @@ _transfer_errno = {
     LIBUSB_TRANSFER_OVERFLOW:errno.__dict__.get('EOVERFLOW', None)
 }
 
-# Data structures
+def _strerror(errcode):
+    try:
+        return _lib.libusb_strerror(errcode).decode('utf8')
+    except AttributeError:
+        return _str_error_map[errcode]
 
-class _timeval(Structure):
-    _fields_ = [("tv_sec", c_long),
-                ("tv_usec", c_long)]
+# Data structures
 
 class _libusb_endpoint_descriptor(Structure):
     _fields_ = [('bLength', c_uint8),
@@ -266,7 +269,6 @@ def _get_iso_packet_list(transfer):
     return list_type.from_address(addressof(transfer.iso_packet_desc))
 
 _lib = None
-_libusb = None
 
 def _load_library(find_library=None):
     # Windows backend uses stdcall calling convention
@@ -274,12 +276,16 @@ def _load_library(find_library=None):
     # On FreeBSD 8/9, libusb 1.0 and libusb 0.1 are in the same shared
     # object libusb.so, so if we found libusb library name, we must assure
     # it is 1.0 version. We just try to get some symbol from 1.0 version
+    if sys.platform == 'win32':
+        win_cls = WinDLL
+    else:
+        win_cls = None
+
     return usb.libloader.load_locate_library(
                 ('usb-1.0', 'libusb-1.0', 'usb'),
                 'cygusb-1.0.dll', 'Libusb 1',
-                win_cls=(WinDLL if sys.platform == 'win32' else None),
-                find_library=find_library, check_symbols=('libusb_init',)
-    )
+                win_cls=win_cls,
+                find_library=find_library, check_symbols=('libusb_init',))
 
 def _setup_prototypes(lib):
     # void libusb_set_debug (libusb_context *ctx, int level)
@@ -468,6 +474,14 @@ def _setup_prototypes(lib):
     # int libusb_submit_transfer(struct libusb_transfer *transfer);
     lib.libusb_submit_transfer.argtypes = [POINTER(_libusb_transfer)]
 
+    if hasattr(lib, 'libusb_strerror'):
+        # const char *libusb_strerror(enum libusb_error errcode)
+        lib.libusb_strerror.argtypes = [c_uint]
+        lib.libusb_strerror.restype = c_char_p
+
+    # int libusb_clear_halt(libusb_device_handle *dev, unsigned char endpoint)
+    lib.libusb_clear_halt.argtypes = [_libusb_device_handle, c_ubyte]
+
     # void libusb_set_iso_packet_lengths(
     #               libusb_transfer* transfer,
     #               unsigned int length
@@ -490,80 +504,6 @@ def _setup_prototypes(lib):
     #                                   unsigned char endpoint);
     lib.libusb_get_max_iso_packet_size.argtypes = [c_void_p,
                                                    c_ubyte]
-
-    # void libusb_fill_bulk_transfer(
-    #               struct libusb_transfer* transfer,
-    #               libusb_device_handle*  dev_handle,
-    #               unsigned char endpoint,
-    #               unsigned char* buffer,
-    #               int length,
-    #               libusb_transfer_cb_fn   callback,
-    #               void * user_data,
-    #               unsigned int timeout
-    #           );
-    def libusb_fill_bulk_transfer(_libusb_transfer_p, dev_handle, endpoint, buffer, length,
-                                  callback, user_data, timeout):
-        r"""This function is inline in the libusb.h file, so we must implement
-            it.
-
-        lib.libusb_fill_bulk_transfer.argtypes = [
-                       _libusb_transfer,
-                       _libusb_device_handle,
-                       c_ubyte,
-                       POINTER(c_ubyte),
-                       c_int,
-                       _libusb_transfer_cb_fn_p,
-                       c_void_p,
-                       c_uint
-                   ]
-        """
-        transfer = _libusb_transfer_p.contents
-        transfer.dev_handle = dev_handle
-        transfer.endpoint = endpoint
-        transfer.type = _LIBUSB_TRANSFER_TYPE_BULK
-        transfer.timeout = timeout
-        transfer.buffer = cast(buffer, c_void_p)
-        transfer.length = length
-        transfer.user_data = user_data
-        transfer.callback = callback
-    lib.libusb_fill_bulk_transfer = libusb_fill_bulk_transfer
-
-    # void libusb_fill_interrupt_transfer(
-    #               struct libusb_transfer* transfer,
-    #               libusb_device_handle*  dev_handle,
-    #               unsigned char endpoint,
-    #               unsigned char* buffer,
-    #               int length,
-    #               libusb_transfer_cb_fn   callback,
-    #               void * user_data,
-    #               unsigned int timeout
-    #           );
-    def libusb_fill_interrupt_transfer(_libusb_transfer_p, dev_handle, endpoint, buffer, length,
-                                       callback, user_data, timeout):
-        r"""This function is inline in the libusb.h file, so we must implement
-            it.
-
-        lib.libusb_fill_interrupt_transfer.argtypes = [
-                       _libusb_transfer,
-                       _libusb_device_handle,
-                       c_ubyte,
-                       POINTER(c_ubyte),
-                       c_int,
-                       _libusb_transfer_cb_fn_p,
-                       c_void_p,
-                       c_uint
-                   ]
-        """
-        transfer = _libusb_transfer_p.contents
-        transfer.dev_handle = dev_handle
-        transfer.endpoint = endpoint
-        transfer.type = _LIBUSB_TRANSFER_TYPE_INTERRUPT
-        transfer.timeout = timeout
-        transfer.buffer = cast(buffer, c_void_p)
-        transfer.length = length
-        transfer.user_data = user_data
-        transfer.callback = callback
-    lib.libusb_fill_interrupt_transfer = libusb_fill_interrupt_transfer
 
     # void libusb_fill_iso_transfer(
     #               struct libusb_transfer* transfer,
@@ -620,35 +560,40 @@ def _setup_prototypes(lib):
     except AttributeError:
         pass
 
+    try:
+        # int libusb_get_port_numbers(libusb_device *dev,
+        #                             uint8_t* port_numbers,
+        #                             int port_numbers_len)
+        lib.libusb_get_port_numbers.argtypes = [
+                c_void_p,
+                POINTER(c_uint8),
+                c_int
+            ]
+        lib.libusb_get_port_numbers.restype = c_int
+    except AttributeError:
+        pass
+
     #int libusb_handle_events(libusb_context *ctx);
     lib.libusb_handle_events.argtypes = [c_void_p]
 
-    #int libusb_handle_events_timeout_completed(
-    #        libusb_context *ctx,
-    #        struct timeval *tv,
-    #        int *completed
-    #    );
-    lib.libusb_handle_events_timeout_completed.argtypes = [
-                c_void_p,
-                POINTER(_timeval),
-                POINTER(c_int),
-            ]
-
 # check a libusb function call
-def _check(retval):
-    if isinstance(retval, int):
-        retval = c_int(retval)
-    if isinstance(retval, c_int):
-        if retval.value < 0:
-           ret = retval.value
-           raise USBError(_str_error[ret], ret, _libusb_errno[ret])
-    return retval
+def _check(ret):
+    if hasattr(ret, 'value'):
+        ret = ret.value
+
+    if ret < 0:
+        if ret == LIBUSB_ERROR_NOT_SUPPORTED:
+            raise NotImplementedError(_strerror(ret))
+        else:
+            raise USBError(_strerror(ret), ret, _libusb_errno[ret])
+
+    return ret
 
 # wrap a device
-class _Device(object):
+class _Device(_objfinalizer.AutoFinalizedObject):
     def __init__(self, devid):
         self.devid = _lib.libusb_ref_device(devid)
-    def __del__(self):
+    def _finalize_object(self):
         _lib.libusb_unref_device(self.devid)
 
 # wrap a descriptor and keep a reference to another object
@@ -661,27 +606,27 @@ class _WrapDescriptor(object):
         return getattr(self.desc, name)
 
 # wrap a configuration descriptor
-class _ConfigDescriptor(object):
+class _ConfigDescriptor(_objfinalizer.AutoFinalizedObject):
     def __init__(self, desc):
         self.desc = desc
-    def __del__(self):
+    def _finalize_object(self):
         _lib.libusb_free_config_descriptor(self.desc)
     def __getattr__(self, name):
         return getattr(self.desc.contents, name)
 
 
 # iterator for libusb devices
-class _DevIterator(object):
+class _DevIterator(_objfinalizer.AutoFinalizedObject):
     def __init__(self, ctx):
         self.dev_list = POINTER(c_void_p)()
         self.num_devs = _check(_lib.libusb_get_device_list(
                                     ctx,
                                     byref(self.dev_list))
-                                ).value
+                                )
     def __iter__(self):
         for i in range(self.num_devs):
             yield _Device(self.dev_list[i])
-    def __del__(self):
+    def _finalize_object(self):
         _lib.libusb_free_device_list(self.dev_list, 1)
 
 class _DeviceHandle(object):
@@ -690,57 +635,7 @@ class _DeviceHandle(object):
         self.devid = dev.devid
         _check(_lib.libusb_open(self.devid, byref(self.handle)))
 
-class _TransferHandler(object):
-    def __init__(self, fn, dev_handle, ep, buff, timeout):
-        address, length = buff.buffer_info()
-
-        self.transfer = _lib.libusb_alloc_transfer(0)
-
-        fn(self.transfer,
-           dev_handle.handle,
-           ep,
-           cast(address, POINTER(c_ubyte)),
-           length,
-           _libusb_transfer_cb_fn_p(self.__callback),
-           None,
-           timeout)
-
-    def __del__(self):
-        _lib.libusb_free_transfer(self.transfer)
-
-    def submit(self, ctx, stop):
-        self.__callback_done = 0
-        self.__usb_error = None
-        _check(_lib.libusb_submit_transfer(self.transfer))
-
-        tv = _timeval()
-
-        while not self.__callback_done and not stop[0]:
-            tv.tv_sec = 0
-            tv.tv_usec = 100000
-            _check(_lib.libusb_handle_events_timeout_completed(ctx, byref(tv), None))
-
-        if not self.__callback_done:
-            _check(_lib.libusb_cancel_transfer(self.transfer))
-            return 0
-        elif self.__usb_error:
-            raise self.__usb_error
-
-        return self.__compute_size_transf_data()
-
-    def __compute_size_transf_data(self):
-        return self.transfer.contents.actual_length
-
-    def __callback(self, transfer):
-        if transfer.contents.status != LIBUSB_TRANSFER_COMPLETED:
-            status = int(transfer.contents.status)
-            # Don't actually raise the error until we leave our ctypes call
-            self.__usb_error = usb.USBError(_str_transfer_error[status],
-                                            status,
-                                            _transfer_errno[status])
-        self.__callback_done = 1
-
-class _IsoTransferHandler(_TransferHandler):
+class _IsoTransferHandler(_objfinalizer.AutoFinalizedObject):
     def __init__(self, dev_handle, ep, buff, timeout):
         address, length = buff.buffer_info()
 
@@ -761,16 +656,40 @@ class _IsoTransferHandler(_TransferHandler):
 
         self.__set_packets_length(length, packet_length)
 
+    def _finalize_object(self):
+        _lib.libusb_free_transfer(self.transfer)
+
+    def submit(self, ctx = None):
+        self.__callback_done = 0
+        _check(_lib.libusb_submit_transfer(self.transfer))
+
+        while not self.__callback_done:
+            _check(_lib.libusb_handle_events(ctx))
+
+        status = int(self.transfer.contents.status)
+        if status != LIBUSB_TRANSFER_COMPLETED:
+            raise usb.USBError(_str_transfer_error[status],
+                               status,
+                               _transfer_errno[status])
+
+        return self.__compute_size_transf_data()
+
+    def __compute_size_transf_data(self):
+        return sum([t.actual_length for t in
+                    _get_iso_packet_list(self.transfer.contents)])
+
     def __set_packets_length(self, n, packet_length):
         _lib.libusb_set_iso_packet_lengths(self.transfer, packet_length)
         r = n % packet_length
         if r:
             iso_packets = _get_iso_packet_list(self.transfer.contents)
-            iso_packets[-1].length = r
+            # When the device is disconnected, this list may
+            # return with length 0
+            if len(iso_packets):
+                iso_packets[-1].length = r
 
-    def __compute_size_transf_data(self):
-        return sum([t.actual_length for t in
-                    _get_iso_packet_list(self.transfer.contents)])
+    def __callback(self, transfer):
+        self.__callback_done = 1
 
 # implementation of libusb 1.0 backend
 class _LibUSB(usb.backend.IBackend):
@@ -782,7 +701,7 @@ class _LibUSB(usb.backend.IBackend):
         _check(self.lib.libusb_init(byref(self.ctx)))
 
     @methodtrace(_logger)
-    def __del__(self):
+    def _finalize_object(self):
         self.lib.libusb_exit(self.ctx)
 
 
@@ -797,11 +716,23 @@ class _LibUSB(usb.backend.IBackend):
         dev_desc.bus = self.lib.libusb_get_bus_number(dev.devid)
         dev_desc.address = self.lib.libusb_get_device_address(dev.devid)
 
-	#Only available i newer versions of libusb
+        # Only available in newer versions of libusb
         try:
             dev_desc.port_number = self.lib.libusb_get_port_number(dev.devid)
         except AttributeError:
             dev_desc.port_number = None
+
+        # Only available in newer versions of libusb
+        try:
+            buff = (c_uint8 * 7)()  # USB 3.0 maximum depth is 7
+            written = dev_desc.port_numbers = self.lib.libusb_get_port_numbers(
+                    dev.devid, buff, len(buff))
+            if written > 0:
+                dev_desc.port_numbers = tuple(buff[:written])
+            else:
+                dev_desc.port_numbers = None
+        except AttributeError:
+            dev_desc.port_numbers = None
 
         return dev_desc
 
@@ -811,7 +742,10 @@ class _LibUSB(usb.backend.IBackend):
         _check(self.lib.libusb_get_config_descriptor(
                 dev.devid,
                 config, byref(cfg)))
-        return _ConfigDescriptor(cfg)
+        config_desc = _ConfigDescriptor(cfg)
+        config_desc.extra_descriptors = (
+                config_desc.extra[:config_desc.extra_length])
+        return config_desc
 
     @methodtrace(_logger)
     def get_interface_descriptor(self, dev, intf, alt, config):
@@ -821,14 +755,18 @@ class _LibUSB(usb.backend.IBackend):
         i = cfg.interface[intf]
         if alt >= i.num_altsetting:
             raise IndexError('Invalid alternate setting index ' + str(alt))
-        return _WrapDescriptor(i.altsetting[alt], cfg)
+        intf_desc = i.altsetting[alt]
+        intf_desc.extra_descriptors = intf_desc.extra[:intf_desc.extra_length]
+        return _WrapDescriptor(intf_desc, cfg)
 
     @methodtrace(_logger)
     def get_endpoint_descriptor(self, dev, ep, intf, alt, config):
         i = self.get_interface_descriptor(dev, intf, alt, config)
         if ep > i.bNumEndpoints:
             raise IndexError('Invalid endpoint index ' + str(ep))
-        return _WrapDescriptor(i.endpoint[ep], i)
+        ep_desc = i.endpoint[ep]
+        ep_desc.extra_descriptors = ep_desc.extra[:ep_desc.extra_length]
+        return _WrapDescriptor(ep_desc, i)
 
     @methodtrace(_logger)
     def open_device(self, dev):
@@ -864,41 +802,50 @@ class _LibUSB(usb.backend.IBackend):
         _check(self.lib.libusb_release_interface(dev_handle.handle, intf))
 
     @methodtrace(_logger)
-    def bulk_write(self, dev_handle, ep, intf, data, timeout, stop):
-        fn = _lib.libusb_fill_bulk_transfer
-        handler = _TransferHandler(fn, dev_handle, ep, data, timeout)
-        return handler.submit(self.ctx, stop)
+    def bulk_write(self, dev_handle, ep, intf, data, timeout):
+        return self.__write(self.lib.libusb_bulk_transfer,
+                            dev_handle,
+                            ep,
+                            intf,
+                            data,
+                            timeout)
 
     @methodtrace(_logger)
-    def bulk_read(self, dev_handle, ep, intf, size, timeout, stop):
-        data = _interop.as_array('\x00' * size)
-        fn = _lib.libusb_fill_bulk_transfer
-        handler = _TransferHandler(fn, dev_handle, ep, data, timeout)
-        return data[:handler.submit(self.ctx, stop)]
+    def bulk_read(self, dev_handle, ep, intf, buff, timeout):
+        return self.__read(self.lib.libusb_bulk_transfer,
+                           dev_handle,
+                           ep,
+                           intf,
+                           buff,
+                           timeout)
 
     @methodtrace(_logger)
-    def intr_write(self, dev_handle, ep, intf, data, timeout, stop):
-        fn = _lib.libusb_fill_interrupt_transfer
-        handler = _TransferHandler(fn, dev_handle, ep, data, timeout)
-        return handler.submit(self.ctx, stop)
+    def intr_write(self, dev_handle, ep, intf, data, timeout):
+        return self.__write(self.lib.libusb_interrupt_transfer,
+                            dev_handle,
+                            ep,
+                            intf,
+                            data,
+                            timeout)
 
     @methodtrace(_logger)
-    def intr_read(self, dev_handle, ep, intf, size, timeout, stop):
-        data = _interop.as_array('\x00' * size)
-        fn = _lib.libusb_fill_interrupt_transfer
-        handler = _TransferHandler(fn, dev_handle, ep, data, timeout)
-        return data[:handler.submit(self.ctx, stop)]
+    def intr_read(self, dev_handle, ep, intf, buff, timeout):
+        return self.__read(self.lib.libusb_interrupt_transfer,
+                           dev_handle,
+                           ep,
+                           intf,
+                           buff,
+                           timeout)
 
     @methodtrace(_logger)
-    def iso_write(self, dev_handle, ep, intf, data, timeout, stop):
+    def iso_write(self, dev_handle, ep, intf, data, timeout):
         handler = _IsoTransferHandler(dev_handle, ep, data, timeout)
-        return handler.submit(self.ctx, stop)
+        return handler.submit(self.ctx)
 
     @methodtrace(_logger)
-    def iso_read(self, dev_handle, ep, intf, size, timeout, stop):
-        data = _interop.as_array('\x00' * size)
-        handler = _IsoTransferHandler(dev_handle, ep, data, timeout)
-        return data[:handler.submit(self.ctx, stop)]
+    def iso_read(self, dev_handle, ep, intf, buff, timeout):
+        handler = _IsoTransferHandler(dev_handle, ep, buff, timeout)
+        return handler.submit(self.ctx)
 
     @methodtrace(_logger)
     def ctrl_transfer(self,
@@ -907,15 +854,10 @@ class _LibUSB(usb.backend.IBackend):
                       bRequest,
                       wValue,
                       wIndex,
-                      data_or_wLength,
+                      data,
                       timeout):
-        if usb.util.ctrl_direction(bmRequestType) == usb.util.CTRL_OUT:
-            buff = data_or_wLength
-        else:
-            buff = _interop.as_array('\x00' * data_or_wLength)
-
-        addr, length = buff.buffer_info()
-        length *= buff.itemsize
+        addr, length = data.buffer_info()
+        length *= data.itemsize
 
         ret = _check(self.lib.libusb_control_transfer(
                                         dev_handle.handle,
@@ -927,10 +869,11 @@ class _LibUSB(usb.backend.IBackend):
                                         length,
                                         timeout))
 
-        if usb.util.ctrl_direction(bmRequestType) == usb.util.CTRL_OUT:
-            return ret.value
-        else:
-            return buff[:ret.value]
+        return ret
+
+    @methodtrace(_logger)
+    def clear_halt(self, dev_handle, ep):
+        _check(self.lib.libusb_clear_halt(dev_handle.handle, ep))
 
     @methodtrace(_logger)
     def reset_device(self, dev_handle):
@@ -949,15 +892,44 @@ class _LibUSB(usb.backend.IBackend):
     def attach_kernel_driver(self, dev_handle, intf):
         _check(self.lib.libusb_attach_kernel_driver(dev_handle.handle, intf))
 
+    def __write(self, fn, dev_handle, ep, intf, data, timeout):
+        address, length = data.buffer_info()
+        length *= data.itemsize
+        transferred = c_int()
+        retval = fn(dev_handle.handle,
+                  ep,
+                  cast(address, POINTER(c_ubyte)),
+                  length,
+                  byref(transferred),
+                  timeout)
+        # do not assume LIBUSB_ERROR_TIMEOUT means no I/O.
+        if not (transferred.value and retval == LIBUSB_ERROR_TIMEOUT):
+            _check(retval)
+
+        return transferred.value
+
+    def __read(self, fn, dev_handle, ep, intf, buff, timeout):
+        address, length = buff.buffer_info()
+        length *= buff.itemsize
+        transferred = c_int()
+        retval = fn(dev_handle.handle,
+                  ep,
+                  cast(address, POINTER(c_ubyte)),
+                  length,
+                  byref(transferred),
+                  timeout)
+        # do not assume LIBUSB_ERROR_TIMEOUT means no I/O.
+        if not (transferred.value and retval == LIBUSB_ERROR_TIMEOUT):
+            _check(retval)
+        return transferred.value
+
 def get_backend(find_library=None):
-    global _lib, _libusb
+    global _lib
     try:
         if _lib is None:
             _lib = _load_library(find_library=find_library)
             _setup_prototypes(_lib)
-        if _libusb is None:
-            _libusb = _LibUSB(_lib)
-        return _libusb
+        return _LibUSB(_lib)
     except usb.libloader.LibaryException:
         # exception already logged (if any)
         _logger.error('Error loading libusb 1.0 backend', exc_info=False)
