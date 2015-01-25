@@ -413,62 +413,23 @@ class Printer:
             for gcode in gcodes:
                 self._printer.send_now(gcode)
 
-    def report(self):
-        tool_temp = [0, 0]
-        tool_target_temp = [0, 0]
-        platform_temp = 0
-        platform_target_temp = 0
-        percent = 0
-        if not self.is_operational():
-            status = 'no_printer'
-        elif not self.is_printing():
-            status = 'ready'
-            tool_temp = [
-                self.get_tool_temp(0),
-                self.get_tool_temp(1)
-            ]
-            tool_target_temp = [
-                self.get_tool_target_temp(0),
-                self.get_tool_target_temp(1)
-            ]
-            platform_temp = self.get_platform_temp()
-            platform_target_temp = self.get_platform_target_temp()
-            percent = self.get_percent()
-        else:
-            tool_temp = [
-                self.get_tool_temp(0),
-                self.get_tool_temp(1)
-            ]
-            tool_target_temp = [
-                self.get_tool_target_temp(0),
-                self.get_tool_target_temp(1)
-            ]
-            tool_ready = [
-                abs(tool_target_temp[0] - tool_temp[0]) < 10,
-                abs(tool_target_temp[1] - tool_temp[1]) < 10
-            ]
-            platform_temp = self.get_platform_temp()
-            platform_target_temp = self.get_platform_target_temp()
-            platform_ready = platform_target_temp < 5 or abs(platform_target_temp - platform_temp) < 10
-            if platform_ready and (tool_ready[0] or tool_ready[1]):
-                status = 'printing'
-            else:
-                status = 'heating'
-            percent = self.get_percent()
-        result = {
-            #'position' : self._position,
-            'status': status,
-            'platform_temperature': platform_temp,
-            'platform_target_temperature': platform_target_temp,
-            'toolhead1_temperature': tool_temp[0],
-            'toolhead1_target_temperature': tool_target_temp[0],
-            'toolhead2_temperature': tool_temp[1],
-            'toolhead2_target_temperature': tool_target_temp[1],
-            'percent': percent,
-            'buffer_free_space': 10000,
-            'last_error':  self.get_error()
-        }
-        return result
+    def get_temps(self):
+        platform_temp = self.get_platform_temp()
+        first_tool_temp = self.get_tool_temp(0)
+        temps = [platform_temp, first_tool_temp]
+        second_tool_temp = self.get_tool_temp(1)
+        if second_tool_temp:
+            temps.append(second_tool_temp)
+        return temps
+
+    def get_target_temps(self):
+        platform_temp = self.get_platform_target_temp()
+        first_tool_temp = self.get_tool_target_temp(0)
+        target_temps = [platform_temp, first_tool_temp]
+        second_tool_temp = self.get_tool_target_temp(1)
+        if second_tool_temp:
+            target_temps.append(second_tool_temp)
+        return target_temps
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)

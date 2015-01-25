@@ -181,7 +181,6 @@ def make_log_snapshot():
         log_snap_file.write(lines)
     return path
 
-
 def compress_and_send(log_file_name=None, server_path=http_client.token_send_logs_path):
     logger = logging.getLogger('app.' + __name__)
     if not log_file_name:
@@ -217,6 +216,18 @@ def send_all_snapshots():
         for file_name in dir:
             compress_and_send(file_name)
         return  True
+
+def kill_makerbot_conveyor(self):
+    logger = logging.getLogger("app.kill_makerbot_conveyor")
+    logger.info('[Stopping third party software...')
+    try:
+        from birdwing.conveyor_from_egg import kill_existing_conveyor
+        kill_existing_conveyor()
+    except ImportError as e:
+        logger.debug(e)
+        logger.info('...fail]')
+    else:
+        logger.info('...done]')
 
 if __name__ == "__main__":
     make_log_snapshot()

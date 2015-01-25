@@ -4,6 +4,7 @@ import serial
 import threading
 
 import http_client
+import command_processor
 
 # Warning any runtime modification of profile will cause errors. profiles are used for identification. need to fix this somehow.
 class PrinterInterface(threading.Thread):
@@ -29,13 +30,18 @@ class PrinterInterface(threading.Thread):
 
     def __init__(self, usb_info, user_token):
         self.printer = None
+        self.printer_token = None
         self.creation_time = time.time()
         self.logger = logging.getLogger('app.' + __name__)
         self.usb_info = usb_info
-        self.logger.info('New printer interface for %s' + str(usb_info))
+        self.logger.info('New printer interface for %s'  + str(usb_info))
 
-    def connect_printer(self):
-        http_client.token_login()
+    def connect_to_server(self):
+        answer = http_client.printer_login(http_client.package_printer_login, self.usb_info)
+
+
+    @protection
+    def connect_printer_driver(self):
         printer_driver = __import__(self.profile['driver'])
         self.logger.info("Connecting with profile: " + str(self.profile))
         try:
@@ -58,20 +64,20 @@ class PrinterInterface(threading.Thread):
         self.logger.warning('Error. Timeout while waiting for printer to become operational.')
 
     def run(self):
-        if not self.printer:
-            self.connect_printer()
-        else:
+        self.stop_flag = False
+        self.connect_to_server()
+        self.connect_printer_driver()
+        while not self.stop_flag and self.printer:
             if self.printer.is_operational():
-                self.excecute(self.get_command())
+                command = http_client.send(http_client.package_command_request, self.report())
+                command_processor.process_command_request(self, command)
+                time.sleep(1)
             else:
                 if time.time() - self.creation_time < self.profile.get('start_timeout', self.DEFAULT_TIMEOUT):
                     time.sleep(0.1)
                 else:
-                    self.printer()
-
-
-    def get_command(self):
-        pass
+                    self.printer.close()
+                    self.printer = None
 
     # @protection
     # def is_operational(self):
@@ -157,3 +163,27 @@ class PrinterInterface(threading.Thread):
     @protection
     def is_paused(self):
         return self.printer.is_paused()
+
+    def get_printer_state(self):
+        if self.printer.is_operational():
+            if self.printer.is_printing():
+                state = "printing"
+            elif self.printer.is_paused():
+                state = "paused"
+            else:
+                state = "ready"
+        else:
+            state = "error"
+        return state
+
+    def state_report(self):
+        if self.printer_token:
+            report = {"printer_token": self.token}
+            report["temps"] = self.printer.get_temps()
+            report["target_temps"] = self.printer.get_target_temps()
+            report["percent"] = self.printer.get_percent()
+            report["state"] = self.printer.get_printer_state()
+        
+
+
+

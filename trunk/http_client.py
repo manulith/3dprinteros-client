@@ -33,25 +33,6 @@ def load_json(jdata):
         else:
             logger.error("Data should be dictionary: " + str(data))
 
-# old protocol
-
-def token_login(token):
-    data = { 'token': token }
-    return json.dumps(data), token_login_path
-
-# at same time it sends status report
-def token_job_request(token, state):
-    #state = app.App().state
-    data = { 'token': token, "fullbuffer": False, "state": state } #TODO get info about fullbuffers
-    return json.dumps(data), token_jobs_path
-
-def token_camera_request(token, jpg_image):
-    # right now images are base64 encoded. don't ask me why.
-    data = { 'user_token': token, 'image': jpg_image } #TODO get info about fullbuffers
-    return json.dumps(data), token_camera_path
-
-# new protocol
-
 def package_users_login(username, password, error=[None,None]):
     data = {'login': {'user': username, 'password': password}, 'error': error}
     return json.dumps(data), user_login_path
@@ -67,8 +48,6 @@ def package_command_request(printer_token, state, error=[None,None]):
 def package_cloud_sync_upload(token, file_data, file_name):
     data = { 'user_token': token, 'file_data': file_data}
     return json.dumps(data), cloudsync_path
-
-# end of new protocol
 
 def connect(URL):
     logger = logging.getLogger('app.' +__name__)

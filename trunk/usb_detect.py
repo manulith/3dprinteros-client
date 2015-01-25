@@ -40,8 +40,6 @@ def get_devices():
         except:
             SNR = None
 
-
-
         try:
             manufacturer = dev.manufacturer  # can provoke PIPE ERROR
             device_dct['Manufacturer'] = manufacturer
@@ -52,8 +50,9 @@ def get_devices():
             device_dct['Product'] = product
         except (usb.core.USBError, AttributeError):
             pass
-        print SNR
+
         device_dct['SNR'] = SNR
+        device_dct['SNR2'] = dev.iSerialNumber
         device_dct['COM'] = get_port_by_vid_pid_snr(device_dct['VID'], device_dct['PID'], SNR)
         device_data_dcts.append(device_dct)
         dev.close()
@@ -120,8 +119,10 @@ def get_unknown_printers(devices):
 
 if __name__ == '__main__':
     import json
-    printers = get_printers()
-    print json.dumps(printers)
-    for printer in printers:
-        print "\n"
-        print printer
+    for dev in get_devices():
+        print dev
+    # printers = get_printers()
+    # print json.dumps(printers)
+    # for printer in printers:
+    #     print "\n"
+    #     print printer
