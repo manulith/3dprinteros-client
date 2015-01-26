@@ -3,8 +3,9 @@ import logging
 import serial
 import threading
 
+import utils
 import http_client
-import command_processor
+
 
 # Warning any runtime modification of profile will cause errors. profiles are used for identification. need to fix this somehow.
 class PrinterInterface(threading.Thread):
@@ -29,16 +30,28 @@ class PrinterInterface(threading.Thread):
         return decorator
 
     def __init__(self, usb_info, user_token):
+        self.usb_info = usb_info
+        self.user_token = user_token
         self.printer = None
         self.printer_token = None
         self.creation_time = time.time()
         self.logger = logging.getLogger('app.' + __name__)
-        self.usb_info = usb_info
+
         self.logger.info('New printer interface for %s'  + str(usb_info))
 
     def connect_to_server(self):
-        answer = http_client.printer_login(http_client.package_printer_login, self.usb_info)
-
+        self.logger.info("Connecting to server with printer: %s" % str(self.usb_info))
+        answer = http_client.send(http_client.package_printer_login, (self.user_token, self.usb_info))
+        if answer:
+            error_num, error_str = utils.check_for_errors(answer)
+            if error_num:
+                self.logger.warning("Error while login %s:" % str(self.usb_info))
+                self.logger.warning(error_str)
+            else:
+                self.priner_token = answer['printer_token']
+                self.printer_profile = answer["printer_profile"]
+        else:
+            self.logger.warning("While loggi No connection or false answer")
 
     @protection
     def connect_printer_driver(self):
@@ -52,16 +65,40 @@ class PrinterInterface(threading.Thread):
             self.printer = printer
             self.logger.info("Successful connection to %s!" % (self.profile['name']))
 
-    def wait_operational(self, timeout=30):
-        elapsed = 0
-        while elapsed < timeout:
-            state = self.is_operational()
-            if state:
-                return state
-            else:
-                time.sleep(0.5)
-                elapsed += 0.5
-        self.logger.warning('Error. Timeout while waiting for printer to become operational.')
+    # def wait_operational(self, timeout=30):
+    #     elapsed = 0
+    #     while elapsed < timeout:
+    #         state = self.is_operational()
+    #         if state:
+    #             return state
+    #         else:
+    #             time.sleep(0.5)
+    #             elapsed += 0.5
+    #     self.logger.warning('Error. Timeout while waiting for printer to become operational.')
+
+
+    def process_command_request(printer_interface, data_dict):
+        logger = logging.getLogger("app." + __name__)
+        number = data_dict.get('number', None)
+        if number:
+            logger.info("Processing command number %i" % number)
+        if not check_for_errors(data_dict):
+            command = data_dict.get('command', None)
+            if command:
+                if hasattr(printer_interface.printer, command):
+                    method = printer_interface.getattr('command')
+                    payload = data_dict.get('payload', None)
+                    if data_dict.get('is_link', False):
+                        payload = http_client.download(payload)
+                    elif "command" in ("gcodes", "binary_file"):
+                        payload = base64.b64decode(payload)
+                    if payload:
+                        method(payload)
+                    else:
+                        method()
+                    return True
+        logger.warning("Error processing command: " + str(data_dict))
+
 
     def run(self):
         self.stop_flag = False

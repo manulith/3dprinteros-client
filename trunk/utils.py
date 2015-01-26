@@ -4,7 +4,7 @@
 import os
 import sys
 import time
-import uuid
+import string
 import zipfile
 import logging
 import threading
@@ -14,12 +14,22 @@ from hashlib import md5
 import config
 import http_client
 import requests
+import version
 
 LIBS_FOLDER = 'libraries'
 ALL_LIBS = ['opencv', 'numpy']
 LOG_SNAPSHOTS_DIR = "log_snapshots"
 
-LOG_SNAPSHOT_LINES = 200 # TODO: implement
+LOG_SNAPSHOT_LINES = 200
+
+def is_admin():
+    import ctypes, os
+    try:
+        is_admin = os.getuid() == 0
+    except:
+        is_admin = ctypes.windll.shell32.IsUserAnAdmin()
+
+    print is_admin
 
 def md5_hash(text):
     hash = md5(text)
@@ -163,7 +173,8 @@ def tail(f, lines=200):
 def make_log_snapshot():
     logger = logging.getLogger("app." + __name__)
     with open(config.config['log_file']) as log_file:
-        lines = tail(log_file, LOG_SNAPSHOT_LINES)
+        log_text = "3DPrinterOS %s_%s_%s\n" % (version.version, version.build, version.commit)
+        log_text += tail(log_file, LOG_SNAPSHOT_LINES)
     if not os.path.exists(LOG_SNAPSHOTS_DIR):
         try:
             os.mkdir(LOG_SNAPSHOTS_DIR)
@@ -178,7 +189,7 @@ def make_log_snapshot():
         else:
             break
     with open(path, "w") as log_snap_file:
-        log_snap_file.write(lines)
+        log_snap_file.write(log_text)
     return path
 
 def compress_and_send(log_file_name=None, server_path=http_client.token_send_logs_path):
@@ -228,6 +239,28 @@ def kill_makerbot_conveyor(self):
         logger.info('...fail]')
     else:
         logger.info('...done]')
+
+def check_for_errors(data_dict):
+    logger = logging.getLogger("app." + __name__)
+    error = data_dict.get('error', None)
+    if error:
+        logger.warning("Server returned error %s:%s" % (error[0], error[1]))
+        return error[0]
+
+def remove_illegal_symbols(data):
+    count = 0
+    length = len(data)
+    while count < len(data):
+        if not data[count] in string.printable:
+            data.replace(data[count], "")
+        count += 1
+    return data
+
+def remove_corrupted_lines(lines):
+    for line in lines:
+        if not line or line in string.whitespace:
+            lines.remove(line)
+    return lines
 
 if __name__ == "__main__":
     make_log_snapshot()
