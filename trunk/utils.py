@@ -228,6 +228,35 @@ def send_all_snapshots():
             compress_and_send(file_name)
         return  True
 
+def pack_info(package_name, *args):
+    if package_name in os.listdir(os.getcwd()):
+        print 'File with that package name already exists in the working dir. Please choose another one'
+        return
+    file_name = 'info'
+    temp_file = open(file_name, 'w')
+    for arg in args:
+        temp_file.write(arg + '\n')
+    temp_file.close()
+    try:
+        zf = zipfile.ZipFile(package_name, mode='w')
+        zf.write(file_name)
+        zf.close()
+    except Exception as e:
+        print 'Error: ' + e.message
+        return
+    os.remove(file_name)
+
+def read_packed_info(package_name):
+    if package_name not in os.listdir(os.getcwd()):
+        print 'Package not found'
+        return
+    zf = zipfile.ZipFile(package_name, 'r')
+    packed_info = zf.read('info')
+    packed_info = packed_info.split('\n')
+    packed_info.remove(-1)
+    return packed_info
+
+
 def kill_makerbot_conveyor(self):
     logger = logging.getLogger("app.kill_makerbot_conveyor")
     logger.info('[Stopping third party software...')
