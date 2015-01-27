@@ -36,8 +36,6 @@ def load_json(jdata):
             logger.error("Data should be dictionary: " + str(data))
 
 def package_user_login(username, password, error = {}):
-    logger = logging.getLogger("app." + __name__)
-    logger.debug("Login as %s %s" % (username, password))
     data = {'login': {'user': username, 'password': password}, 'error': error, 'host_mac': MACADDR}
     return json.dumps(data), user_login_path
 

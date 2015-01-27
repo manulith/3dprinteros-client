@@ -2,6 +2,7 @@ import time
 import logging
 
 import utils
+import config
 import http_client
 
 class UserLogin:
@@ -18,10 +19,11 @@ class UserLogin:
         answer = http_client.send(http_client.package_user_login, (login, password, http_client.MACADDR))
         if answer:
             user_token = answer.get('user_token', None)
-            error = answer['error']
+            error = answer.get('error', None)
             if user_token and not error:
                 self.user_token = login
-                if utils.write_token(login, password):
+                config.update_profiles(answer['all_profiles'])
+                if utils.write_login(login, password):
                     return
             else:
                 self.logger.warning("Error processing user_login " + str(error))
