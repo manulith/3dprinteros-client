@@ -14,6 +14,7 @@ import version
 import usb_detect
 import http_client
 import printer_interface
+import user_login
 
 class App():
 
@@ -49,7 +50,9 @@ class App():
         self.printer_interfaces = []
         self.stop_flag = False
         self.quit_flag = False
+        self.user_login = user_login.UserLogin()
         self.init_interface()
+        self.user_login.wait_for_login()
         self.main_loop()
 
     def init_interface(self):
@@ -60,11 +63,7 @@ class App():
             self.web_interface.start()
             webbrowser.open("http://127.0.0.1:8008", 2, True)
 
-    def local_report(self, data):
-        pass
-
     def main_loop(self):
-        self.user_token = None
         while not self.stop_flag:
             self.time_stamp()
             if not self.user_token:
@@ -93,9 +92,9 @@ class App():
                 self.printer_interfaces.append(pi)
 
     def disconnect_printer(self, pi):
-        self.logger.info('Disconnecting %s' % printer_interface.profile['name'])
-        self.printer_interfaces.remove(printer_interface)
-        http_client.send(http_client.token_job_request, (self.token, self.get_report(printer_interface)))
+        self.logger.info('Disconnecting %s' % str(pi.usb_info))
+        if http_client.send(http_client.package_command_request, (pi.printer_token, pi.state_report('not_detected'))):
+            self.printer_interfaces.remove(printer_interface)
 
     def intercept_signal(self, signal_code, frame):
         self.logger.warning("SIGINT or SIGTERM received. Closing 3DPrinterOS Client version %s_%s" % \

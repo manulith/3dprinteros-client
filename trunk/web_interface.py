@@ -38,10 +38,10 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         else:
             self.send_response(200)
             self.end_headers()
-            if self.server.app.token:
+            if self.server.app.user_login.user_token:
                 name = 'web_interface/main_loop_form.html'
             else:
-                name = 'web_interface/token_form.html'
+                name = 'web_interface/login.html'
             with open(name) as f:
                 page = f.read()
             printers_list = []
@@ -91,7 +91,6 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.end_headers()
         self.write_with_autoreplace(message)
 
-
     def send_log_snapshots(self):
         result = utils.send_all_snapshots()
         if result:
@@ -110,44 +109,72 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.server.app.stop_flag = True
         self.server.app.quit_flag = True
 
-    def process_clear_token(self):
-        result = utils.write_token('')
-        if result:
-            message = open('web_interface/token_reset.html', 'r').read()
-            self.server.token_was_reset_flag = True
-        else:
-            message = "Error writing token"
-        self.send_response(200)
-        self.end_headers()
-        self.write_with_autoreplace(message)
-
-    def process_write_token(self):
+    # def process_clear_token(self):
+    #     result = utils.write_token('')
+    #     if result:
+    #         message = open('web_interface/token_reset.html', 'r').read()
+    #         self.server.token_was_reset_flag = True
+    #     else:
+    #         message = "Error writing token"
+    #     self.send_response(200)
+    #     self.end_headers()
+    #     self.write_with_autoreplace(message)
+    #
+    # def process_write_token(self):
+    #     content_length = self.headers.getheader('Content-Length')
+    #     if content_length:
+    #         length = int(content_length)
+    #         body = self.rfile.read(length)
+    #         prefix = "token="
+    #         if prefix in body:
+    #             token = body.replace(prefix, "")
+    #             result = utils.write_token(token)
+    #             if result:
+    #                 message = open('web_interface/token_success.html', 'r').read()
+    #             else:
+    #                 message = open('web_interface/token_error.html', 'r').read()
+    #             self.send_response(200)
+    #             self.end_headers()
+    #             self.write_with_autoreplace(message)
+    #         else:
+    #             self.send_response(400)
+    #             self.end_headers()
+    #             self.write_with_autoreplace('Invalid body content for this request')
+    #     else:
+    #         self.send_response(411)
+    #         self.end_headers()
+    #         self.write_with_autoreplace('Zero Content-Length')
+            
+    def process_login(self):
         content_length = self.headers.getheader('Content-Length')
         if content_length:
             length = int(content_length)
             body = self.rfile.read(length)
-            prefix = "token="
-            if prefix in body:
-                token = body.replace(prefix, "")
-                result = utils.write_token(token)                
-                if result:
-                    message = open('web_interface/token_success.html', 'r').read()
-                else:
-                    message = open('web_interface/token_error.html', 'r').read()
-                self.send_response(200)
-                self.end_headers()
-                self.write_with_autoreplace(message)
-            else:
-                self.send_response(400)
-                self.end_headers()
-                self.write_with_autoreplace('Invalid body content for this request')
+            raw_login, password = body.split("password=")
+            login = raw_login.replace("login=", "")
+        error = self.server.app.user_login.login_as_user(login, password)
+        if error:
+            message = open('web_interface/error_message.html', 'r').read()
         else:
-            self.send_response(411)
-            self.end_headers()
-            self.write_with_autoreplace('Zero Content-Length')
-            
-    def process_login(self):
-        pass
+            message = open('web_interface/success_message.html', 'r').read()
+        self.send_response(200)
+        self.end_headers()
+        self.write_with_autoreplace(message)
+
+        # if content_length:
+        #         length = int(content_length)
+        #         body = self.rfile.read(length)
+        #         prefix = "token="
+        #         if prefix in body:
+        #             token = body.replace(prefix, "")
+        #             result = utils.write_token(token)
+        #             if result:
+        #                 message = open('web_interface/token_success.html', 'r').read()
+        #             else:
+        #                 message = open('web_interface/token_error.html', 'r').read()
+        #             self.send_response(200)
+        #             self.end_headers()
+        #             self.write_with_autoreplace(message)
 
 
 class WebInterface(threading.Thread):
