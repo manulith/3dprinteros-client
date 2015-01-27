@@ -28,7 +28,7 @@ LOG_SNAPSHOT_LINES = 200
 def get_macaddr():
     return hex(uuid.getnode())
 
-MAC_ADDR = get_macaddr()
+MACADDR = get_macaddr()
 
 
 def is_admin():

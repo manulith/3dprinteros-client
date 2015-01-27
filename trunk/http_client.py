@@ -36,7 +36,7 @@ def load_json(jdata):
             logger.error("Data should be dictionary: " + str(data))
 
 def package_users_login(username, password, error=[None,None]):
-    data = {'login': {'user': username, 'password': password}, 'error': error, 'host_mac': utils.MAC_ADDR}
+    data = {'login': {'user': username, 'password': password}, 'error': error, 'host_mac': utils.MACADDR}
     return json.dumps(data), user_login_path
 
 def package_printer_login(user_token, printer_profile, error=[None,None]):
