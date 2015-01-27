@@ -154,7 +154,7 @@ def read_login():
     pack_name = 'login_info.bin'
     logger.debug("Searching for login info in %s" % pack_name)
     try:
-        login_info = read_zipped_info(pack_name)
+        login_info = read_info_zip(pack_name)
         logger.debug('Login info loaded from ' + pack_name)
     except Exception as e:
         logger.warning('Failed login loading! ' + e.message)
@@ -166,7 +166,7 @@ def write_login(login, password):
     logger = logging.getLogger('app.' + __name__)
     package_name = 'login_info.bin' #TODO: it probably shoud be read from config
     try:
-        zip_info(package_name, login, password)
+        pack_info_zip(package_name, login, password)
     except Exception as e:
         logger.warning('Login info writing error! ' + e.message)
     else:
