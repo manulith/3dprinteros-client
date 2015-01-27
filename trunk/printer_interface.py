@@ -42,7 +42,7 @@ class PrinterInterface(threading.Thread):
         self.logger.info("Connecting to server with printer: %s" % str(self.usb_info))
         answer = http_client.send(http_client.package_printer_login, (self.user_token, self.usb_info))
         if answer:
-            error = answer['error']
+            error = answer.get('error', None)
             if error:
                 self.logger.warning("Error while login %s:" % str(self.usb_info))
                 self.logger.warning(str(error['code']) + " " + error["message"])

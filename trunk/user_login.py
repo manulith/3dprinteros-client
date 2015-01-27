@@ -22,11 +22,11 @@ class UserLogin:
             user_token = answer.get('user_token', None)
             error = answer.get('error', None)
             if user_token and not error:
-                self.user_token = login
                 profiles_str = answer['all_profiles']
                 all_profiles = json.loads(profiles_str)
                 config.update_profiles(all_profiles)
                 if utils.write_login(login, password):
+                    self.user_token = answer["user_token"]
                     return
             else:
                 self.logger.warning("Error processing user_login " + str(error))

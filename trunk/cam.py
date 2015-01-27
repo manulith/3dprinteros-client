@@ -120,7 +120,7 @@ class CameraImageSender(threading.Thread):
 
     def send_picture(self, picture):
         picture = base64.b64encode(str(picture))
-        data = {"token": self.token, "camera_number": self.camera_number, "camera_name": self.camera_name, "data": picture, "host_mac": http_client.MACADDR}
+        data = {"user_token": self.token, "camera_number": self.camera_number, "camera_name": self.camera_name, "data": picture, "host_mac": http_client.MACADDR}
         http_client.multipart_upload(self.url, data)
 
     def close(self):
