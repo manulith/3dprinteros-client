@@ -37,7 +37,7 @@ def load_json(jdata):
         else:
             logger.error("Data should be dictionary: " + str(data))
 
-def package_users_login(username, password, error=[None,None]):
+def package_user_login(username, password, error=[None,None]):
     data = {'login': {'user': username, 'password': password}, 'error': error, 'host_mac': MACADDR}
     return json.dumps(data), user_login_path
 

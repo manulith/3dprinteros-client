@@ -145,7 +145,7 @@ class PrinterInterface(threading.Thread):
                 port = serial.Serial(self.profile['COM'], self.profile['baudrate'][0], timeout=1)
                 if port.isOpen():
                     port.setDTR(1)
-                    time.sleep(0.5)
+                    time.sleep(1)
                     port.setDTR(0)
                     port.close()
                     self.logger.info("Malfunctioning port %s was closed." % self.profile['COM'])

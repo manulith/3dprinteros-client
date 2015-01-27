@@ -50,7 +50,7 @@ class App():
         self.printer_interfaces = []
         self.stop_flag = False
         self.quit_flag = False
-        self.user_login = user_login.UserLogin()
+        self.user_login = user_login.UserLogin(self)
         self.init_interface()
         self.user_login.wait_for_login()
         self.main_loop()

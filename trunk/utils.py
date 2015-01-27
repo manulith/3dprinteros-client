@@ -147,8 +147,6 @@ def get_libusb_path(lib):
 #         logger.debug('Token was writen to ' + path)
 #         return True
 
-#here start login utils
-
 def read_login():
     logger = logging.getLogger('app.' + __name__)
     pack_name = 'login_info.bin'
@@ -159,6 +157,8 @@ def read_login():
     except Exception as e:
         logger.warning('Failed login loading! ' + e.message)
     else:
+        if not login_info:
+            login_info = None, None
         return login_info
     logger.debug('Error while loading login info in paths: %s' % str(pack_name) )
 
@@ -172,8 +172,6 @@ def write_login(login, password):
     else:
         logger.info('Login info was written and packed.')
         return True
-
-#login utils end
 
 def tail(f, lines=200):
     total_lines_wanted = lines
@@ -280,17 +278,14 @@ def pack_info_zip(package_name, *args):
     os.remove(file_name)
 
 def read_info_zip(package_name):
-    if package_name not in os.listdir(os.getcwd()):
-        print 'Package not found'
-        return
-    zf = zipfile.ZipFile(package_name, 'r')
-    packed_info = zf.read('info', pwd='d0nTfe_artH_er1PPe_r')
-    packed_info = packed_info.split('\n')
-    packed_info.remove('')
-    for number in range(0, len(packed_info)):
-        packed_info[number] = base64.b64decode(packed_info[number])
-    return packed_info
-
+    if package_name in os.listdir(os.getcwd()):
+        zf = zipfile.ZipFile(package_name, 'r')
+        packed_info = zf.read('info', pwd='d0nTfe_artH_er1PPe_r')
+        packed_info = packed_info.split('\n')
+        packed_info.remove('')
+        for number in range(0, len(packed_info)):
+            packed_info[number] = base64.b64decode(packed_info[number])
+        return packed_info
 
 def kill_makerbot_conveyor(self):
     logger = logging.getLogger("app.kill_makerbot_conveyor")

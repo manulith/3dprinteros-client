@@ -16,7 +16,7 @@ class UserLogin:
 
     def login_as_user(self, login, password):
         self.errors = set()
-        answer = http_client.send(http_client.user_login, (login, password, http_client.MACADDR))
+        answer = http_client.send(http_client.package_user_login, (login, password, http_client.MACADDR))
         if answer:
             user_token = answer.get('user_token', None)
             errors = utils.check_for_errors(answer)
@@ -33,9 +33,8 @@ class UserLogin:
 
     def wait_for_login(self):
         self.logger.debug("Waiting for correct user login...")
-        while not self.token or self.parent.stop_flag:
-            self.user_login()
-            time.sleep(1)
-            if self.quit_flag:
-                self.quit()
+        while not self.user_token or self.parent.stop_flag:
+            time.sleep(0.1)
+            if getattr(self.parent, "quit_flag", False):
+                self.parent.quit()
         self.logger.debug("...end waiting for user login.")
