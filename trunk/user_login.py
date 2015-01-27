@@ -15,20 +15,18 @@ class UserLogin:
             self.login_as_user(login, password)
 
     def login_as_user(self, login, password):
-        self.errors = set()
         answer = http_client.send(http_client.package_user_login, (login, password, http_client.MACADDR))
         if answer:
             user_token = answer.get('user_token', None)
-            errors = utils.check_for_errors(answer)
-            if user_token and not errors:
+            error = answer['error']
+            if user_token and not error:
                 self.user_token = login
-                self.errors = set()
-                utils.write_token(login, password)
-                return 0
+                if utils.write_token(login, password):
+                    return
             else:
-                self.errors.union(errors)
-                return (errors)
-                self.logger.warning("Error processing user_login " + str(errors))
+                self.logger.warning("Error processing user_login " + str(error))
+                return error['code'], error['message']
+
         self.logger.error("Login rejected")
 
     def wait_for_login(self):

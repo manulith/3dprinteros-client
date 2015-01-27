@@ -303,8 +303,8 @@ def check_for_errors(data_dict):
     logger = logging.getLogger("app." + __name__)
     error = data_dict.get('error', None)
     if error:
-        logger.warning("Server returned error %s:%s" % (error[0], error[1]))
-        return error[0]
+        logger.warning("Server returned error %i:%s" % (error['code'], error['message']))
+        return error['code']
 
 def remove_illegal_symbols(data):
     count = 0

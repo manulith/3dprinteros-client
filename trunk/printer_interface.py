@@ -21,8 +21,6 @@ class PrinterInterface(threading.Thread):
                 result = func(self, *args, **kwargs)
             except Exception as e:
                 self.logger.error("!Error in command %s\n[%s]" % (str(func.__name__), str(e)))
-                if self.profile.get('stop_on_error', False):
-                    raise e
             else:
                 if result != None:
                     self.logger.info('Result is: ( ' + str(result) + " )")
@@ -52,7 +50,7 @@ class PrinterInterface(threading.Thread):
                 self.priner_token = answer['printer_token']
                 self.printer_profile = answer["printer_profile"]
         else:
-            self.logger.warning("While loggi No connection or false answer")
+            self.logger.warning("Error on printer login. No connection or answer from server.")
 
     @protection
     def connect_printer_driver(self):
