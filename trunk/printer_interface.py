@@ -1,6 +1,7 @@
 import time
-import logging
+import base64
 import serial
+import logging
 import threading
 
 import utils
@@ -76,17 +77,22 @@ class PrinterInterface(threading.Thread):
     #             elapsed += 0.5
     #     self.logger.warning('Error. Timeout while waiting for printer to become operational.')
 
-
-    def process_command_request(printer_interface, data_dict):
+    @protection
+    def process_command_request(self, data_dict):
         logger = logging.getLogger("app." + __name__)
         number = data_dict.get('number', None)
         if number:
             logger.info("Processing command number %i" % number)
-        if not check_for_errors(data_dict):
+        error = data_dict['error']
+        if error:
+            error_code = error[0]
+            error_str = error[1]
+            self.logger.warning("Server command came with errors %d %s", (error_code, error_str))
+        else:
             command = data_dict.get('command', None)
             if command:
-                if hasattr(printer_interface.printer, command):
-                    method = printer_interface.getattr('command')
+                if hasattr(self.printer, command):
+                    method = self.getattr('command')
                     payload = data_dict.get('payload', None)
                     if data_dict.get('is_link', False):
                         payload = http_client.download(payload)
@@ -99,7 +105,6 @@ class PrinterInterface(threading.Thread):
                     return True
         logger.warning("Error processing command: " + str(data_dict))
 
-
     def run(self):
         self.stop_flag = False
         self.connect_to_server()
@@ -107,7 +112,7 @@ class PrinterInterface(threading.Thread):
         while not self.stop_flag and self.printer:
             if self.printer.is_operational():
                 command = http_client.send(http_client.package_command_request, self.report())
-                command_processor.process_command_request(self, command)
+                self.process_command_request(self, command)
                 time.sleep(1)
             else:
                 if time.time() - self.creation_time < self.profile.get('start_timeout', self.DEFAULT_TIMEOUT):
@@ -115,13 +120,6 @@ class PrinterInterface(threading.Thread):
                 else:
                     self.printer.close()
                     self.printer = None
-
-    # @protection
-    # def is_operational(self):
-    #     if self.printer:
-    #         return self.printer.is_operational()
-    #     self.logger.warning("No printer in printer_interface " + str(self.profile['name']))
-    #     return False
 
     @protection
     def report(self):
@@ -213,14 +211,13 @@ class PrinterInterface(threading.Thread):
             state = "error"
         return state
 
-    def state_report(self):
+    def state_report(self, outer_state=None):
         if self.printer_token:
             report = {"printer_token": self.token}
             report["temps"] = self.printer.get_temps()
             report["target_temps"] = self.printer.get_target_temps()
             report["percent"] = self.printer.get_percent()
-            report["state"] = self.printer.get_printer_state()
-        
-
-
-
+            if outer_state:
+                report["state"] = outer_state
+            else:
+                report["state"] = self.printer.get_printer_state()

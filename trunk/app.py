@@ -74,6 +74,9 @@ class App():
                 self.detected_printers = usb_detect.get_printers()
                 self.logger.debug("DONE detect_printers")
                 self.check_and_connect()
+                for printer in self.printer_interfaces:
+                    if printer.usb_info not in self.detected_printers:
+                        self.disconnect_printer(printer)
         # this is for quit from web interface(to release server's thread and quit)
         if self.quit_flag:
             self.quit()

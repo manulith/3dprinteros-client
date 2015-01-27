@@ -83,7 +83,7 @@ def sort_and_add_profile(devices):
                 if vid_pid[0] == device['VID']:
                     if not vid_pid[1] or vid_pid[1] == device['PID']:
                         dct = {}
-                        dct.update(profiles[profile])
+                        #dct.update(profiles[profile])
                         dct.update(device)
                         printers.append(dct)
     return printers
