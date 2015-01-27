@@ -139,10 +139,38 @@ def write_token(token_data):
         with open(path, "w") as token_file:
             token_file.write(token_data)
     except IOError as e:
-        logger.warning("Error then writing token" + str(e))
+        logger.warning("Error while writing token" + str(e))
     else:
         logger.debug('Token was writen to ' + path)
         return True
+
+#here start login utils
+
+def read_login():
+    logger = logging.getLogger('app.' + __name__)
+    pack_name = 'login_info.bin'
+    logger.debug("Searching for login info in %s" % pack_name)
+    try:
+        login_info = read_zipped_info(pack_name)
+        logger.debug('Login info loaded from ' + pack_name)
+    except Exception as e:
+        logger.warning('Failed login loading! ' + e.message)
+    else:
+        return login_info
+    logger.debug('Error while loading login info in paths: %s' % str(pack_name) )
+
+def write_login(login, password):
+    logger = logging.getLogger('app.' + __name__)
+    package_name = 'login_info.bin' #TODO: it probably shoud be read from config
+    try:
+        zip_info(package_name, login, password)
+    except Exception as e:
+        logger.warning('Login info writing error! ' + e.message)
+    else:
+        logger.info('Login info was written and packed.')
+        return True
+
+#login utils end
 
 def tail(f, lines=200):
     total_lines_wanted = lines
@@ -227,6 +255,35 @@ def send_all_snapshots():
         for file_name in dir:
             compress_and_send(file_name)
         return  True
+
+def zip_info(package_name, *args):
+    if package_name in os.listdir(os.getcwd()):
+        print 'File with that package name already exists in the working dir. Please choose another one'
+        return
+    file_name = 'info'
+    temp_file = open(file_name, 'w')
+    for arg in args:
+        temp_file.write(arg + '\n')
+    temp_file.close()
+    try:
+        zf = zipfile.ZipFile(package_name, mode='w')
+        zf.write(file_name)
+        zf.close()
+    except Exception as e:
+        print 'Error: ' + e.message
+        return
+    os.remove(file_name)
+
+def read_zipped_info(package_name):
+    if package_name not in os.listdir(os.getcwd()):
+        print 'Package not found'
+        return
+    zf = zipfile.ZipFile(package_name, 'r')
+    packed_info = zf.read('info')
+    packed_info = packed_info.split('\n')
+    packed_info.remove(-1)
+    return packed_info
+
 
 def kill_makerbot_conveyor(self):
     logger = logging.getLogger("app.kill_makerbot_conveyor")

@@ -58,6 +58,8 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     def do_POST(self):
         if self.path.find('write_token') >= 0:
             self.process_write_token()
+        elif self.path.find('login') >= 0:
+            self.process_login()
         elif self.path.find('clear_token') >= 0:
             self.process_clear_token()
         elif self.path.find('quit') >= 0:
@@ -66,10 +68,18 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.snapshot_log()
         elif self.path.find('send_log_snapshots') >= 0:
             self.send_log_snapshots()
+        elif self.path.find('logs') >= 0:
+            self.download_logs()
         else:
             self.send_response(404)
             self.end_headers()
             self.write_with_autoreplace('Not found')
+
+    def download_logs(self):
+        page = open('web_interface/download_logs.html').read()
+        self.send_response(200)
+        self.end_headers()
+        self.write_with_autoreplace(page)
 
     def snapshot_log(self):
         result = utils.make_log_snapshot()
@@ -135,6 +145,9 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.send_response(411)
             self.end_headers()
             self.write_with_autoreplace('Zero Content-Length')
+            
+    def process_login(self):
+        pass
 
 
 class WebInterface(threading.Thread):
