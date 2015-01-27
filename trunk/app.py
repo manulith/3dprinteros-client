@@ -66,16 +66,12 @@ class App():
     def main_loop(self):
         while not self.stop_flag:
             self.time_stamp()
-            if not self.user_token:
-                self.user_token = self.login_user()
-            else:
-                self.logger.debug("START detect_printers")
-                self.detected_printers = usb_detect.get_printers()
-                self.logger.debug("DONE detect_printers")
-                self.check_and_connect()
-                for printer in self.printer_interfaces:
-                    if printer.usb_info not in self.detected_printers:
-                        self.disconnect_printer(printer)
+            self.detected_printers = usb_detect.get_printers()
+            self.check_and_connect()
+            for printer in self.printer_interfaces:
+                if printer.usb_info not in self.detected_printers:
+                    self.disconnect_printer(printer)
+            time.sleep(2)
         # this is for quit from web interface(to release server's thread and quit)
         if self.quit_flag:
             self.quit()
