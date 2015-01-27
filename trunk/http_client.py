@@ -3,10 +3,11 @@ import json
 import httplib
 import logging
 import requests
+import uuid
 
 import config
-import utils
 
+MACADDR = hex(uuid.getnode())
 
 CONNECTION_TIMEOUT = 6
 URL = config.config['URL']
@@ -36,7 +37,7 @@ def load_json(jdata):
             logger.error("Data should be dictionary: " + str(data))
 
 def package_users_login(username, password, error=[None,None]):
-    data = {'login': {'user': username, 'password': password}, 'error': error, 'host_mac': utils.MACADDR}
+    data = {'login': {'user': username, 'password': password}, 'error': error, 'host_mac': utils.get_macaddr()}
     return json.dumps(data), user_login_path
 
 def package_printer_login(user_token, printer_profile, error=[None,None]):
