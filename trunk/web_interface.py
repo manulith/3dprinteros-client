@@ -1,5 +1,6 @@
-import threading
+import urllib
 import logging
+import threading
 import BaseHTTPServer
 
 import utils
@@ -150,7 +151,8 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         if content_length:
             length = int(content_length)
             body = self.rfile.read(length)
-            raw_login, password = body.split("password=")
+            body = urllib.unquote(body).decode('utf8')
+            raw_login, password = body.split("&password=")
             login = raw_login.replace("login=", "")
         error = self.server.app.user_login.login_as_user(login, password)
         if error:
