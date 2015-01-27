@@ -31,7 +31,7 @@ def update_config(config):
             config_file.write(jdata)
 
 def update_profiles(profiles):
-    with open(get_config_file_path(), 'w') as profiles_file:
+    with open(get_profiles_file_path(), 'w') as profiles_file:
         try:
             jdata = json.dumps(profiles)
         except Exception as e:

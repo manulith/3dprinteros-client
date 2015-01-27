@@ -321,8 +321,6 @@ def remove_corrupted_lines(lines):
             lines.remove(line)
     return lines
 
-
-
 if __name__ == "__main__":
     make_log_snapshot()
     send_all_snapshots()

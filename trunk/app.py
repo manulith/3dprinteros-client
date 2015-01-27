@@ -83,7 +83,7 @@ class App():
         currently_connected_usb_info = [pi.usb_info for pi in self.printer_interfaces]
         for usb_info in self.detected_printers:
             if usb_info not in currently_connected_usb_info:
-                pi = printer_interface.PrinterInterface(usb_info, self.user_token)
+                pi = printer_interface.PrinterInterface(usb_info, self.user_login.user_token)
                 pi.start()
                 self.printer_interfaces.append(pi)
 

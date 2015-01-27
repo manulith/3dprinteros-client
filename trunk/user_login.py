@@ -1,4 +1,5 @@
 import time
+import json
 import logging
 
 import utils
@@ -22,13 +23,14 @@ class UserLogin:
             error = answer.get('error', None)
             if user_token and not error:
                 self.user_token = login
-                config.update_profiles(answer['all_profiles'])
+                profiles_str = answer['all_profiles']
+                all_profiles = json.loads(profiles_str)
+                config.update_profiles(all_profiles)
                 if utils.write_login(login, password):
                     return
             else:
                 self.logger.warning("Error processing user_login " + str(error))
                 return error['code'], error['message']
-
         self.logger.error("Login rejected")
 
     def wait_for_login(self):

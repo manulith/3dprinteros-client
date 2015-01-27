@@ -35,8 +35,8 @@ class PrinterInterface(threading.Thread):
         self.printer_token = None
         self.creation_time = time.time()
         self.logger = logging.getLogger('app.' + __name__)
-
         self.logger.info('New printer interface for %s'  + str(usb_info))
+        super(PrinterInterface, self).__init__()
 
     def connect_to_server(self):
         self.logger.info("Connecting to server with printer: %s" % str(self.usb_info))

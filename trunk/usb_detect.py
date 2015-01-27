@@ -79,9 +79,9 @@ def sort_devices(devices):
     profiles = config.load_profiles()
     for device in devices:
         for profile in profiles:
-            for vid_pid in profiles[profile][u'vids_pids']:
-                if vid_pid[0] == device['VID'] and vid_pid[1] == device['PID']:
-                        printers.append(device)
+            if [ device['VID'], device['PID'] ] in profile[u"vids_pids"]:
+                printers.append(device)
+                break
     return printers
 
 def get_printers():
