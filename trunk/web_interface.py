@@ -23,6 +23,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         return host
 
     def write_with_autoreplace(self, page):
+        page = page.replace('!!!VERSION!!!', 'Client v.' + version.version)
         page = page.replace('3DPrinterOS', '3DPrinterOS Client v.' + version.version)
         self.wfile.write(page)
 
