@@ -51,7 +51,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                     printer_snr = 'Unknown serial number'
                 else:
                     printer_snr = str(printer['SNR'])
-                printers_list.append('<b>' + printer['name'] + "</b><br>(s/n: " + printer_snr + ')')
+                printers_list.append('<b>' + printer['VID'] + " " + printer['PID'] + "</b><br>(s/n: " + printer_snr + ')')
             printers = ''.join(map(lambda x: "<p>" + x + "</p>", printers_list))
             page = page.replace('!!!PRINTERS!!!', printers)
             self.write_with_autoreplace(page)

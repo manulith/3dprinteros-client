@@ -42,27 +42,28 @@ class PrinterInterface(threading.Thread):
         self.logger.info("Connecting to server with printer: %s" % str(self.usb_info))
         answer = http_client.send(http_client.package_printer_login, (self.user_token, self.usb_info))
         if answer:
-            error_num, error_str = utils.check_for_errors(answer)
-            if error_num:
+            error = answer['error']
+            if error:
                 self.logger.warning("Error while login %s:" % str(self.usb_info))
-                self.logger.warning(error_str)
+                self.logger.warning(str(error['code']) + " " + error["message"])
             else:
                 self.priner_token = answer['printer_token']
                 self.printer_profile = answer["printer_profile"]
+                return True
         else:
             self.logger.warning("Error on printer login. No connection or answer from server.")
 
     @protection
     def connect_printer_driver(self):
-        printer_driver = __import__(self.profile['driver'])
-        self.logger.info("Connecting with profile: " + str(self.profile))
+        printer_driver = __import__(self.printer_profile['driver'])
+        self.logger.info("Connecting with profile: " + str(self.printer_profile))
         try:
-            printer = printer_driver.Printer(self.profile)
+            printer = printer_driver.Printer(self.printer_profile)
         except Exception as e:
-            self.logger.warning("Error connecting to %s" % self.profile['name'], exc_info=True)
+            self.logger.warning("Error connecting to %s" % self.printer_profile['name'], exc_info=True)
         else:
             self.printer = printer
-            self.logger.info("Successful connection to %s!" % (self.profile['name']))
+            self.logger.info("Successful connection to %s!" % (self.printer_profile['name']))
 
     # def wait_operational(self, timeout=30):
     #     elapsed = 0
@@ -105,15 +106,16 @@ class PrinterInterface(threading.Thread):
 
     def run(self):
         self.stop_flag = False
-        self.connect_to_server()
-        self.connect_printer_driver()
+        connected = False
+        if self.connect_to_server():
+            self.connect_printer_driver()
         while not self.stop_flag and self.printer:
             if self.printer.is_operational():
                 command = http_client.send(http_client.package_command_request, self.report())
                 self.process_command_request(self, command)
                 time.sleep(1)
             else:
-                if time.time() - self.creation_time < self.profile.get('start_timeout', self.DEFAULT_TIMEOUT):
+                if time.time() - self.creation_time < self.printer_profile.get('start_timeout', self.DEFAULT_TIMEOUT):
                     time.sleep(0.1)
                 else:
                     self.printer.close()
@@ -128,7 +130,7 @@ class PrinterInterface(threading.Thread):
     @protection
     def close(self):
         if self.printer:
-            self.logger.info('Closing ' + str(self.profile))
+            self.logger.info('Closing ' + str(self.printer_profile))
             self.printer.close()
             self.logger.info('...closed.')
             self.printer = None
@@ -137,16 +139,16 @@ class PrinterInterface(threading.Thread):
 
     @protection
     def close_hanged_port(self):
-        self.logger.info("Trying to force close serial port %s" % self.profile['COM'])
-        if self.profile["force_port_close"] and self.profile['COM']:
+        self.logger.info("Trying to force close serial port %s" % self.usb_info['COM'])
+        if self.printer_profile["force_port_close"] and self.usb_info['COM']:
             try:
-                port = serial.Serial(self.profile['COM'], self.profile['baudrate'][0], timeout=1)
+                port = serial.Serial(self.usb_info['COM'], self.printer_profile['baudrate'][0], timeout=1)
                 if port.isOpen():
                     port.setDTR(1)
                     time.sleep(1)
                     port.setDTR(0)
                     port.close()
-                    self.logger.info("Malfunctioning port %s was closed." % self.profile['COM'])
+                    self.logger.info("Malfunctioning port %s was closed." % self.usb_info['COM'])
             except serial.SerialException as e:
                 self.logger.info("Force close serial port failed with error %s" % e.message)
         else:
