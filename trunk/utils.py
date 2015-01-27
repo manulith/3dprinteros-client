@@ -103,49 +103,49 @@ def get_libusb_path(lib):
     logger.info('Libusb from: ' + backend_path)
     return backend_path
 
-def get_paths_to_token():
-    token_file_name = "3DPrinterOS-Key"
-    abs_path_to_users_home = os.path.abspath(os.path.expanduser("~"))
-    if sys.platform.startswith('win'):
-        abs_path_to_appdata = os.path.abspath(os.getenv('APPDATA'))
-        path = os.path.join(abs_path_to_appdata, '3DPrinterOS', token_file_name)
-    elif sys.platform.startswith('linux'):
-        path = os.path.join(abs_path_to_users_home, "." + token_file_name)
-    elif sys.platform.startswith('darwin'):
-        path = os.path.join(abs_path_to_users_home, "Library", "Application Support", token_file_name)
-    else:
-        raise EnvironmentError('Could not detect OS. Only GNU/LINUX, MAC OS X and MS WIN VISTA/7/8 are supported.')
-    local_path = os.path.dirname(os.path.abspath(__file__))
-    local_path = os.path.join(local_path, token_file_name)
-    return (local_path, path)
-
-def read_token():
-    logger = logging.getLogger('app.' + __name__)
-    paths = get_paths_to_token()
-    for path in paths:
-        logger.debug("Searching for token-file in %s" % path)
-        try:
-            with open(path) as token_file:
-                token = token_file.read()
-                logger.debug('Token loaded from ' + path)
-        except IOError:
-            continue
-        else:
-            return token.strip()
-    logger.debug('Error while loading token in paths: %s' % str(paths) )
-
-def write_token(token_data):
-    logger = logging.getLogger('app.' + __name__)
-    paths = get_paths_to_token()
-    path = paths[0] # we are only writing locally
-    try:
-        with open(path, "w") as token_file:
-            token_file.write(token_data)
-    except IOError as e:
-        logger.warning("Error while writing token" + str(e))
-    else:
-        logger.debug('Token was writen to ' + path)
-        return True
+# def get_paths_to_token():
+#     token_file_name = "3DPrinterOS-Key"
+#     abs_path_to_users_home = os.path.abspath(os.path.expanduser("~"))
+#     if sys.platform.startswith('win'):
+#         abs_path_to_appdata = os.path.abspath(os.getenv('APPDATA'))
+#         path = os.path.join(abs_path_to_appdata, '3DPrinterOS', token_file_name)
+#     elif sys.platform.startswith('linux'):
+#         path = os.path.join(abs_path_to_users_home, "." + token_file_name)
+#     elif sys.platform.startswith('darwin'):
+#         path = os.path.join(abs_path_to_users_home, "Library", "Application Support", token_file_name)
+#     else:
+#         raise EnvironmentError('Could not detect OS. Only GNU/LINUX, MAC OS X and MS WIN VISTA/7/8 are supported.')
+#     local_path = os.path.dirname(os.path.abspath(__file__))
+#     local_path = os.path.join(local_path, token_file_name)
+#     return (local_path, path)
+#
+# def read_token():
+#     logger = logging.getLogger('app.' + __name__)
+#     paths = get_paths_to_token()
+#     for path in paths:
+#         logger.debug("Searching for token-file in %s" % path)
+#         try:
+#             with open(path) as token_file:
+#                 token = token_file.read()
+#                 logger.debug('Token loaded from ' + path)
+#         except IOError:
+#             continue
+#         else:
+#             return token.strip()
+#     logger.debug('Error while loading token in paths: %s' % str(paths) )
+#
+# def write_token(token_data):
+#     logger = logging.getLogger('app.' + __name__)
+#     paths = get_paths_to_token()
+#     path = paths[0] # we are only writing locally
+#     try:
+#         with open(path, "w") as token_file:
+#             token_file.write(token_data)
+#     except IOError as e:
+#         logger.warning("Error while writing token" + str(e))
+#     else:
+#         logger.debug('Token was writen to ' + path)
+#         return True
 
 #here start login utils
 
