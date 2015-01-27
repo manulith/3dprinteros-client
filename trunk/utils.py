@@ -11,7 +11,6 @@ import threading
 import platform
 from hashlib import md5
 import base64
-import uuid
 
 import config
 import http_client
@@ -24,11 +23,6 @@ LOG_SNAPSHOTS_DIR = "log_snapshots"
 
 LOG_SNAPSHOT_LINES = 200
 
-
-def get_macaddr():
-    return hex(uuid.getnode())
-
-MACADDR = get_macaddr()
 
 
 def is_admin():
