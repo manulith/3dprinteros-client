@@ -6,7 +6,7 @@ import threading
 import logging
 
 import http_client
-import utils
+import user_login
 
 class CameraMaster():
     def __init__(self):
@@ -91,12 +91,14 @@ class CameraMaster():
         return cameras_count
 
 class CameraImageSender(threading.Thread):
-    def __init__(self, camera_number, camera_name, cap = None):
+    def __init__(self, user_token, camera_number, camera_name, cap = None):
         self.logger = logging.getLogger("app." + __name__)
         self.stop_flag = False
         self.camera_number = camera_number
         self.camera_name = camera_name
-        self.token = 'dweFzU8sDKg6KdTjRraANVJG0EZoiS8HBYz6i1fGYvsPnWirbzGdIcU6rApSkthe2TTXzaeqoZD5P3W6DyLjIaG8X9WmYmX0bZX8KJPKlkE3mzAIjYdudG7Zl8sHlBsE'
+        ul = user_login.UserLogin(self)
+        ul.wait_for_login()
+        self.token = ul.user_token
         self.url = 'https://cloud.3dprinteros.com/oldliveview/setLiveView/'
         if not self.token:
             self.stop_flag = True
