@@ -5,6 +5,8 @@ import logging
 import requests
 
 import config
+import utils
+
 
 CONNECTION_TIMEOUT = 6
 URL = config.config['URL']
@@ -16,7 +18,7 @@ command_path = "/command"
 cloudsync_path = "/autoupload"
 token_jobs_path = "/getJobs"
 token_login_path = "/sendRequestToken" #json['token': token]
-token_camera_path = "/oldliveview/setLiveView" #json['image': basebase64_image ]
+token_camera_path = "/oldliveview/setLiveView" #json['image': base64_image ]
 token_send_logs_path = "/oldliveview/sendLogs"
 
 domain_path_re = re.compile("https?:\/\/(.+)(\/.*)")
@@ -34,7 +36,7 @@ def load_json(jdata):
             logger.error("Data should be dictionary: " + str(data))
 
 def package_users_login(username, password, error=[None,None]):
-    data = {'login': {'user': username, 'password': password}, 'error': error}
+    data = {'login': {'user': username, 'password': password}, 'error': error, 'host_mac': utils.MAC_ADDR}
     return json.dumps(data), user_login_path
 
 def package_printer_login(user_token, printer_profile, error=[None,None]):

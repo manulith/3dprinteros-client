@@ -10,6 +10,8 @@ import logging
 import threading
 import platform
 from hashlib import md5
+import base64
+import uuid
 
 import config
 import http_client
@@ -21,6 +23,13 @@ ALL_LIBS = ['opencv', 'numpy']
 LOG_SNAPSHOTS_DIR = "log_snapshots"
 
 LOG_SNAPSHOT_LINES = 200
+
+
+def get_macaddr():
+    return hex(uuid.getnode())
+
+MAC_ADDR = get_macaddr()
+
 
 def is_admin():
     import ctypes, os
@@ -256,32 +265,36 @@ def send_all_snapshots():
             compress_and_send(file_name)
         return  True
 
-def zip_info(package_name, *args):
+def pack_info_zip(package_name, *args):
     if package_name in os.listdir(os.getcwd()):
         print 'File with that package name already exists in the working dir. Please choose another one'
         return
     file_name = 'info'
     temp_file = open(file_name, 'w')
     for arg in args:
+        arg = base64.b64encode(arg)
         temp_file.write(arg + '\n')
     temp_file.close()
     try:
         zf = zipfile.ZipFile(package_name, mode='w')
         zf.write(file_name)
+        zf.setpassword('d0nTfe_artH_er1PPe_r')
         zf.close()
     except Exception as e:
         print 'Error: ' + e.message
         return
     os.remove(file_name)
 
-def read_zipped_info(package_name):
+def read_info_zip(package_name):
     if package_name not in os.listdir(os.getcwd()):
         print 'Package not found'
         return
     zf = zipfile.ZipFile(package_name, 'r')
-    packed_info = zf.read('info')
+    packed_info = zf.read('info', pwd='d0nTfe_artH_er1PPe_r')
     packed_info = packed_info.split('\n')
-    packed_info.remove(-1)
+    packed_info.remove('')
+    for number in range(0, len(packed_info)):
+        packed_info[number] = base64.b64decode(packed_info[number])
     return packed_info
 
 
@@ -318,6 +331,8 @@ def remove_corrupted_lines(lines):
         if not line or line in string.whitespace:
             lines.remove(line)
     return lines
+
+
 
 if __name__ == "__main__":
     make_log_snapshot()
