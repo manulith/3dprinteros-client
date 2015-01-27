@@ -8,6 +8,9 @@ class UserLogin:
     def __init__(self, parent_obj):
         self.parent = parent_obj
 
+    def attempt_login(self, login, password):
+        pass
+
     def login_user(self):
         self.logger.debug("Waiting for correct user login")
         self.errors = set()
@@ -25,10 +28,9 @@ class UserLogin:
                     self.logger.warning("Error processing user_login " + str(errors))
             self.logger.error("Login rejected")
 
-
     def wait_for_login(self):
-        while not self.token or self.stop_flag:
-            self.token_login(self.token)
+        while not self.token or self.parent.stop_flag:
+            self.user_login()
             time.sleep(1)
             if self.quit_flag:
                 self.quit()
