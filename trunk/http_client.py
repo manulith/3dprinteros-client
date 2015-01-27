@@ -8,7 +8,6 @@ import uuid
 import config
 
 MACADDR = hex(uuid.getnode())
-
 CONNECTION_TIMEOUT = 6
 URL = config.config['URL']
 AUX_URL = config.config['AUX_URL']
@@ -24,6 +23,8 @@ token_send_logs_path = "/oldliveview/sendLogs"
 
 domain_path_re = re.compile("https?:\/\/(.+)(\/.*)")
 
+
+
 def load_json(jdata):
     logger = logging.getLogger('app.' +__name__)
     try:
@@ -37,7 +38,7 @@ def load_json(jdata):
             logger.error("Data should be dictionary: " + str(data))
 
 def package_users_login(username, password, error=[None,None]):
-    data = {'login': {'user': username, 'password': password}, 'error': error, 'host_mac': MACADDR()}
+    data = {'login': {'user': username, 'password': password}, 'error': error, 'host_mac': MACADDR}
     return json.dumps(data), user_login_path
 
 def package_printer_login(user_token, printer_profile, error=[None,None]):
