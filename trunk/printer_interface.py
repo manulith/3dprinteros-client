@@ -3,6 +3,7 @@ import base64
 import serial
 import logging
 import threading
+import json
 
 import utils
 import http_client
@@ -35,23 +36,40 @@ class PrinterInterface(threading.Thread):
         self.printer_token = None
         self.creation_time = time.time()
         self.logger = logging.getLogger('app.' + __name__)
-        self.logger.info('New printer interface for %s'  + str(usb_info))
+        self.logger.info('New printer interface for %s' % str(usb_info))
         super(PrinterInterface, self).__init__()
 
     def connect_to_server(self):
         self.logger.info("Connecting to server with printer: %s" % str(self.usb_info))
-        answer = http_client.send(http_client.package_printer_login, (self.user_token, self.usb_info))
-        if answer:
-            error = answer.get('error', None)
-            if error:
-                self.logger.warning("Error while login %s:" % str(self.usb_info))
-                self.logger.warning(str(error['code']) + " " + error["message"])
+        while True:
+            answer = http_client.send(http_client.package_printer_login, (self.user_token, self.usb_info))
+            if answer:
+                error = answer.get('error', None)
+                if error:
+                    self.logger.warning("Error while login %s:" % str(self.usb_info))
+                    self.logger.warning(str(error['code']) + " " + error["message"])
+                    #stub
+                    if str(error['code']) == '8':
+                        time.sleep(1)
+                        continue
+                    else:
+                        return False
+                else:
+                    self.logger.info('Successfully connected to server.')
+                    self.priner_token = answer['printer_token']
+                    #self.printer_profile = dict(json.loads(answer["printer_profile"]).items() + self.usb_info.items())
+                    self.logger.info('Received answer : ' + str(answer))
+                    self.printer_profile = json.loads(answer["printer_profile"])
+                    self.logger.info('Received profile from server : ' + str(self.printer_profile))
+                    self.logger.info('Received token from server : ' + str(self.priner_token))
+                    self.printer_profile = dict(self.usb_info.items() + self.printer_profile.items())
+                    self.logger.info('Final profile : ' + str(self.printer_profile))
+
+
+                    return True
             else:
-                self.priner_token = answer['printer_token']
-                self.printer_profile = answer["printer_profile"]
-                return True
-        else:
-            self.logger.warning("Error on printer login. No connection or answer from server.")
+                self.logger.warning("Error on printer login. No connection or answer from server.")
+                return False
 
     @protection
     def connect_printer_driver(self):
