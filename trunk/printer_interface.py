@@ -3,6 +3,7 @@ import base64
 import serial
 import logging
 import threading
+import json
 
 import utils
 import http_client
@@ -56,10 +57,15 @@ class PrinterInterface(threading.Thread):
                 else:
                     self.logger.info('Successfully connected to server.')
                     self.priner_token = answer['printer_token']
-                    self.printer_profile = answer["printer_profile"]
-                    #self.logger.info('Received answer : ' + str(answer))
-                    self.logger.info('Received token from server : ' + str(self.priner_token))
+                    #self.printer_profile = dict(json.loads(answer["printer_profile"]).items() + self.usb_info.items())
+                    self.logger.info('Received answer : ' + str(answer))
+                    self.printer_profile = json.loads(answer["printer_profile"])
                     self.logger.info('Received profile from server : ' + str(self.printer_profile))
+                    self.logger.info('Received token from server : ' + str(self.priner_token))
+                    self.printer_profile = dict(self.usb_info.items() + self.printer_profile.items())
+                    self.logger.info('Final profile : ' + str(self.printer_profile))
+
+
                     return True
             else:
                 self.logger.warning("Error on printer login. No connection or answer from server.")
