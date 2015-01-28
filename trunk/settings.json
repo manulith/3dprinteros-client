@@ -5,6 +5,8 @@
   "log_file": "3dprinteros_client.log",
   "web_interface": true,
   "camera": {
-    "enabled" : false
+    "enabled" : false,
+    "img_ext" : ".jpg",
+    "img_qual" : 90
   }
 }

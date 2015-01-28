@@ -7,6 +7,7 @@ import logging
 
 import http_client
 import user_login
+import config
 
 class CameraMaster():
     def __init__(self):
@@ -20,9 +21,10 @@ class CameraMaster():
             self.init_cameras()
 
     def init_cameras(self):
-        for num, name in enumerate(self.get_camera_names()):
+        cam_names = self.get_camera_names()
+        for num in cam_names:
             cap = cv2.VideoCapture(num)
-            cam = CameraImageSender(num, name, cap)
+            cam = CameraImageSender(num, cam_names[num], cap)
             cam.start()
             self.cameras.append(cam)
 
@@ -91,26 +93,28 @@ class CameraMaster():
         return cameras_count
 
 class CameraImageSender(threading.Thread):
-    def __init__(self, user_token, camera_number, camera_name, cap = None):
+    def __init__(self, camera_number, camera_name, cap):
         self.logger = logging.getLogger("app." + __name__)
         self.stop_flag = False
-        self.camera_number = camera_number
+        self.camera_number = camera_number + 1
         self.camera_name = camera_name
+        self.url = 'https://acorn.3dprinteros.com/streamerapi/camera/'
+        self.cap = cap
         ul = user_login.UserLogin(self)
-        ul.wait_for_login()
+        if self.stop_flag != True:
+            ul.wait_for_login()
         self.token = ul.user_token
-        self.url = 'https://cloud.3dprinteros.com/oldliveview/setLiveView/'
         if not self.token:
             self.stop_flag = True
             self.error = 'No_Token'
-        self.cap = cap
+        print()
         super(CameraImageSender, self).__init__()
 
 
     def take_a_picture(self):
         cap_ret, frame = self.cap.read()
-        encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 90]
-        result, image_encode = cv2.imencode('.jpg', frame, encode_param)
+        encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), config.config["camera"]["img_qual"]]
+        result, image_encode = cv2.imencode(config.config["camera"]["img_ext"], frame, encode_param)
         if cap_ret and result:
             data = np.array(image_encode)
             string_data = data.tostring()
@@ -120,8 +124,10 @@ class CameraImageSender(threading.Thread):
 
     def send_picture(self, picture):
         picture = base64.b64encode(str(picture))
-        data = {"user_token": self.token, "camera_number": self.camera_number, "camera_name": self.camera_name, "data": picture, "host_mac": http_client.MACADDR}
-        http_client.multipart_upload(self.url, data)
+        #data = {"user_token": self.token, "camera_number": self.camera_number, "camera_name": self.camera_name, "data": picture, "host_mac": http_client.MACADDR}
+        #http_client.multipart_upload(self.url, data)
+        answer =  http_client.send(http_client.package_camera_send, (self.token, self.camera_number, self.camera_name, picture, http_client.MACADDR))
+        self.logger.info('Camera streaming response: ' + str(answer))
 
     def close(self):
         self.stop_flag = True
@@ -139,6 +145,7 @@ class CameraImageSender(threading.Thread):
                 time.sleep(1)
         self.cap.release()
         self.logger.info("Closing camera %s" % self.camera_name)
+
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)

@@ -18,7 +18,7 @@ printer_login_path = streamer_prefix + "/printer_login"
 command_path = streamer_prefix + "/command"
 cloudsync_path = "/autoupload"
 
-token_camera_path = "/oldliveview/setLiveView" #json['image': base64_image ]
+token_camera_path = streamer_prefix + "/camera" #json['image': base64_image ]
 token_send_logs_path = "/oldliveview/sendLogs"
 
 domain_path_re = re.compile("https?:\/\/(.+)(\/.*)")
@@ -42,6 +42,11 @@ def package_user_login(username, password, error = {}):
 def package_printer_login(user_token, printer_profile, error={}):
     data = { 'user_token': user_token, 'printer': printer_profile, 'error': error }
     return json.dumps(data), printer_login_path
+
+#for camera streaming with json
+def package_camera_send(token, camera_number, camera_name, data, error = {}):
+    data = {'user_token': token, 'camera_number': camera_number, 'camera_name':camera_name, 'file_data': data, 'error': error, 'host_mac': MACADDR}
+    return json.dumps(data), token_camera_path
 
 def package_command_request(printer_token, state, error={}):
     data = { 'printer_token': printer_token, 'state': state, 'error': error }

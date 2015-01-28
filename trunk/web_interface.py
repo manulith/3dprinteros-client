@@ -86,9 +86,11 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     def snapshot_log(self):
         result = utils.make_log_snapshot()
         if result:
-            message = open('web_interface/success_message.html').read()
+            message = open('web_interface/message.html', 'r').read()
+            message = message.replace('!!!MESSAGE!!!', 'Success!')
         else:
-            message = open('web_interface/error_message.html').read()
+            message = open('web_interface/message.html', 'r').read()
+            message = message.replace('!!!MESSAGE!!!', 'Error!')
         self.send_response(200)
         self.end_headers()
         self.write_with_autoreplace(message)
@@ -96,9 +98,11 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     def send_log_snapshots(self):
         result = utils.send_all_snapshots()
         if result:
-            message = open('web_interface/success_message.html').read()
+            message = open('web_interface/message.html', 'r').read()
+            message = message.replace('!!!MESSAGE!!!', 'Success!')
         else:
-            message = open('web_interface/error_message.html').read()
+            message = open('web_interface/message.html', 'r').read()
+            message = message.replace('!!!MESSAGE!!!', 'Error!')
         self.send_response(200)
         self.end_headers()
         self.write_with_autoreplace(message)
@@ -157,9 +161,11 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             login = raw_login.replace("login=", "")
         error = self.server.app.user_login.login_as_user(login, password)
         if error:
-            message = open('web_interface/error_message.html', 'r').read()
+            message = open('web_interface/message.html').read()
+            message = message.replace('!!!MESSAGE!!!', 'Error!')
         else:
-            message = open('web_interface/success_message.html', 'r').read()
+            message = open('web_interface/message.html', 'r').read()
+            message = message.replace('!!!MESSAGE!!!', 'Success!')
         self.send_response(200)
         self.end_headers()
         self.write_with_autoreplace(message)
