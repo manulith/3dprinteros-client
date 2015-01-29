@@ -7,6 +7,7 @@
   "camera": {
     "enabled" : false,
     "img_ext" : ".jpg",
-    "img_qual" : 90
+    "img_qual" : 90,
+    "camera_min_loop_time" : 1
   }
 }
