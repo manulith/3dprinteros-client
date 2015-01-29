@@ -31,10 +31,11 @@ class CameraMaster():
             self.cameras.append(cam)
 
     def close(self):
+        start_time = time.time()
         for sender in self.cameras:
             sender.close()
-
-        time.sleep(2)
+        if time.time() - start_time < config.config["camera"]["camera_min_loop_time"]:
+            time.sleep(1)
         for sender in self.cameras:
             if sender.isAlive():
                 self.logger.warning("Failed to close camera %s" % sender.name)
