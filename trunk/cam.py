@@ -107,7 +107,6 @@ class CameraImageSender(threading.Thread):
         if not self.token:
             self.stop_flag = True
             self.error = 'No_Token'
-        print()
         super(CameraImageSender, self).__init__()
 
     def take_a_picture(self):
@@ -126,7 +125,7 @@ class CameraImageSender(threading.Thread):
         #data = {"user_token": self.token, "camera_number": self.camera_number, "camera_name": self.camera_name, "data": picture, "host_mac": http_client.MACADDR}
         #http_client.multipart_upload(self.url, data)
         answer =  http_client.send(http_client.package_camera_send, (self.token, self.camera_number, self.camera_name, picture, http_client.MACADDR))
-        self.logger.info(self.camera_name + ' streaming response: ' + str(answer))
+        self.logger.debug(self.camera_name + ' streaming response: ' + str(answer))
 
     def close(self):
         self.stop_flag = True

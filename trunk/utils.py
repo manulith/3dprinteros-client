@@ -263,7 +263,7 @@ def send_all_snapshots():
 def pack_info_zip(package_name, *args):
     logger = logging.getLogger('app.' + __name__)
     if package_name in os.listdir(os.getcwd()):
-        logger.warning('That info package found in the working dir.')
+        logger.warning(package_name + ' found in the working dir.')
         return
     file_name = 'info'
     temp_file = open(file_name, 'w')
