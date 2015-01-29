@@ -64,6 +64,7 @@ class PrinterInterface(threading.Thread):
                     return True
             else:
                 self.logger.warning("Error on printer login. No connection or answer from server.")
+                time.sleep(0.1)
                 return False
 
     @protection
@@ -94,9 +95,10 @@ class PrinterInterface(threading.Thread):
         number = data_dict.get('number', None)
         if number:
             logger.info("Processing command number %i" % number)
-        error = data_dict['error']
-        if error['code']:
+        error = data_dict.get('error', None)
+        if error:
             self.logger.warning("Server command came with errors %d %s" % (error['code'], error['message']))
+            self.logger.debug("Full answer text: " + str(data_dict))
         else:
             command = data_dict.get('command', None)
             if command:
@@ -122,7 +124,7 @@ class PrinterInterface(threading.Thread):
             if self.printer.is_operational():
                 answer = http_client.send(http_client.package_command_request, (self.printer_token, self.state_report()))
                 if answer:
-                    self.logger.debug("Got answer: ", answer)
+                    self.logger.debug("Got answer: " + str(answer))
                     self.process_command_request(answer)
                     time.sleep(0.5)
             else:

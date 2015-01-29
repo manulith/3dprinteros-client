@@ -40,7 +40,7 @@ def load_json(jdata):
 #packagers
 
 def package_user_login(username, password, error = {}):
-    data = {'login': {'user': username, 'password': password}, 'error': error, 'host_mac': MACADDR}
+    data = { 'login': {'user': username, 'password': password}, 'error': error, 'host_mac': MACADDR }
     return json.dumps(data), user_login_path
 
 def package_printer_login(user_token, printer_profile, error={}):
@@ -52,11 +52,11 @@ def package_command_request(printer_token, state, error={}):
     return json.dumps(data), command_path
 
 def package_camera_send(user_token, camera_number, camera_name, data, error = {}):
-    data = {'user_token': user_token, 'camera_number': camera_number, 'camera_name': camera_name, 'file_data': data, 'error': error, 'host_mac': MACADDR}
+    data = { 'user_token': user_token, 'camera_number': camera_number, 'camera_name': camera_name, 'file_data': data, 'error': error, 'host_mac': MACADDR }
     return json.dumps(data), token_camera_path
 
 def package_cloud_sync_upload(token, file_data, file_name):
-    data = { 'user_token': token, 'file_data': file_data}
+    data = { 'user_token': token, 'file_data': file_data }
     return json.dumps(data), cloudsync_path
 
 #senders
@@ -87,6 +87,7 @@ def get_request(connection, payload, path, headers=""):
 def request(connection, payload, path, method, headers):
     logger = logging.getLogger('app.' +__name__)
     logger.debug("{ Requesting...")
+
     try:
         connection.request(method, path, payload, headers)
         resp = connection.getresponse()
@@ -94,18 +95,23 @@ def request(connection, payload, path, method, headers):
         logger.info(("Error during HTTP request:" + str(e)))
         logger.debug("...failed }")
     else:
-        logger.debug("Request status: %s %s" % (resp.status , resp.reason))
-        if resp.status == httplib.OK and resp.reason == "OK":
-            try:
-                received = resp.read()
-            except httplib.error as e:
-                logger.debug("Error reading response: " + str(e))
-                connection.close()
-            else:
-                connection.close()
+        try:
+            received = resp.read()
+        except httplib.error as e:
+            logger.debug("Error reading response: " + str(e))
+            received = None
+        else:
+            print resp.status
+            if resp.status == httplib.OK and resp.reason == "OK":
                 logger.debug("...success }")
-                return received
-    logger.debug("...nothing to do }")
+            else:
+                logger.debug("HTTP request error: %s\nServer reported: %s" % (resp.reason, received))
+                received = None
+        finally:
+            connection.close()
+    return received
+
+
 
 def send(packager, payloads):
     if type(payloads) != tuple:
@@ -113,6 +119,7 @@ def send(packager, payloads):
     connection = connect(URL)
     if connection:
         request_body, path = packager(*payloads)
+        print request_body
         json_answer = post_request(connection, request_body, path)
         if json_answer:
             return load_json(json_answer)

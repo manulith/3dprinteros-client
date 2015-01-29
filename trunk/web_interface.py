@@ -156,7 +156,8 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         if content_length:
             length = int(content_length)
             body = self.rfile.read(length)
-            body = urllib.unquote(body).decode('utf8')
+            print body
+            #body = urllib.unquote(body).decode('utf8')
             raw_login, password = body.split("&password=")
             login = raw_login.replace("login=", "")
         error = self.server.app.user_login.login_as_user(login, password)

@@ -110,7 +110,6 @@ class CameraImageSender(threading.Thread):
         print()
         super(CameraImageSender, self).__init__()
 
-
     def take_a_picture(self):
         cap_ret, frame = self.cap.read()
         encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), config.config["camera"]["img_qual"]]
