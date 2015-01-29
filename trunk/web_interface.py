@@ -23,7 +23,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         return host
 
     def write_with_autoreplace(self, page):
-        page = page.replace('!!!VERSION!!!', 'Client v.' + version.version)
+        page = page.replace('!!!VERSION!!!', 'Client v.' + version.version + ', build ' + version.build + ', commit ' + version.commit)
         page = page.replace('3DPrinterOS', '3DPrinterOS Client v.' + version.version)
         self.wfile.write(page)
 
@@ -162,10 +162,10 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         error = self.server.app.user_login.login_as_user(login, password)
         if error:
             message = open('web_interface/message.html').read()
-            message = message.replace('!!!MESSAGE!!!', 'Error!')
+            message = message.replace('!!!MESSAGE!!!', str(error[1]))
         else:
             message = open('web_interface/message.html', 'r').read()
-            message = message.replace('!!!MESSAGE!!!', 'Success!')
+            message = message.replace('!!!MESSAGE!!!', 'Login successful!<br><br>Processing...')
         self.send_response(200)
         self.end_headers()
         self.write_with_autoreplace(message)

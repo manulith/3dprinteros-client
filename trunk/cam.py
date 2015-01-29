@@ -1,3 +1,5 @@
+import utils
+utils.init_path_to_libs()
 import numpy as np
 import cv2
 import time
@@ -24,7 +26,7 @@ class CameraMaster():
         cam_names = self.get_camera_names()
         for num in cam_names:
             cap = cv2.VideoCapture(num)
-            cam = CameraImageSender(num, cam_names[num], cap)
+            cam = CameraImageSender(num+1, cam_names[num], cap)
             cam.start()
             self.cameras.append(cam)
 
@@ -96,12 +98,11 @@ class CameraImageSender(threading.Thread):
     def __init__(self, camera_number, camera_name, cap):
         self.logger = logging.getLogger("app." + __name__)
         self.stop_flag = False
-        self.camera_number = camera_number + 1
+        self.camera_number = camera_number
         self.camera_name = camera_name
         self.cap = cap
         ul = user_login.UserLogin(self)
-        if self.stop_flag != True:
-            ul.wait_for_login()
+        ul.wait_for_login()
         self.token = ul.user_token
         if not self.token:
             self.stop_flag = True
