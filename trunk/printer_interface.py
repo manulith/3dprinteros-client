@@ -48,7 +48,6 @@ class PrinterInterface(threading.Thread):
                 if error:
                     self.logger.warning("Error while login %s:" % str(self.usb_info))
                     self.logger.warning(str(error['code']) + " " + error["message"])
-                    #stub
                     if str(error['code']) == '8':
                         time.sleep(1)
                         continue
@@ -56,16 +55,12 @@ class PrinterInterface(threading.Thread):
                         return False
                 else:
                     self.logger.info('Successfully connected to server.')
-                    self.priner_token = answer['printer_token']
-                    #self.printer_profile = dict(json.loads(answer["printer_profile"]).items() + self.usb_info.items())
-                    self.logger.info('Received answer : ' + str(answer))
+                    self.printer_token = answer['printer_token']
+                    self.logger.info('Received answer: ' + str(answer))
                     self.printer_profile = json.loads(answer["printer_profile"])
-                    self.logger.info('Received profile from server : ' + str(self.printer_profile))
-                    self.logger.info('Received token from server : ' + str(self.priner_token))
-                    self.printer_profile = dict(self.usb_info.items() + self.printer_profile.items())
-                    self.logger.info('Final profile : ' + str(self.printer_profile))
-
-
+                    if self.usb_info['COM']:
+                        self.printer_profile['COM'] = self.usb_info['COM']
+                    self.logger.info('Setting profile: ' + str(self.printer_profile))
                     return True
             else:
                 self.logger.warning("Error on printer login. No connection or answer from server.")
@@ -94,7 +89,6 @@ class PrinterInterface(threading.Thread):
     #             elapsed += 0.5
     #     self.logger.warning('Error. Timeout while waiting for printer to become operational.')
 
-    @protection
     def process_command_request(self, data_dict):
         logger = logging.getLogger("app." + __name__)
         number = data_dict.get('number', None)
@@ -129,9 +123,13 @@ class PrinterInterface(threading.Thread):
             self.connect_printer_driver()
         while not self.stop_flag and self.printer:
             if self.printer.is_operational():
-                command = http_client.send(http_client.package_command_request, self.state_report())
-                self.process_command_request(self, command)
-                time.sleep(1)
+                print self.printer_token
+                print self.state_report()
+                answer = http_client.send(http_client.package_command_request, (self.printer_token, self.state_report()))
+                if answer:
+                    print answer
+                    self.process_command_request(self, answer)
+                    time.sleep(0.5)
             else:
                 if time.time() - self.creation_time < self.printer_profile.get('start_timeout', self.DEFAULT_TIMEOUT):
                     time.sleep(0.1)
@@ -230,12 +228,12 @@ class PrinterInterface(threading.Thread):
         return state
 
     def state_report(self, outer_state=None):
-        if self.printer_token:
-            report = {"printer_token": self.token}
+        if self.printer:
+            report = {}
             report["temps"] = self.printer.get_temps()
             report["target_temps"] = self.printer.get_target_temps()
             report["percent"] = self.printer.get_percent()
             if outer_state:
                 report["state"] = outer_state
             else:
-                report["state"] = self.printer.get_printer_state()
+                report["state"] = self.get_printer_state()

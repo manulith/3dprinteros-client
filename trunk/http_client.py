@@ -43,18 +43,19 @@ def package_printer_login(user_token, printer_profile, error={}):
     data = { 'user_token': user_token, 'printer': printer_profile, 'error': error }
     return json.dumps(data), printer_login_path
 
-#for camera streaming with json
-def package_camera_send(token, camera_number, camera_name, data, error = {}):
-    data = {'user_token': token, 'camera_number': camera_number, 'camera_name':camera_name, 'file_data': data, 'error': error, 'host_mac': MACADDR}
-    return json.dumps(data), token_camera_path
-
 def package_command_request(printer_token, state, error={}):
     data = { 'printer_token': printer_token, 'state': state, 'error': error }
+    print json.dumps(data)
     return json.dumps(data), command_path
+
+def package_camera_send(user_token, camera_number, camera_name, data, error = {}):
+    data = {'user_token': user_token, 'camera_number': camera_number, 'camera_name': camera_name, 'file_data': data, 'error': error, 'host_mac': MACADDR}
+    return json.dumps(data), token_camera_path
 
 def package_cloud_sync_upload(token, file_data, file_name):
     data = { 'user_token': token, 'file_data': file_data}
     return json.dumps(data), cloudsync_path
+
 
 def connect(URL):
     logger = logging.getLogger('app.' +__name__)

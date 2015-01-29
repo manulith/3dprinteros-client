@@ -98,14 +98,15 @@ class Printer:
             if baudrate_count >= len(baudrates):
                 raise RuntimeError("Printrun: no more baudrates to try for %s" % self._profile['name'])
             self._logger.info("Trying to connect with baudrate %i" % baudrates[baudrate_count])
-            try:
-                self._logger.debug("Resetting")
-                self._printer.reset()
-                self._logger.debug("Disconnecting")
-                self._printer.disconnect()
-                self._logger.debug("Done resetting and disconnecting.")
-            except Exception as e:
-                self._logger.debug('Error while resetting and disconnecting : \n' + e.message)
+            if getattr(self, "_printer", None):
+                try:
+                    self._logger.debug("Resetting")
+                    self._printer.reset()
+                    self._logger.debug("Disconnecting")
+                    self._printer.disconnect()
+                    self._logger.debug("Done resetting and disconnecting.")
+                except Exception as e:
+                    self._logger.debug('Error while resetting and disconnecting : \n' + e.message)
             try:
                 self._printer = printcore(self._profile['COM'], baudrates[baudrate_count])
             except Exception as e:
