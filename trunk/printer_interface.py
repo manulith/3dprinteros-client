@@ -95,10 +95,8 @@ class PrinterInterface(threading.Thread):
         if number:
             logger.info("Processing command number %i" % number)
         error = data_dict['error']
-        if error:
-            error_code = error[0]
-            error_str = error[1]
-            self.logger.warning("Server command came with errors %d %s", (error_code, error_str))
+        if error['code']:
+            self.logger.warning("Server command came with errors %d %s" % (error['code'], error['message']))
         else:
             command = data_dict.get('command', None)
             if command:
@@ -114,7 +112,6 @@ class PrinterInterface(threading.Thread):
                     else:
                         method()
                     return True
-        logger.warning("Error processing command: " + str(data_dict))
 
     def run(self):
         self.stop_flag = False
@@ -123,12 +120,10 @@ class PrinterInterface(threading.Thread):
             self.connect_printer_driver()
         while not self.stop_flag and self.printer:
             if self.printer.is_operational():
-                print self.printer_token
-                print self.state_report()
                 answer = http_client.send(http_client.package_command_request, (self.printer_token, self.state_report()))
                 if answer:
-                    print answer
-                    self.process_command_request(self, answer)
+                    self.logger.debug("Got answer: ", answer)
+                    self.process_command_request(answer)
                     time.sleep(0.5)
             else:
                 if time.time() - self.creation_time < self.printer_profile.get('start_timeout', self.DEFAULT_TIMEOUT):
@@ -237,3 +232,4 @@ class PrinterInterface(threading.Thread):
                 report["state"] = outer_state
             else:
                 report["state"] = self.get_printer_state()
+            return report

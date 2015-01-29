@@ -23,6 +23,8 @@ token_send_logs_path = "/oldliveview/sendLogs"
 
 domain_path_re = re.compile("https?:\/\/(.+)(\/.*)")
 
+#utils
+
 def load_json(jdata):
     logger = logging.getLogger('app.' +__name__)
     try:
@@ -35,6 +37,8 @@ def load_json(jdata):
         else:
             logger.error("Data should be dictionary: " + str(data))
 
+#packagers
+
 def package_user_login(username, password, error = {}):
     data = {'login': {'user': username, 'password': password}, 'error': error, 'host_mac': MACADDR}
     return json.dumps(data), user_login_path
@@ -44,8 +48,7 @@ def package_printer_login(user_token, printer_profile, error={}):
     return json.dumps(data), printer_login_path
 
 def package_command_request(printer_token, state, error={}):
-    data = { 'printer_token': printer_token, 'state': state, 'error': error }
-    print json.dumps(data)
+    data = { 'printer_token': printer_token, 'report': state, 'error': error }
     return json.dumps(data), command_path
 
 def package_camera_send(user_token, camera_number, camera_name, data, error = {}):
@@ -56,6 +59,7 @@ def package_cloud_sync_upload(token, file_data, file_name):
     data = { 'user_token': token, 'file_data': file_data}
     return json.dumps(data), cloudsync_path
 
+#senders
 
 def connect(URL):
     logger = logging.getLogger('app.' +__name__)
