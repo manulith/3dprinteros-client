@@ -129,7 +129,7 @@ class PrinterInterface(threading.Thread):
             self.connect_printer_driver()
         while not self.stop_flag and self.printer:
             if self.printer.is_operational():
-                command = http_client.send(http_client.package_command_request, self.report())
+                command = http_client.send(http_client.package_command_request, self.state_report())
                 self.process_command_request(self, command)
                 time.sleep(1)
             else:
