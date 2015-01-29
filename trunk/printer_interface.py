@@ -122,7 +122,7 @@ class PrinterInterface(threading.Thread):
         while not self.stop_flag and self.printer:
             if self.printer.is_operational():
                 report = self.state_report()
-                self.logger.debug("Printer %s\nRequesting command with: %s " % (report, self.printer_token))
+                self.logger.debug("Printer %s\nRequesting command with: %s " % (self.printer_token, report))
                 answer = http_client.send(http_client.package_command_request, (self.printer_token, report))
                 self.logger.debug("Got answer: " + str(answer))
                 if answer:
