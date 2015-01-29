@@ -98,7 +98,6 @@ class PrinterInterface(threading.Thread):
         error = data_dict.get('error', None)
         if error:
             self.logger.warning("Server command came with errors %d %s" % (error['code'], error['message']))
-            self.logger.debug("Full answer text: " + str(data_dict))
         else:
             command = data_dict.get('command', None)
             if command:
@@ -122,9 +121,11 @@ class PrinterInterface(threading.Thread):
             self.connect_printer_driver()
         while not self.stop_flag and self.printer:
             if self.printer.is_operational():
-                answer = http_client.send(http_client.package_command_request, (self.printer_token, self.state_report()))
+                report = self.state_report()
+                self.logger.debug("Printer %s\nRequesting command with: %s " % (report, self.printer_token))
+                answer = http_client.send(http_client.package_command_request, (self.printer_token, report))
+                self.logger.debug("Got answer: " + str(answer))
                 if answer:
-                    self.logger.debug("Got answer: " + str(answer))
                     self.process_command_request(answer)
                     time.sleep(0.5)
             else:
