@@ -164,13 +164,16 @@ def read_login():
 
 def write_login(login, password):
     logger = logging.getLogger('app.' + __name__)
-    package_name = 'login_info.bin' #TODO: it probably shoud be read from config
+    package_name = 'login_info.bin' #probably it shoud be read from config
     try:
-        pack_info_zip(package_name, login, password)
+        result = pack_info_zip(package_name, login, password)
     except Exception as e:
         logger.warning('Login info writing error! ' + e.message)
     else:
-        logger.info('Login info was written and packed.')
+        if result == True:
+            logger.info('Login info was written and packed.')
+        else:
+            logger.warning("Login info wasn't written.")
         return True
 
 def tail(f, lines=200):
@@ -242,7 +245,7 @@ def compress_and_send(log_file_name=None, server_path=http_client.token_send_log
         r = requests.post(url, data = token, files = files)
         f.close()
         result = r.text
-        print "Log sending response: " + result
+        logger.info("Log sending response: " + result)
         if '"success":true' in result:
             os.remove(LOG_SNAPSHOTS_DIR + '/' + log_file_name)
         os.remove(zip_file_name)
@@ -258,8 +261,9 @@ def send_all_snapshots():
         return  True
 
 def pack_info_zip(package_name, *args):
+    logger = logging.getLogger('app.' + __name__)
     if package_name in os.listdir(os.getcwd()):
-        print 'File with that package name already exists in the working dir. Please choose another one'
+        logger.warning('That info package found in the working dir.')
         return
     file_name = 'info'
     temp_file = open(file_name, 'w')
@@ -273,9 +277,10 @@ def pack_info_zip(package_name, *args):
         zf.setpassword('d0nTfe_artH_er1PPe_r')
         zf.close()
     except Exception as e:
-        print 'Error: ' + e.message
+        logger.error('Packing error: ' + e.message)
         return
     os.remove(file_name)
+    return True
 
 def read_info_zip(package_name):
     if package_name in os.listdir(os.getcwd()):
