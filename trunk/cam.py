@@ -32,7 +32,7 @@ class CameraMaster():
         for sender in self.cameras:
             sender.close()
 
-        time.sleep(1)
+        time.sleep(2)
         for sender in self.cameras:
             if sender.isAlive():
                 self.logger.warning("Failed to close camera %s" % sender.name)
@@ -98,7 +98,6 @@ class CameraImageSender(threading.Thread):
         self.stop_flag = False
         self.camera_number = camera_number + 1
         self.camera_name = camera_name
-        self.url = 'https://acorn.3dprinteros.com/streamerapi/camera/'
         self.cap = cap
         ul = user_login.UserLogin(self)
         if self.stop_flag != True:
