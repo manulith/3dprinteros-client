@@ -40,7 +40,7 @@ def load_json(jdata):
 #packagers
 
 def package_user_login(username, password, error = {}):
-    data = {'login': {'user': username, 'password': password}, 'error': error, 'host_mac': MACADDR}
+    data = { 'login': { 'user': username, 'password': password}, 'error': error, 'host_mac': MACADDR }
     return json.dumps(data), user_login_path
 
 def package_printer_login(user_token, printer_profile, error={}):
@@ -52,11 +52,11 @@ def package_command_request(printer_token, state, error={}):
     return json.dumps(data), command_path
 
 def package_camera_send(user_token, camera_number, camera_name, data, error = {}):
-    data = {'user_token': user_token, 'camera_number': camera_number, 'camera_name': camera_name, 'file_data': data, 'error': error, 'host_mac': MACADDR}
+    data = { 'user_token': user_token, 'camera_number': camera_number, 'camera_name': camera_name, 'file_data': data, 'error': error, 'host_mac': MACADDR }
     return json.dumps(data), token_camera_path
 
 def package_cloud_sync_upload(token, file_data, file_name):
-    data = { 'user_token': token, 'file_data': file_data}
+    data = { 'user_token': token, 'file_data': file_data }
     return json.dumps(data), cloudsync_path
 
 #senders
