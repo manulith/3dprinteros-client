@@ -1,9 +1,8 @@
 import re
 import json
+import uuid
 import httplib
 import logging
-import requests
-import uuid
 
 import config
 
@@ -16,10 +15,9 @@ streamer_prefix = "/streamerapi"
 user_login_path = streamer_prefix + "/user_login"
 printer_login_path = streamer_prefix + "/printer_login"
 command_path = streamer_prefix + "/command"
+camera_path = streamer_prefix + "/camera" #json['image': base64_image ]
 cloudsync_path = "/autoupload"
-
-token_camera_path = streamer_prefix + "/camera" #json['image': base64_image ]
-token_send_logs_path = "/oldliveview/sendLogs"
+token_send_logs_path = "/oldliveview/sendLogs" #rename me!
 
 domain_path_re = re.compile("https?:\/\/(.+)(\/.*)")
 
@@ -53,7 +51,7 @@ def package_command_request(printer_token, state, error={}):
 
 def package_camera_send(user_token, camera_number, camera_name, data, error = {}):
     data = {'user_token': user_token, 'camera_number': camera_number, 'camera_name': camera_name, 'file_data': data, 'error': error, 'host_mac': MACADDR}
-    return json.dumps(data), token_camera_path
+    return json.dumps(data), camera_path
 
 def package_cloud_sync_upload(token, file_data, file_name):
     data = { 'user_token': token, 'file_data': file_data}
@@ -81,7 +79,7 @@ def post_request(connection, payload, path, headers=None):
         headers = {"Content-Type": "application/json", "Content-Length": str(len(payload))}
     return request(connection, payload, path, 'POST', headers)
 
-def get_request(connection, payload, path, headers=""):
+def get_request(connection, payload, path, headers={}):
     return request(connection, payload, path, 'GET', headers)
 
 def request(connection, payload, path, method, headers):
@@ -91,21 +89,23 @@ def request(connection, payload, path, method, headers):
         connection.request(method, path, payload, headers)
         resp = connection.getresponse()
     except Exception as e:
-        logger.info(("Error during HTTP request:" + str(e)))
-        logger.debug("...failed }")
+        logger.info(("Error during HTTP request:" + e.message))
     else:
-        logger.debug("Request status: %s %s" % (resp.status , resp.reason))
-        if resp.status == httplib.OK and resp.reason == "OK":
-            try:
-                received = resp.read()
-            except httplib.error as e:
-                logger.debug("Error reading response: " + str(e))
-                connection.close()
-            else:
+        logger.debug("Request status: %s %s" % (resp.status, resp.reason))
+        try:
+            received = resp.read()
+        except httplib.error as e:
+            logger.debug("Error reading response: " + str(e))
+        else:
+            if resp.status == httplib.OK and resp.reason == "OK":
                 connection.close()
                 logger.debug("...success }")
                 return received
-    logger.debug("...nothing to do }")
+            else:
+                logger.warning("Error: server response is not 200 OK\nMessage:%s" % received)
+        finally:
+            connection.close()
+    logger.debug("...failed }")
 
 def send(packager, payloads):
     if type(payloads) != tuple:
@@ -120,6 +120,7 @@ def send(packager, payloads):
 def download(url):
     logger = logging.getLogger('app.' +__name__)
     match = domain_path_re.match(url)
+    logger.info("Downloading payload from" + url)
     try:
         domain, path = match.groups()
     except AttributeError:
@@ -127,17 +128,7 @@ def download(url):
     else:
         connection = connect(domain)
         if connection:
-            return post_request(connection, "", path)
-
-def multipart_upload(url, payload, file_obj=None):
-    logger = logging.getLogger('app.' +__name__)
-    kwarg = {"data": payload}
-    if file_obj:
-        kwarg.update({"file": file_obj})
-    try:
-        r = requests.post(url, **kwarg)
-    except Exception as e:
-        logger.debug("Error while uploading to server: %s" % str(e))
-    else:
-        print 'Response: ' + r.text
-        return r.status_code == 200
+            logger.debug("Got connection to download server")
+            return get_request(connection, None, path)
+        else:
+            logger.warning("Error: no connection to download server")

@@ -67,6 +67,30 @@ class PrinterInterface(threading.Thread):
                 time.sleep(0.1)
                 return False
 
+    def get_printer_state(self):
+        if self.printer.is_operational():
+            if self.printer.is_printing():
+                state = "printing"
+            elif self.printer.is_paused():
+                state = "paused"
+            else:
+                state = "ready"
+        else:
+            state = "error"
+        return state
+
+    def state_report(self, outer_state=None):
+        if self.printer:
+            report = {}
+            report["temps"] = self.printer.get_temps()
+            report["target_temps"] = self.printer.get_target_temps()
+            report["percent"] = self.printer.get_percent()
+            if outer_state:
+                report["state"] = outer_state
+            else:
+                report["state"] = self.get_printer_state()
+            return report
+
     @protection
     def connect_printer_driver(self):
         printer_driver = __import__(self.printer_profile['driver'])
@@ -101,22 +125,24 @@ class PrinterInterface(threading.Thread):
         else:
             command = data_dict.get('command', None)
             if command:
-                if hasattr(self.printer, command):
-                    method = self.getattr('command')
+                if not hasattr(self.printer, command):
+                    self.logger.warning("Unknown command: " + str(command))
+                else:
+                    method = getattr(self, command)
                     payload = data_dict.get('payload', None)
                     if data_dict.get('is_link', False):
                         payload = http_client.download(payload)
                     elif "command" in ("gcodes", "binary_file"):
                         payload = base64.b64decode(payload)
                     if payload:
-                        method(payload)
+                        print payload
+                        method(self, payload)
                     else:
                         method()
                     return True
 
     def run(self):
         self.stop_flag = False
-        connected = False
         if self.connect_to_server():
             self.connect_printer_driver()
         while not self.stop_flag and self.printer:
@@ -182,6 +208,10 @@ class PrinterInterface(threading.Thread):
         self.printer.pause()
 
     @protection
+    def resume(self):
+        self.printer.resume()
+
+    @protection
     def cancel(self):
         self.printer.cancel()
 
@@ -192,47 +222,3 @@ class PrinterInterface(threading.Thread):
     @protection
     def set_total_gcodes(self, length):
         self.printer.set_total_gcodes(length)
-
-    @protection
-    def begin(self, length):
-        self.set_total_gcodes(length)
-
-    @protection
-    def enqueue(self, gcodes):
-        self.printer.enqueue(gcodes)
-
-    @protection
-    def end(self):
-        self.printer.end()
-
-    @protection
-    def resume(self):
-        self.printer.resume()
-
-    @protection
-    def is_paused(self):
-        return self.printer.is_paused()
-
-    def get_printer_state(self):
-        if self.printer.is_operational():
-            if self.printer.is_printing():
-                state = "printing"
-            elif self.printer.is_paused():
-                state = "paused"
-            else:
-                state = "ready"
-        else:
-            state = "error"
-        return state
-
-    def state_report(self, outer_state=None):
-        if self.printer:
-            report = {}
-            report["temps"] = self.printer.get_temps()
-            report["target_temps"] = self.printer.get_target_temps()
-            report["percent"] = self.printer.get_percent()
-            if outer_state:
-                report["state"] = outer_state
-            else:
-                report["state"] = self.get_printer_state()
-            return report
