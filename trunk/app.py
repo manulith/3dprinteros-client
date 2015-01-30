@@ -109,10 +109,10 @@ class App:
             for pi in self.printer_interfaces:
                 if pi.isAlive():
                     ready_flag = False
-                    self.logger.debug("Waiting for driver modules to close %s" % pi.profile['driver'])
+                    self.logger.debug("Waiting for driver modules to close %s" % str(pi.usb_info))
                 else:
                     self.printer_interfaces.remove(pi)
-                    self.logger.info("Close %s" % str(pi.usb_info))
+                    self.logger.info("%s was close" % str(pi.usb_info))
             if ready_flag:
                 break
             time.sleep(0.1)

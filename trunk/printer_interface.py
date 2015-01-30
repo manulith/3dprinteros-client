@@ -162,12 +162,6 @@ class PrinterInterface(threading.Thread):
                     self.printer = None
 
     @protection
-    def report(self):
-        if self.printer:
-            return self.printer.report()
-        return {'status': 'no_printer'}
-
-    @protection
     def close(self):
         self.stop_flag = True
         if self.printer:
@@ -202,7 +196,9 @@ class PrinterInterface(threading.Thread):
 
     @protection
     def gcodes(self, gcodes):
-        self.printer.gcodes(gcodes.split("\n"))
+        lines = gcodes.split("\n")
+        self.set_total_gcodes(len(lines))
+        self.printer.gcodes(lines)
 
     @protection
     def pause(self):
