@@ -43,7 +43,7 @@ class Printer():
         self._printing_thread = threading.Thread(target=self._printing, name='PR')
         self._printing_thread.start()
         self._logger.info('Makerbot printer created')
-        self._parset = None
+        self._parser = None
         try:
             self._parser = self._create_parser()
             self._parser.state.values["build_name"] = '3DPrinterOS'
