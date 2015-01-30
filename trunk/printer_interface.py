@@ -137,7 +137,7 @@ class PrinterInterface(threading.Thread):
                         payload = base64.b64decode(payload)
                     if payload:
                         print payload
-                        method(self, payload)
+                        method(payload)
                     else:
                         method()
                     return True

@@ -16,7 +16,7 @@ import http_client
 import printer_interface
 import user_login
 
-class App():
+class App:
 
     MIN_LOOP_TIME = 2
     READY_TIMEOUT = 10
@@ -112,10 +112,11 @@ class App():
                     self.logger.debug("Waiting for driver modules to close %s" % pi.profile['driver'])
                 else:
                     pi.join(1)
-                    if not pi.isAlive():
+                    if pi.isAlive():
                         self.printer_interfaces.remove(pi)
                         self.logger.info("Close %s" % str(pi.usb_info))
-
+                    else:
+                        ready_flag = False
             if ready_flag:
                 break
             time.sleep(0.1)
