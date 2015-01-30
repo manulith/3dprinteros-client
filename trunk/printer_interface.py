@@ -136,7 +136,6 @@ class PrinterInterface(threading.Thread):
                     elif "command" in ("gcodes", "binary_file"):
                         payload = base64.b64decode(payload)
                     if payload:
-                        print payload
                         method(payload)
                     else:
                         method()
@@ -203,7 +202,7 @@ class PrinterInterface(threading.Thread):
 
     @protection
     def gcodes(self, gcodes):
-        self.printer.gcodes(gcodes)
+        self.printer.gcodes(gcodes.split("\n"))
 
     @protection
     def pause(self):
