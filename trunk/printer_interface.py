@@ -145,6 +145,7 @@ class PrinterInterface(threading.Thread):
         self.stop_flag = False
         if self.connect_to_server():
             self.connect_printer_driver()
+        time.sleep(1)
         while not self.stop_flag and self.printer:
             if self.printer.is_operational():
                 report = self.state_report()
@@ -197,7 +198,9 @@ class PrinterInterface(threading.Thread):
     @protection
     def gcodes(self, gcodes):
         lines = gcodes.split("\n")
+        print "LEN=" + str(len(lines))
         self.set_total_gcodes(len(lines))
+        time.sleep(1)
         self.printer.gcodes(lines)
 
     @protection

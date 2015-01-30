@@ -120,7 +120,6 @@ class Printer:
                 self._printer.send("M105")
             time.sleep(2)
             baudrate_count += 1
-
         self._logger.info("Successful connection! Correct baudrate is %i" % baudrates[baudrate_count-1])
 
     def define_regexp(self):
@@ -264,27 +263,32 @@ class Printer:
         #     self._error_code = 'protocol'
         #     self._error_message = 'Begin was not sent'
         #     return
+        print "IN GCODES"
+        print "IN GCODES"
+        print "IN GCODES"
         self._logger.info('len(gcodes): ' + str(len(gcodes)) + ', ' + self._debug_info())
         if len(self._gcodes) > 0:
             self._append_buffer += gcodes
             return
 
         if len(gcodes) > 0:
+            print gcodes
+            print "!!!"
             self._gcodes = LightGCode(gcodes[0:2000])
             try:
-                '''
-                Force operational state and wait for print_thread to start,
-                because while starting print following condition (interpreted as error) arise:
-                printcore.printing == True and print_thread.is_alive() == False
-                '''
-                self._force_operational = True
                 if self._printer.startprint(self._gcodes):
                     time.sleep(2)
                     self._append_buffer += gcodes[2000:]
                 else:
                     self._logger.critical('Error starting print')
-            finally:
-                self._force_operational = False
+            except Exception as e:
+                print e
+                print e
+                print e
+                print e
+                print e
+                print e
+
 
     def end(self):
         self._logger.debug('End debug info : ' + self._debug_info())
@@ -331,9 +335,9 @@ class Printer:
 
     def is_printing(self):
         self._logger.debug('Is_printing debug info : ' + self._debug_info())
-        if self._printing:
-            if self._got_all_gcodes and not self._printer.printing and not self._printer.paused:
-                self._printing = False
+        # if self._printing:
+        #     if self._got_all_gcodes and not self._printer.printing and not self._printer.paused:
+        #         self._printing = False
         return self._printing
 
     def is_operational(self):
@@ -401,7 +405,7 @@ class Printer:
             return 100
         if self._printer.queueindex == 0:  # when underflow print will be completed and queueindex = 0
             return self._last_percent
-        return round((float(self._printer.queueindex) / self._length)*100, 2)
+        return round( (float(self._printer.queueindex) / self._length ) * 100, 2 )
 
     def get_percent(self):
         self._logger.debug(self._debug_info())
@@ -434,7 +438,3 @@ class Printer:
         if second_tool_temp:
             target_temps.append(second_tool_temp)
         return target_temps
-
-if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG)
-    p = Printer({"name" : "test", "COM" : "/dev/ttyACM0", "baudrate" : [115200, 250000], "end_gcodes" : [], "reconnect_on_cancel" : False, "extruder_count" :1})
