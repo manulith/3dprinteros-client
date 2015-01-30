@@ -5,7 +5,7 @@ import sys
 import time
 import signal
 import logging
-import logging.handlers
+from subprocess import Popen, PIPE
 
 import utils
 utils.init_path_to_libs()
@@ -21,27 +21,8 @@ class App:
     MIN_LOOP_TIME = 2
     READY_TIMEOUT = 10
 
-    @staticmethod
-    def get_logger():
-        logger = logging.getLogger("app")
-        logger.propagate = False
-        logger.setLevel(logging.DEBUG)
-        stderr_handler = logging.StreamHandler()
-        stderr_handler.setLevel(logging.DEBUG)
-        logger.addHandler(stderr_handler)
-        log_file = config.config['log_file']
-        if log_file:
-            try:
-                file_handler = logging.handlers.RotatingFileHandler(log_file, maxBytes=1024*1024*4, backupCount=1)
-                file_handler.setFormatter(logging.Formatter('%(levelname)s\t%(asctime)s\t%(threadName)s/%(funcName)s\t%(message)s'))
-                file_handler.setLevel(logging.DEBUG)
-                logger.addHandler(file_handler)
-            except Exception as e:
-                logger.debug('Could not create log file because' + e.message + '\n.No log mode.')
-        return logger
-
     def __init__(self):
-        self.logger = self.get_logger()
+        self.logger = utils.get_logger(config.config["log_file"])
         self.logger.info("Welcome to 3DPrinterOS Client version %s_%s" % (version.version, version.build))
         self.time_stamp()
         signal.signal(signal.SIGINT, self.intercept_signal)
@@ -50,10 +31,14 @@ class App:
         self.printer_interfaces = []
         self.stop_flag = False
         self.quit_flag = False
+        self.cam = None
         self.user_login = user_login.UserLogin(self)
         self.init_interface()
         self.user_login.wait_for_login()
+        if config.config["camera"]["enabled"] == True:
+            self.cam = Popen(['python', 'cam.py'], stdout=PIPE, stderr=PIPE)
         self.main_loop()
+
 
     def init_interface(self):
         if config.config['web_interface']:
@@ -99,6 +84,9 @@ class App:
 
     def quit(self):
         self.stop_flag = True
+        if self.cam:
+            self.cam.kill()
+            self.logger.info('Camera process closed.')
         for pi in self.printer_interfaces:
             pi.close()
         time.sleep(0.1) #to reduce logging spam in next

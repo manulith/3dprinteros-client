@@ -7,6 +7,7 @@ import time
 import string
 import zipfile
 import logging
+import logging.handlers
 import threading
 import platform
 from hashlib import md5
@@ -323,6 +324,24 @@ def remove_corrupted_lines(lines):
         if not line or line in string.whitespace:
             lines.remove(line)
     return lines
+
+def get_logger(log_file):
+        logger = logging.getLogger("app")
+        logger.propagate = False
+        logger.setLevel(logging.DEBUG)
+        stderr_handler = logging.StreamHandler()
+        stderr_handler.setLevel(logging.DEBUG)
+        logger.addHandler(stderr_handler)
+        if log_file:
+            try:
+                file_handler = logging.handlers.RotatingFileHandler(log_file, maxBytes=1024*1024*4, backupCount=1)
+                file_handler.setFormatter(logging.Formatter('%(levelname)s\t%(asctime)s\t%(threadName)s/%(funcName)s\t%(message)s'))
+                file_handler.setLevel(logging.DEBUG)
+                logger.addHandler(file_handler)
+            except Exception as e:
+                logger.debug('Could not create log file because' + e.message + '\n.No log mode.')
+        return logger
+
 
 if __name__ == "__main__":
     make_log_snapshot()

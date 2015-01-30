@@ -6,6 +6,8 @@ import time
 import base64
 import threading
 import logging
+import signal
+import sys
 
 import http_client
 import user_login
@@ -13,7 +15,9 @@ import config
 
 class CameraMaster():
     def __init__(self):
-        self.logger = logging.getLogger("app." + __name__)
+        self.logger = utils.get_logger(config.config["camera"]["log_file"])
+        signal.signal(signal.SIGINT, self.intercept_signal)
+        signal.signal(signal.SIGTERM, self.intercept_signal)
         self.cameras = []
         if len(self.get_camera_names()) != self.get_number_of_cameras():
             message = "Malfunction in get_camera_names. Number of cameras doesn't equal to number of camera names"
@@ -30,6 +34,10 @@ class CameraMaster():
             cam.start()
             self.cameras.append(cam)
 
+    def intercept_signal(self, signal_code, frame):
+        self.logger.warning("SIGINT or SIGTERM received. Closing Camera Module...")
+        self.close()
+
     def close(self):
         start_time = time.time()
         for sender in self.cameras:
@@ -37,13 +45,14 @@ class CameraMaster():
         if time.time() - start_time < config.config["camera"]["camera_min_loop_time"]:
             time.sleep(1)
         for sender in self.cameras:
+            sender.join(1)
             if sender.isAlive():
                 self.logger.warning("Failed to close camera %s" % sender.name)
-
+        logging.shutdown()
+        sys.exit(0)
 
     def get_camera_names(self):
         cameras_names = {}
-        import sys
         if sys.platform.startswith('win'):
             import win32com.client
             str_computer = "."
@@ -95,6 +104,7 @@ class CameraMaster():
             cameras_count += 1
         return cameras_count
 
+
 class CameraImageSender(threading.Thread):
     def __init__(self, camera_number, camera_name, cap):
         self.logger = logging.getLogger("app." + __name__)
@@ -103,6 +113,7 @@ class CameraImageSender(threading.Thread):
         self.camera_name = camera_name
         self.cap = cap
         ul = user_login.UserLogin(self)
+        self.logger.info(self.camera_name + ' login...')
         ul.wait_for_login()
         self.token = ul.user_token
         if not self.token:
@@ -123,8 +134,6 @@ class CameraImageSender(threading.Thread):
 
     def send_picture(self, picture):
         picture = base64.b64encode(str(picture))
-        #data = {"user_token": self.token, "camera_number": self.camera_number, "camera_name": self.camera_name, "data": picture, "host_mac": http_client.MACADDR}
-        #http_client.multipart_upload(self.url, data)
         answer =  http_client.send(http_client.package_camera_send, (self.token, self.camera_number, self.camera_name, picture, http_client.MACADDR))
         self.logger.debug(self.camera_name + ' streaming response: ' + str(answer))
 
@@ -147,7 +156,6 @@ class CameraImageSender(threading.Thread):
 
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.DEBUG)
     CM = CameraMaster()
     while True:
         try:
