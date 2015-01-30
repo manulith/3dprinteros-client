@@ -47,23 +47,19 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             with open(name) as f:
                 page = f.read()
             printers_list = []
-            for printer in self.server.app.detected_printers:
-                if str(printer['SNR']) == 'None':
-                    printer_snr = 'Unknown serial number'
+            for pi in self.server.app.printer_interfaces:
+                if str(pi.printer_profile) == 'None':
+                    printer = 'Unknown printer'
                 else:
-                    printer_snr = str(printer['SNR'])
-                printers_list.append('<b>' + printer['VID'] + " " + printer['PID'] + "</b><br>(s/n: " + printer_snr + ')')
+                    printer = str(pi.printer_profile)
+                printers_list.append('<b>' + printer + '</b>')
             printers = ''.join(map(lambda x: "<p>" + x + "</p>", printers_list))
             page = page.replace('!!!PRINTERS!!!', printers)
             self.write_with_autoreplace(page)
 
     def do_POST(self):
-        if self.path.find('write_token') >= 0:
-            self.process_write_token()
-        elif self.path.find('login') >= 0:
+        if self.path.find('login') >= 0:
             self.process_login()
-        elif self.path.find('clear_token') >= 0:
-            self.process_clear_token()
         elif self.path.find('quit') >= 0:
             self.quit_main_app()
         elif self.path.find('snapshot_log') >= 0:
@@ -117,42 +113,6 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.server.app.stop_flag = True
         self.server.app.quit_flag = True
 
-    # def process_clear_token(self):
-    #     result = utils.write_token('')
-    #     if result:
-    #         message = open('web_interface/token_reset.html', 'r').read()
-    #         self.server.token_was_reset_flag = True
-    #     else:
-    #         message = "Error writing token"
-    #     self.send_response(200)
-    #     self.end_headers()
-    #     self.write_with_autoreplace(message)
-    #
-    # def process_write_token(self):
-    #     content_length = self.headers.getheader('Content-Length')
-    #     if content_length:
-    #         length = int(content_length)
-    #         body = self.rfile.read(length)
-    #         prefix = "token="
-    #         if prefix in body:
-    #             token = body.replace(prefix, "")
-    #             result = utils.write_token(token)
-    #             if result:
-    #                 message = open('web_interface/token_success.html', 'r').read()
-    #             else:
-    #                 message = open('web_interface/token_error.html', 'r').read()
-    #             self.send_response(200)
-    #             self.end_headers()
-    #             self.write_with_autoreplace(message)
-    #         else:
-    #             self.send_response(400)
-    #             self.end_headers()
-    #             self.write_with_autoreplace('Invalid body content for this request')
-    #     else:
-    #         self.send_response(411)
-    #         self.end_headers()
-    #         self.write_with_autoreplace('Zero Content-Length')
-            
     def process_login(self):
         content_length = self.headers.getheader('Content-Length')
         if content_length:
