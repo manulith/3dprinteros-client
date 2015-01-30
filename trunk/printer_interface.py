@@ -40,8 +40,9 @@ class PrinterInterface(threading.Thread):
         super(PrinterInterface, self).__init__()
 
     def connect_to_server(self):
+        self.stop_flag = False
         self.logger.info("Connecting to server with printer: %s" % str(self.usb_info))
-        while True:
+        while not self.stop_flag:
             answer = http_client.send(http_client.package_printer_login, (self.user_token, self.usb_info))
             if answer:
                 error = answer.get('error', None)
@@ -169,6 +170,7 @@ class PrinterInterface(threading.Thread):
 
     @protection
     def close(self):
+        self.stop_flag = True
         if self.printer:
             self.logger.info('Closing ' + str(self.printer_profile))
             self.printer.close()
