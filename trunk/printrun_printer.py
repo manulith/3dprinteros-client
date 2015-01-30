@@ -74,9 +74,6 @@ class Printer:
         self._temp_request_active = True
         self._temp_request_thread.start()
         self._append_buffer = deque()
-        # self._append_thread = threading.Thread(target=self._append)
-        # self._append_active = True
-        # self._append_thread.start()
         self._append_thread = None
         self._append_active = False
         #self._position = [0.00,0.00,0.00]
@@ -392,8 +389,10 @@ class Printer:
         self._logger.debug('Close debug info : ' + self._debug_info())
         self._printer.disconnect()
         self._temp_request_active = False
-        self._temp_request_thread.join()
+        self._logger.debug('(Joining printrun_printer threads...')
         self._stop_append()
+        self._temp_request_thread.join()
+        self._logger.debug('...done)')
 
     def _get_percent(self):
         if len(self._gcodes) == 0 or self._length == 0:
