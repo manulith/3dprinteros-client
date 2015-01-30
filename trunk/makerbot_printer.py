@@ -268,21 +268,23 @@ class Printer():
             return True
 
     def _read_state(self):
-        self._platform_temp          = self._execute(lambda: self._parser.s3g.get_platform_temperature(1))
-        self._platform_ttemp         = self._execute(lambda: self._parser.s3g.get_platform_target_temperature(1))
-        self._head_temp[0]  = self._execute(lambda: self._parser.s3g.get_toolhead_temperature(0))
-        self._head_ttemp[0] = self._execute(lambda: self._parser.s3g.get_toolhead_target_temperature(0))
-        self._head_temp[1]  = self._execute(lambda: self._parser.s3g.get_toolhead_temperature(1))
-        self._head_ttemp[1] = self._execute(lambda: self._parser.s3g.get_toolhead_target_temperature(1))
-        self._mb            = self._execute(lambda: self._parser.s3g.get_motherboard_status())
-        #self._position      = self._execute(lambda: self._parser.s3g.get_extended_position())
+        if self._parser:
+            self._platform_temp          = self._execute(lambda: self._parser.s3g.get_platform_temperature(1))
+            self._platform_ttemp         = self._execute(lambda: self._parser.s3g.get_platform_target_temperature(1))
+            self._head_temp[0]  = self._execute(lambda: self._parser.s3g.get_toolhead_temperature(0))
+            self._head_ttemp[0] = self._execute(lambda: self._parser.s3g.get_toolhead_target_temperature(0))
+            self._head_temp[1]  = self._execute(lambda: self._parser.s3g.get_toolhead_temperature(1))
+            self._head_ttemp[1] = self._execute(lambda: self._parser.s3g.get_toolhead_target_temperature(1))
+            self._mb            = self._execute(lambda: self._parser.s3g.get_motherboard_status())
+            #self._position      = self._execute(lambda: self._parser.s3g.get_extended_position())
 
     # and position
     def _read_temps(self):
-        self._platform_temp         = self._execute(lambda: self._parser.s3g.get_platform_temperature(1))
-        self._head_temp[0] = self._execute(lambda: self._parser.s3g.get_toolhead_temperature(0))
-        self._head_temp[1] = self._execute(lambda: self._parser.s3g.get_toolhead_temperature(1))
-        #self._position      = self._execute(lambda: self._parser.s3g.get_extended_position())
+        if self._parser:
+            self._platform_temp         = self._execute(lambda: self._parser.s3g.get_platform_temperature(1))
+            self._head_temp[0] = self._execute(lambda: self._parser.s3g.get_toolhead_temperature(0))
+            self._head_temp[1] = self._execute(lambda: self._parser.s3g.get_toolhead_temperature(1))
+            #self._position      = self._execute(lambda: self._parser.s3g.get_extended_position())
 
     def is_printing(self):
         printing = [
