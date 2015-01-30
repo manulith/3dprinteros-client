@@ -72,6 +72,8 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.send_log_snapshots()
         elif self.path.find('logs') >= 0:
             self.download_logs()
+        elif self.path.find('logout') >= 0:
+            self.process_logout()
         else:
             self.send_response(404)
             self.end_headers()
@@ -171,20 +173,16 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.end_headers()
         self.write_with_autoreplace(message)
 
-        # if content_length:
-        #         length = int(content_length)
-        #         body = self.rfile.read(length)
-        #         prefix = "token="
-        #         if prefix in body:
-        #             token = body.replace(prefix, "")
-        #             result = utils.write_token(token)
-        #             if result:
-        #                 message = open('web_interface/token_success.html', 'r').read()
-        #             else:
-        #                 message = open('web_interface/token_error.html', 'r').read()
-        #             self.send_response(200)
-        #             self.end_headers()
-        #             self.write_with_autoreplace(message)
+    def process_logout(self):
+        if os.path.isfile('login_info.bin') == True:
+            try:
+                os.remove('login_info.bin')
+            except Exception as e:
+                self.logger.error('Failed to logout: ' + e.message)
+        page = open('web_interface/logout.html', 'r').read()
+        self.send_response(200)
+        self.end_headers()
+        self.write_with_autoreplace(page)
 
 
 class WebInterface(threading.Thread):
