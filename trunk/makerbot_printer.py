@@ -29,7 +29,6 @@ class Printer():
         self._buffer = collections.deque()
         self._state = self.STATE_READY
         self._actual_state = self.STATE_NONE
-        self._state_before_error = self.STATE_READY
         self._error_code = ''
         self._error_message = ''
         self._platform_temp = 0
@@ -38,7 +37,6 @@ class Printer():
         self._head_ttemp = [0, 0]
         #self._position = ([0,0,0], None)
         self._mb = {'preheat': False, 'heat_shutdown': False}
-        self._eof = False
         self._lock = threading.Lock()
         self._printing_thread = threading.Thread(target=self._printing, name='PR')
         self._printing_thread.start()
@@ -75,48 +73,28 @@ class Printer():
     def get_printing_job_state(self):
         state = {}
         state['parser_state'] = self._parser.state
-        state['eof']          = self._eof
         state['buffer']       = self._buffer
-        state['state']        = self._state_before_error
         self._logger.info('State before error ' + str(state['state']))
         return state
 
     def set_printing_job_state(self, state):
         self._parser.state = state['parser_state']
-        self._eof          = state['eof']
         self._buffer       = state['buffer']
         self._state        = state['state']
         self._logger.info('Restoring state ' + str(state['state']))
-
-    def begin(self, length):
-        self.set_total_gcodes(length)
 
     # length argument is used for unification with Printrun. DON'T REMOVE IT!
     def set_total_gcodes(self, length):
         with self._lock:
             self._state = self.STATE_PRINTING
-            self._eof   = False
             self._buffer.clear()
             self._parser.state.values["build_name"] = '3DPrinterOS'
             self._parser.state.percentage = 0
             self._logger.info('Begin of GCodes')
             self._execute(lambda: self._parser.s3g.set_RGB_LED(255, 255, 255, 0))
 
-    def end(self):
-        with self._lock:
-            self._eof = True
-            self._logger.info('End of GCodes')
-
-    def enqueue(self, gcodes):
-        self.gcodes(gcodes)
-
     def gcodes(self, gcodes):
         with self._lock:
-            if self._state != self.STATE_PRINTING:
-                self._state = self.STATE_FATAL_ERROR
-                self._error_code = 'protocol'
-                self._error_message = 'Begin was not sent'
-                return
             self._buffer += gcodes
             self._logger.info('Enqueued block: ' + str(len(gcodes)) + ', total: ' + str(len(self._buffer)))
 
@@ -126,9 +104,6 @@ class Printer():
                 return
             self._state = self.STATE_PAUSED
             self._wait_for_actual_status(self.STATE_PAUSED)
-
-    def resume(self):
-        self.unpause()
 
     def unpause(self):
         with self._lock:
@@ -141,16 +116,6 @@ class Printer():
 
     def emergency_stop(self):
         self.cancel()
-
-    def reset(self):
-        with self._lock:
-            self._buffer.clear()
-            self._state = self.STATE_READY
-
-    def send(self, gcode):
-        with self._lock:
-            self._execute(gcode)
-            self._logger.info('Executed GCode: ' + gcode)
 
     def get_buffer_free_space(self):
         return max(250*15 - len(self._buffer), 0)
@@ -189,7 +154,7 @@ class Printer():
             time.sleep(0.1)
 
     def _execute(self, command):
-        while True:
+        while self._state != self.STATE_CLOSED:
             self._logger.debug("Executing command: {" + str(command) + "}")
             try:
                 if isinstance(command, str):
@@ -211,7 +176,6 @@ class Printer():
 
             except serial.serialutil.SerialException as e:
                 self._logger.info('SerialException')
-                self._state_before_error = self._state
                 self._state = self.STATE_RETRYABLE_ERROR
                 self._close()
                 self._error_code = 'serial'
@@ -220,7 +184,6 @@ class Printer():
 
             except makerbot_driver.ProtocolError as e:
                 self._logger.info('ProtocolError: ' + str(traceback.format_exc()))
-                self._state_before_error = self._state
                 self._state = self.STATE_RETRYABLE_ERROR
                 self._close()
                 self._error_code = 'general'
@@ -229,7 +192,6 @@ class Printer():
 
             except makerbot_driver.Gcode.GcodeError as e:
                 self._logger.info('makerbot_driver.Gcode.GcodeError')
-                self._state_before_error = self._state
                 self._state = self.STATE_FATAL_ERROR
                 self._close()
                 self._error_code = 'gcode'
@@ -238,7 +200,6 @@ class Printer():
 
             except Exception as e:
                 self._logger.info('Unexpected error: ' + str(traceback.format_exc()))
-                self._state_before_error = self._state
                 self._state = self.STATE_FATAL_ERROR
                 self._close()
                 self._error_code = 'general'
@@ -367,10 +328,9 @@ class Printer():
                     #TODO check this is real print(can cause misprints)
                     #self._position = self._execute(lambda: self._parser.s3g.get_extended_position())
                 except IndexError:
-                    if self._eof:
+                    if self._parser.s3g.is_finished():
                         self._logger.info('All GCodes are sent to printer')
                         self._state = self.STATE_READY
-                    time.sleep(0.1)
             elif self._state == self.STATE_CLOSED:
                 if self._actual_state != self._state:
                     self._actual_state = self._state

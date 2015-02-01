@@ -12,7 +12,6 @@ class Printer:
         info = 'len(_gcodes): ' + str(len(self._gcodes)) + '\n'
         info += '_length: ' + str(self._length) + '\n'
         info += 'len(_append_buffer): ' + str(len(self._append_buffer)) + '\n'
-        info += '_got_all_gcodes: ' + str(self._got_all_gcodes) + '\n'
         info += '_was_error: ' + str(self._was_error) + '\n'
         info += '_last_percent: ' + str(self._last_percent) + '\n'
         info += '_wait_heading: ' + str(self._wait_heading) + '\n'
@@ -93,7 +92,7 @@ class Printer:
         self._logger.info('Baudrates list for %s : %s' % (self._profile['name'], str(baudrates)))
         while not self.connected_flag:
             if baudrate_count >= len(baudrates):
-                raise RuntimeError("Printrun: no more baudrates to try for %s" % self._profile['name'])
+                raise RuntimeError("No more baudrates to try")
             self._logger.info("Trying to connect with baudrate %i" % baudrates[baudrate_count])
             if getattr(self, "_printer", None):
                 try:
@@ -246,7 +245,6 @@ class Printer:
         self._logger.debug('Begin debug info : ' + self._debug_info())
         self._length = length
         self._printing = True
-        self._got_all_gcodes = False
         self._last_percent = 0
         self._wait_heading = False
         self._force_operational = False
@@ -258,14 +256,6 @@ class Printer:
         self.gcodes(gcodes)
 
     def gcodes(self, gcodes):
-        # if not self._printing:
-        #     self._was_error = True
-        #     self._error_code = 'protocol'
-        #     self._error_message = 'Begin was not sent'
-        #     return
-        print "IN GCODES"
-        print "IN GCODES"
-        print "IN GCODES"
         self._logger.info('len(gcodes): ' + str(len(gcodes)) + ', ' + self._debug_info())
         if len(self._gcodes) > 0:
             self._append_buffer += gcodes
@@ -282,17 +272,7 @@ class Printer:
                 else:
                     self._logger.critical('Error starting print')
             except Exception as e:
-                print e
-                print e
-                print e
-                print e
-                print e
-                print e
-
-
-    def end(self):
-        self._logger.debug('End debug info : ' + self._debug_info())
-        self._got_all_gcodes = True
+                self.logger.warning("Can`t start printing. Error: %s" % e.message)
 
     def pause(self):
         self._logger.debug(self._debug_info())
@@ -301,9 +281,6 @@ class Printer:
                 ' E' + str(self._printer.pauseE - self._pause_extrude_length)
         self._printer.send_now(gcode)
         self._logger.info("Paused successfully")
-
-    def resume(self):
-        self.unpause()
 
     def unpause(self):
         self._logger.debug(self._debug_info())
@@ -323,7 +300,6 @@ class Printer:
         self._logger.debug(self._debug_info())
         self._stop_append()
         self._printer.cancelprint()
-        self._got_all_gcodes = True
         self._last_percent = 100
 
     def emergency_stop(self):
@@ -335,9 +311,6 @@ class Printer:
 
     def is_printing(self):
         self._logger.debug('Is_printing debug info : ' + self._debug_info())
-        # if self._printing:
-        #     if self._got_all_gcodes and not self._printer.printing and not self._printer.paused:
-        #         self._printing = False
         return self._printing
 
     def is_operational(self):
@@ -383,12 +356,6 @@ class Printer:
     def get_platform_target_temp(self):
         return self._platform_target_temp
 
-    def get_state(self):
-        pass
-
-    def set_state(self):
-        pass
-
     def close(self):
         self._logger.debug('Close debug info : ' + self._debug_info())
         self._printer.disconnect()
@@ -398,28 +365,11 @@ class Printer:
         self._temp_request_thread.join()
         self._logger.debug('...done)')
 
-    def _get_percent(self):
-        if len(self._gcodes) == 0 or self._length == 0:
-            return 0
-        if not self.is_printing():
-            return 100
-        if self._printer.queueindex == 0:  # when underflow print will be completed and queueindex = 0
-            return self._last_percent
-        return round( (float(self._printer.queueindex) / self._length ) * 100, 2 )
-
     def get_percent(self):
         self._logger.debug(self._debug_info())
         self._last_percent = self._get_percent()
         self._logger.debug('percent: ' + str(self._last_percent))
         return self._last_percent
-
-    def get_remaining_gcode_count(self):
-        pass
-
-    def send(self, gcodes):
-        if not self.is_printing():
-            for gcode in gcodes:
-                self._printer.send_now(gcode)
 
     def get_temps(self):
         platform_temp = self.get_platform_temp()
