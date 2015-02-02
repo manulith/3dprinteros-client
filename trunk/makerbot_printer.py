@@ -68,12 +68,13 @@ class Sender(base_sender.BaseSender):
 
     def gcodes(self, gcodes):
         self.logger.info('Enqueued block: ' + str(len(gcodes)) + ', total: ' + str(len(self.buffer)))
-        self.buffer.append(gcodes)
+        for code in gcodes:
+            self.buffer.append(code)
 
     def cancel(self):
         self.buffer.clean()
         self.execute(lambda: self.parser.s3g.abort_immediately())
-        self.buffer.append()
+        #self.buffer.append()
         self.lift_extruder()
 
     def emergency_stop(self):
