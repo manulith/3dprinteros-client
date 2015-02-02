@@ -10,7 +10,7 @@ class Sender(base_sender.BaseSender):
     EXECUTION_RETRY_WAIT = 0.05
     PAUSE_STEP_TIME = 0.1
     BUFFER_OVERFLOW_WAIT = 0.1
-    IDLE_WAITING_STEP = 0.1
+    IDLE_WAITING_STEP = 3
     TEMP_UPDATE_PERIOD = 5
 
     def __init__(self, profile):
@@ -65,12 +65,13 @@ class Sender(base_sender.BaseSender):
         self.parser.s3g.set_RGB_LED(255, 255, 255, 0)
 
     def gcodes(self, gcodes):
-        self.buffer.append(gcodes)
         self.logger.info('Enqueued block: ' + str(len(gcodes)) + ', total: ' + str(len(self.buffer)))
+        self.buffer.append(gcodes)
 
     def cancel(self):
         self.buffer.clean()
         self.execute(lambda: self.parser.s3g.abort_immediately())
+        self.buffer.append()
         self.lift_extruder()
 
     def emergency_stop(self):
@@ -92,7 +93,6 @@ class Sender(base_sender.BaseSender):
             if self.pause_flag:
                 time.sleep(self.PAUSE_STEP_TIME)
                 continue
-            self.logger.debug("Executing command: {" + str(command) + "}")
             if retries > 0:
                 self.logger.warning("Number %d attempt to execute %s" % (retries, str(command)))
             if retries > self.MAX_EXECUTION_RETRIES:
@@ -102,6 +102,7 @@ class Sender(base_sender.BaseSender):
             try:
                 if isinstance(command, str):
                     self.parser.execute_line(command)
+                    self.logger.debug("Executing command: " + command)
                     result = None
                 else:
                     result = command()
@@ -193,7 +194,7 @@ class Sender(base_sender.BaseSender):
                     self.read_state()
                 self.state = 'printing'
                 self.execute(command)
-                self.logger.debug('Executed GCode: ' + command)
+                #self.logger.debug('Executed GCode: ' + command)
                 #self.set_target_temps(result)
                 #TODO check this is real print(can cause misprints)
                 #self.position = self.execute(lambda: self.parser.s3g.get_extended_position())
@@ -201,7 +202,6 @@ class Sender(base_sender.BaseSender):
 
     def is_printing(self):
         return self.state == 'printing'
-
 
     def get_percent(self):
         return self.parser.state.percentage
