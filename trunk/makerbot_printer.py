@@ -11,7 +11,7 @@ class Sender(base_sender.BaseSender):
     PAUSE_STEP_TIME = 0.1
     BUFFER_OVERFLOW_WAIT = 0.1
     IDLE_WAITING_STEP = 0.1
-    TEMP_UPDATE_PERION = 5
+    TEMP_UPDATE_PERIOD = 5
 
     def __init__(self, profile):
         base_sender.BaseSender.__init__(self, profile)
@@ -78,11 +78,11 @@ class Sender(base_sender.BaseSender):
 
     def close(self):
         self.stop_flag = True
-        self.printing_thread.join(10)
+        self.sending_thread.join(10)
         if self.parser is not None:
             if self.parser.s3g is not None:
                 self.parser.s3g.close()
-        if self.printing_thread.isAlive():
+        if self.sending_thread.isAlive():
             self.logger.error("Failed to join printing thread in makerbot_printer")
             raise RuntimeError("Failed to join printing thread in makerbot_printer")
 

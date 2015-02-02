@@ -1,15 +1,12 @@
 import time
+import json
 import base64
-import serial
 import logging
 import threading
-import json
 
-import utils
 import http_client
 
 
-# Warning any runtime modification of profile will cause errors. profiles are used for identification. need to fix this somehow.
 class PrinterInterface(threading.Thread):
 
     DEFAULT_TIMEOUT = 45

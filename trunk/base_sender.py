@@ -1,5 +1,5 @@
-import collections
 import logging
+import collections
 
 class BaseSender:
 
