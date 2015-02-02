@@ -80,7 +80,6 @@ def init_path_to_libs():
         logger.info('Using library: ' + lib_path)
         sys.path.append(lib_path)
 
-
 def get_libusb_path(lib):
     logger = logging.getLogger('app.' + __name__)
     logger.info('Using: ' + lib)
