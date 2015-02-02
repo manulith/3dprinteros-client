@@ -12,9 +12,6 @@ class Printer:
         info = 'len(_gcodes): ' + str(len(self._gcodes)) + '\n'
         info += '_length: ' + str(self._length) + '\n'
         info += 'len(_append_buffer): ' + str(len(self._append_buffer)) + '\n'
-        info += '_was_error: ' + str(self._was_error) + '\n'
-        info += '_last_percent: ' + str(self._last_percent) + '\n'
-        info += '_wait_heading: ' + str(self._wait_heading) + '\n'
         info += '_printing: ' + str(self._printing) + '\n'
         info += '_printer.online: ' + str(self._printer.online) + '\n'
         info += '_printer.printing: ' + str(self._printer.printing) + '\n'
@@ -47,7 +44,6 @@ class Printer:
         self._extruder_count = profile['extruder_count']
         self._pause_lift_height = 5
         self._pause_extrude_length = 7
-        self._force_operational = False
         self._was_error = False
         self._error_code = ''
         self._error_message = ''
@@ -63,11 +59,6 @@ class Printer:
         self._gcodes = LightGCode([])
         self.define_regexp()
         self._length = 0
-        self._got_all_gcodes = True
-        self._printing = False
-        self._last_percent = 0
-        self._wait_heading = False
-        self._temp_request_extruder = 0
         self._temp_timeout = 0
         self._temp_request_thread = threading.Thread(target=self._temp_request)
         self._temp_request_active = True
@@ -246,8 +237,6 @@ class Printer:
         self._length = length
         self._printing = True
         self._last_percent = 0
-        self._wait_heading = False
-        self._force_operational = False
         self._init_temps()
         self._gcodes = LightGCode([])
         self._start_append()
@@ -262,8 +251,6 @@ class Printer:
             return
 
         if len(gcodes) > 0:
-            print gcodes
-            print "!!!"
             self._gcodes = LightGCode(gcodes[0:2000])
             try:
                 if self._printer.startprint(self._gcodes):
@@ -272,7 +259,7 @@ class Printer:
                 else:
                     self._logger.critical('Error starting print')
             except Exception as e:
-                self.logger.warning("Can`t start printing. Error: %s" % e.message)
+                self._logger.warning("Can`t start printing. Error: %s" % e.message)
 
     def pause(self):
         self._logger.debug(self._debug_info())
@@ -300,7 +287,6 @@ class Printer:
         self._logger.debug(self._debug_info())
         self._stop_append()
         self._printer.cancelprint()
-        self._last_percent = 100
 
     def emergency_stop(self):
         self.cancel()
@@ -314,8 +300,6 @@ class Printer:
         return self._printing
 
     def is_operational(self):
-        if self._force_operational:
-            return True
         return self._printer.online and \
                not self._was_error and \
                self._is_threads_alive()

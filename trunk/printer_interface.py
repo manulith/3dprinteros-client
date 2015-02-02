@@ -92,7 +92,6 @@ class PrinterInterface(threading.Thread):
                 report["state"] = self.get_printer_state()
             return report
 
-    @protection
     def connect_printer_driver(self):
         printer_driver = __import__(self.printer_profile['driver'])
         self.logger.info("Connecting with profile: " + str(self.printer_profile))
@@ -136,6 +135,8 @@ class PrinterInterface(threading.Thread):
                     elif "command" in ("gcodes", "binary_file"):
                         payload = base64.b64decode(payload)
                     if payload:
+                        if command == 'gcodes':
+                            payload = payload.split("\n")
                         method(payload)
                     else:
                         method()
@@ -162,7 +163,6 @@ class PrinterInterface(threading.Thread):
                     self.printer.close()
                     self.printer = None
 
-    @protection
     def close(self):
         self.stop_flag = True
         if self.printer:
@@ -173,7 +173,6 @@ class PrinterInterface(threading.Thread):
         else:
             self.logger.debug('Nothing to close')
 
-    @protection
     def close_hanged_port(self):
         self.logger.info("Trying to force close serial port %s" % self.usb_info['COM'])
         if self.printer_profile["force_port_close"] and self.usb_info['COM']:
@@ -190,35 +189,3 @@ class PrinterInterface(threading.Thread):
         else:
             self.logger.info("Force close serial port forbidden: \
                                 not serial printer or force_port_close disabled in config")
-
-    @protection
-    def binary_file(self, data):
-        self.printer.binary_file(data)
-
-    @protection
-    def gcodes(self, gcodes):
-        lines = gcodes.split("\n")
-        print "LEN=" + str(len(lines))
-        self.set_total_gcodes(len(lines))
-        time.sleep(1)
-        self.printer.gcodes(lines)
-
-    @protection
-    def pause(self):
-        self.printer.pause()
-
-    @protection
-    def resume(self):
-        self.printer.resume()
-
-    @protection
-    def cancel(self):
-        self.printer.cancel()
-
-    @protection
-    def emergency_stop(self):
-        self.printer.emergency_stop()
-
-    @protection
-    def set_total_gcodes(self, length):
-        self.printer.set_total_gcodes(length)
