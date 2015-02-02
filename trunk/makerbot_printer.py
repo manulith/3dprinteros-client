@@ -102,16 +102,16 @@ class Sender(base_sender.BaseSender):
                 break
             try:
                 if isinstance(command, str):
+                    text = command
                     self.parser.execute_line(command)
                     self.logger.debug("Executing command: " + command)
                     result = None
-                    text = command
                 else:
-                    result = command()
                     text = 'Makebot driver call'
+                    result = command()
 
             except makerbot_driver.BufferOverflowError:
-                self.logger.info('BufferOverflowError on ' + text)
+                self.logger.info('BufferOverflow on ' + text)
                 self.read_state()
                 time.sleep(self.BUFFER_OVERFLOW_WAIT)
 
