@@ -152,12 +152,13 @@ class WebInterface(threading.Thread):
         threading.Thread.__init__(self)
 
     def run(self):
-        self.logger.info("Web server started")
+        self.logger.info("Starting web server...")
         try:
             self.server = BaseHTTPServer.HTTPServer(("127.0.0.1", 8008), WebInterfaceHandler)
         except Exception as e:
             self.logger.error(e)
         else:
+            self.logger.info("...web server started")
             self.server.app = self.app
             self.server.token_was_reset_flag = False
             self.server.serve_forever()
