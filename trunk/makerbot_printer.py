@@ -32,7 +32,7 @@ class Sender(base_sender.BaseSender):
         else:
             self.sending_thread = threading.Thread(target=self.send_gcodes, name='PR')
             self.sending_thread.start()
-            self.state = 'idle'
+            self.printing_flag = False
 
     def create_parser(self):
         factory = makerbot_driver.MachineFactory()
@@ -184,6 +184,7 @@ class Sender(base_sender.BaseSender):
         last_time = time.time()
         while not self.stop_flag:
             if self.pause_flag:
+                self.printing_flag = False
                 time.sleep(self.PAUSE_STEP_TIME)
                 self.read_state()
                 continue
