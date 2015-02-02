@@ -53,6 +53,7 @@ class CameraMaster():
 
     def get_camera_names(self):
         cameras_names = {}
+        '''
         if sys.platform.startswith('win'):
             import win32com.client
             str_computer = "."
@@ -78,20 +79,17 @@ class CameraMaster():
             return  cameras_names
 
         elif sys.platform.startswith('linux') or sys.platform.startswith('darwin'):
-            cameras_count = self.get_number_of_cameras()
-            if cameras_count > 0:
-                for camera_id in range(0, cameras_count):
-                    cameras_names[camera_id] = 'Camera ' + str(camera_id + 1)
+        '''
+        cameras_count = self.get_number_of_cameras()
+        if cameras_count > 0:
+            for camera_id in range(0, cameras_count):
+                cameras_names[camera_id] = 'Camera ' + str(camera_id + 1)
 
-            self.logger.info('Found ' + str(len(cameras_names)) + ' camera(s):')
-            if len(cameras_names) > 0:
-                for number in range(0,len(cameras_names)):
-                    self.logger.info(cameras_names[number])
-            return  cameras_names
-
-        else:
-            self.logger.info('Unable to get cameras names on your platform.')
-            return cameras_names
+        self.logger.info('Found ' + str(len(cameras_names)) + ' camera(s):')
+        if len(cameras_names) > 0:
+            for number in range(0,len(cameras_names)):
+                self.logger.info(cameras_names[number])
+        return  cameras_names
 
     def get_number_of_cameras(self):
         cameras_count = 0
