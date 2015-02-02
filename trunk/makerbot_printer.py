@@ -73,7 +73,7 @@ class Sender(base_sender.BaseSender):
             self.buffer.append(code)
 
     def cancel(self):
-        self.buffer.clean()
+        self.buffer.clear()
         self.execute(lambda: self.parser.s3g.abort_immediately())
         #self.buffer.append()
         self.lift_extruder()
