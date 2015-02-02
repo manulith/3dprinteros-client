@@ -32,6 +32,7 @@ class Sender(base_sender.BaseSender):
         else:
             self.sending_thread = threading.Thread(target=self.send_gcodes, name='PR')
             self.sending_thread.start()
+            self.state = 'idle'
 
     def create_parser(self):
         factory = makerbot_driver.MachineFactory()
@@ -93,9 +94,6 @@ class Sender(base_sender.BaseSender):
     def execute(self, command):
         retries = 0
         while not self.stop_flag:
-            if self.pause_flag:
-                time.sleep(self.PAUSE_STEP_TIME)
-                continue
             if retries > 0:
                 self.logger.warning("Number %d attempt to execute %s" % (retries, str(command)))
             if retries > self.MAX_EXECUTION_RETRIES:
@@ -107,11 +105,14 @@ class Sender(base_sender.BaseSender):
                     self.parser.execute_line(command)
                     self.logger.debug("Executing command: " + command)
                     result = None
+                    text = command
                 else:
                     result = command()
+                    text = 'Makebot driver call'
 
             except makerbot_driver.BufferOverflowError:
-                self.logger.info('BufferOverflowError')
+                self.logger.info('BufferOverflowError on ' + text)
+                self.read_state()
                 time.sleep(self.BUFFER_OVERFLOW_WAIT)
 
             except (serial.serialutil.SerialException, makerbot_driver.ProtocolError) as e:
@@ -184,18 +185,19 @@ class Sender(base_sender.BaseSender):
         while not self.stop_flag:
             if self.pause_flag:
                 time.sleep(self.PAUSE_STEP_TIME)
+                self.read_state()
                 continue
             try:
                 command = self.buffer.popleft()
             except IndexError:
                 if self.parser.s3g.is_finished():
-                    self.state = 'idle'
+                    self.printing_flag = False
                 time.sleep(self.IDLE_WAITING_STEP)
                 self.read_state()
             else:
                 if time.time() - last_time > self.TEMP_UPDATE_PERIOD:
                     self.read_state()
-                self.state = 'printing'
+                self.printing_flag = True
                 self.execute(command)
                 #self.logger.debug('Executed GCode: ' + command)
                 #self.set_target_temps(result)
@@ -204,7 +206,7 @@ class Sender(base_sender.BaseSender):
         self.logger.info("Makerbot sender: sender thread ends.")
 
     def is_printing(self):
-        return self.state == 'printing'
+        return self.printing_flag
 
     def get_percent(self):
         return self.parser.state.percentage
