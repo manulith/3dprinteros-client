@@ -125,7 +125,7 @@ class PrinterInterface(threading.Thread):
                 if not hasattr(self.printer, command):
                     self.logger.warning("Unknown command: " + str(command))
                 else:
-                    method = getattr(self, command)
+                    method = getattr(self.printer, command)
                     payload = data_dict.get('payload', None)
                     if data_dict.get('is_link', False):
                         payload = http_client.download(payload)
