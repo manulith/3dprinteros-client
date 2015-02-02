@@ -1,7 +1,8 @@
 import time
 import threading
 import makerbot_driver
-import makerbot_serial
+import makerbot_serial as serial
+import serial.serialutil
 
 import base_sender
 
@@ -112,7 +113,7 @@ class Sender(base_sender.BaseSender):
                 self.logger.info('BufferOverflowError')
                 time.sleep(self.BUFFER_OVERFLOW_WAIT)
 
-            except (makerbot_serial.serialutil.SerialException, makerbot_driver.ProtocolError) as e:
+            except (serial.serialutil.SerialException, makerbot_driver.ProtocolError) as e:
                 self.logger.warning(e)
                 retries += 1
                 time.sleep(self.EXECUTION_RETRY_WAIT)
