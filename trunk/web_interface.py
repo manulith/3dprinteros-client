@@ -1,3 +1,4 @@
+import os
 import urllib
 import logging
 import threading
@@ -5,10 +6,6 @@ import BaseHTTPServer
 
 import utils
 import version
-
-#temporary imports
-import os
-import time
 
 class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
@@ -158,7 +155,7 @@ class WebInterface(threading.Thread):
         except Exception as e:
             self.logger.error(e)
         else:
-            self.logger.info("...web server started")
+            self.logger.info("...web server started"    )
             self.server.app = self.app
             self.server.token_was_reset_flag = False
             self.server.serve_forever()

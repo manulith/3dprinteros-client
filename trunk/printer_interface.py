@@ -96,7 +96,7 @@ class PrinterInterface(threading.Thread):
         printer_driver = __import__(self.printer_profile['driver'])
         self.logger.info("Connecting with profile: " + str(self.printer_profile))
         try:
-            printer = printer_driver.Printer(self.printer_profile)
+            printer = printer_driver.Sender(self.printer_profile)
         except Exception as e:
             self.logger.warning("Error connecting to %s" % self.printer_profile['name'], exc_info=True)
         else:
@@ -172,20 +172,3 @@ class PrinterInterface(threading.Thread):
             self.printer = None
         else:
             self.logger.debug('Nothing to close')
-
-    def close_hanged_port(self):
-        self.logger.info("Trying to force close serial port %s" % self.usb_info['COM'])
-        if self.printer_profile["force_port_close"] and self.usb_info['COM']:
-            try:
-                port = serial.Serial(self.usb_info['COM'], self.printer_profile['baudrate'][0], timeout=1)
-                if port.isOpen():
-                    port.setDTR(1)
-                    time.sleep(1)
-                    port.setDTR(0)
-                    port.close()
-                    self.logger.info("Malfunctioning port %s was closed." % self.usb_info['COM'])
-            except serial.SerialException as e:
-                self.logger.info("Force close serial port failed with error %s" % e.message)
-        else:
-            self.logger.info("Force close serial port forbidden: \
-                                not serial printer or force_port_close disabled in config")
