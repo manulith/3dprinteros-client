@@ -64,7 +64,6 @@ def elapse_stretcher(looptime):
 
 def init_path_to_libs():
     logger = logging.getLogger('app.' + __name__)
-    logger.info("Operating system : " + sys.platform)
     if sys.platform.startswith('win'):
         folder_name = "win"
         ALL_LIBS.append('pywin')
