@@ -85,7 +85,7 @@ class App:
     def quit(self):
         self.stop_flag = True
         if self.cam:
-            self.cam.kill()
+            self.cam.terminate()
             self.logger.info('Camera process closed.')
         for pi in self.printer_interfaces:
             pi.close()
