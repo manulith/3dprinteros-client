@@ -8,16 +8,16 @@ import logging
 import base_sender
 
 
-class Printer(base_sender.BaseSender):
+class Sender(base_sender.BaseSender):
 
     pause_lift_height = 5
     pause_extrude_length = 7
 
     def _init__(self, profile):
-        base_sender.BaseSender.__init__(self, profile)
         self.logger = logging.getLogger('app.' + __name__)
-        self.extruder_count = self.profile['extruder_count']
+        base_sender.BaseSender.__init__(self, profile)
         self.select_baudrate_and_connect()
+        self.extruder_count = self.profile['extruder_count']
         self.init_callbacks()
         self.define_regexp()
         self.gcodes = LightGCode([])
@@ -204,8 +204,11 @@ class Printer(base_sender.BaseSender):
         return self.printcore.paused
 
     def is_error(self):
-        return not (self.printcore.online and self.printcore.read_thread.is_alive() and \
-               (self.printcore.send_thread.is_alive() or self.printcore.print_thread.is_alive()))
+        return not self.is_operational()
+
+    def is_operational(self):
+        return self.printcore.online and self.printcore.read_thread.is_alive() and \
+                    (self.printcore.send_thread.is_alive() or self.printcore.print_thread.is_alive())
 
     def close(self):
         self.logger.debug('Printrun closing')

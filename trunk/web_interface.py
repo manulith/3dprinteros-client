@@ -46,10 +46,10 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             printers_list = []
             for pi in self.server.app.printer_interfaces:
                 if not getattr(pi, 'printer_profile', False):
-                    printer = 'Unknown printer'
+                    printer = {'alias': "", 'name': 'Unknown printer'}
                 else:
-                    printer = str(pi.printer_profile)
-                printers_list.append('<b>' + printer + '</b>')
+                    printer = pi.printer_profile
+                printers_list.append('<b>' + printer['alias'] + '</b>'+'<b>' + printer['name'] + '</b>')
             printers = ''.join(map(lambda x: "<p>" + x + "</p>", printers_list))
             page = page.replace('!!!PRINTERS!!!', printers)
             self.write_with_autoreplace(page)

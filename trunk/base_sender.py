@@ -60,3 +60,5 @@ class BaseSender:
     #         self.logger.info("Force close serial port forbidden: \
     #                             not serial printer or force_port_close disabled in config")
 
+    def is_operational(self):
+        return False
