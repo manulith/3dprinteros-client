@@ -44,7 +44,7 @@ class PrinterInterface(threading.Thread):
             if answer:
                 error = answer.get('error', None)
                 if error:
-                    self.logger.warning("Error while login %s:" % str(self.usb_info))
+                    self.logger.warning("Error while login %s:" % str((self.user_token, self.usb_info)))
                     self.logger.warning(str(error['code']) + " " + error["message"])
                     if str(error['code']) == '8':
                         time.sleep(1)
