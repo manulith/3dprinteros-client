@@ -18,7 +18,7 @@ class UserLogin:
             self.login_as_user(login, password)
 
     def login_as_user(self, login, password):
-        answer = http_client.send(http_client.package_user_login, (login, password))
+        answer = http_client.send(http_client.package_user_login, (login, password, sys.platform))
         if not answer:
             return 0, "No connection to server"
         else:

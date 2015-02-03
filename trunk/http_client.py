@@ -37,8 +37,8 @@ def load_json(jdata):
 
 #packagers
 
-def package_user_login(username, password, error = {}):
-    data = { 'login': {'user': username, 'password': password}, 'error': error, 'host_mac': MACADDR}
+def package_user_login(username, password, platform, error = {}):
+    data = { 'login': {'user': username, 'password': password}, 'host_mac': MACADDR, platform: platform, 'error': error}
     return json.dumps(data), user_login_path
 
 def package_printer_login(user_token, printer_profile, error = {}):
