@@ -6,7 +6,7 @@ import os
 import time
 import signal
 import logging
-from subprocess import Popen, PIPE
+from subprocess import Popen
 
 import utils
 utils.init_path_to_libs()
@@ -16,6 +16,7 @@ import usb_detect
 import http_client
 import printer_interface
 import user_login
+
 
 class App:
 
@@ -36,24 +37,18 @@ class App:
         self.user_login = user_login.UserLogin(self)
         self.init_interface()
         self.user_login.wait_for_login()
+        self.start_camera()
+        self.main_loop()
+
+    def start_camera(self):
         if config.config["camera"]["enabled"] == True:
             self.logger.info('Launching camera subprocess')
             client_dir = os.path.dirname(os.path.abspath(__file__))
             cam_path = os.path.join(client_dir, 'cam.py')
-            assert os.path.isfile(cam_path)
             try:
-                self.cam = Popen(['python', cam_path], stdout=PIPE, stderr=PIPE)
-            except:
-                self.logger.info('Python is not installed in system. \
-                Using our portable interpreter for camera subprocess.')
-                python_path = os.path.abspath(os.path.join(client_dir, '..', 'python27', 'python.exe'))
-                assert os.path.isfile(python_path)
-                try:
-                    self.cam = Popen([python_path, cam_path], stdout=PIPE, stderr=PIPE)
-                except Exception as e:
-                    self.logger.warning('Could not launch camera with our interpreter due to:\n' + e.message)
-        self.main_loop()
-
+                self.cam = Popen([sys.executable, cam_path])
+            except Exception as e:
+                self.logger.warning('Could not launch camera due to error:\n' + e.message)
 
     def init_interface(self):
         if config.config['web_interface']:
