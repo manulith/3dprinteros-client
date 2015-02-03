@@ -22,6 +22,7 @@ class Sender(base_sender.BaseSender):
         self.logger = logging.getLogger('app.' + __name__)
         self.logger.info('Makerbot printer created')
         self.parser = None
+        self.position = None
         try:
             self.parser = self.create_parser()
             self.parser.state.values["build_name"] = '3DPrinterOS'
@@ -49,12 +50,9 @@ class Sender(base_sender.BaseSender):
     #     self.extruder_ttemp_regexp = re.compile('\s*M104\s*S(\d+)\s*T(\d+)')
 
     def lift_extruder(self):
-        position = self.parser.state.position.ToList()
-        if position[2] is None or position[3] is None or position[4] is None:
-            self.logger.warning(
-                'It seems that Pause command was called in wrong command sequence(positions are None)')
-        else:
-            self.buffer.appendleft('G1 Z' + str(position[2]) + ' A' + str(position[3]) + ' B' + str(position[4]))
+        position = self.get_position()
+        if position:
+            self.position = position
             z = min(160, position[2] + 30)
             a = max(0, position[3] - 5)
             b = max(0, position[4] - 5)
@@ -79,6 +77,22 @@ class Sender(base_sender.BaseSender):
         self.execute(lambda: self.parser.s3g.abort_immediately())
         #self.buffer.append()
         self.lift_extruder()
+
+    def pause(self):
+        self.lift_extruder()
+        self.pause_flag = True
+
+    def unpause(self):
+        self.buffer.appendleft('G1 Z' + str(self.position[2]) + ' A' + str(self.position[3]) + ' B' + str(self.position[4]))
+        self.pause_flag = False
+
+    def get_position(self):
+        position = self.parser.state.position.ToList()
+        if position[2] is None or position[3] is None or position[4] is None:
+            self.logger.warning(
+                'It seems that Pause command was called in wrong command sequence(positions are None)')
+            return None
+        return position
 
     def emergency_stop(self):
         self.cancel()
@@ -184,6 +198,7 @@ class Sender(base_sender.BaseSender):
 
     def send_gcodes(self):
         last_time = time.time()
+        #self.buffer.appendleft('G28 X0 Y0 Z0')
         while not self.stop_flag:
             if self.pause_flag:
                 self.printing_flag = False
