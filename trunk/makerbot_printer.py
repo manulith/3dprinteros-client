@@ -61,19 +61,20 @@ class Sender(base_sender.BaseSender):
 
     # length argument is used for unification with Printrun. DON'T REMOVE IT!
     def set_total_gcodes(self, length):
-        self.buffer.clear()
         self.parser.state.values["build_name"] = '3DPrinterOS'
         self.parser.state.percentage = 0
         self.logger.info('Begin of GCodes')
         self.parser.s3g.set_RGB_LED(255, 255, 255, 0)
 
     def gcodes(self, gcodes):
+        self.set_total_gcodes()
         self.logger.info('Enqueued block: ' + str(len(gcodes)) + ', total: ' + str(len(self.buffer)))
         for code in gcodes:
             self.buffer.append(code)
 
     def cancel(self):
         self.buffer.clear()
+        self.printing_flag = False
         self.execute(lambda: self.parser.s3g.abort_immediately())
         #self.buffer.append()
         self.lift_extruder()
