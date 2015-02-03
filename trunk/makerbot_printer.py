@@ -60,7 +60,7 @@ class Sender(base_sender.BaseSender):
             self.execute('G1  Z' + str(z) + ' A' + str(a) + ' B' + str(b))
 
     # length argument is used for unification with Printrun. DON'T REMOVE IT!
-    def set_total_gcodes(self, length):
+    def set_total_gcodes(self, length=0):
         self.parser.state.values["build_name"] = '3DPrinterOS'
         self.parser.state.percentage = 0
         self.logger.info('Begin of GCodes')
