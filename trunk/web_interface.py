@@ -45,7 +45,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 page = f.read()
             printers_list = []
             for pi in self.server.app.printer_interfaces:
-                if str(pi.printer_profile) == 'None':
+                if not getattr(pi, 'printer_profile', False):
                     printer = 'Unknown printer'
                 else:
                     printer = str(pi.printer_profile)

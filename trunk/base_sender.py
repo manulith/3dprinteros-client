@@ -28,6 +28,9 @@ class BaseSender:
     def unpause(self):
         self.pause_flag = False
 
+    def close(self):
+        self.stop_flag = True
+
     def get_error_code(self):
         return self.error_code
 
@@ -57,5 +60,3 @@ class BaseSender:
     #         self.logger.info("Force close serial port forbidden: \
     #                             not serial printer or force_port_close disabled in config")
 
-    def close(self):
-        self.stop_flag = True
