@@ -36,7 +36,6 @@ class UserLogin:
                 self.logger.error("Login rejected")
                 return error['code'], error['message']
 
-
     def wait_for_login(self):
         self.logger.debug("Waiting for correct user login...")
         while not self.user_token or self.parent.stop_flag:

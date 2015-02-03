@@ -1,4 +1,5 @@
 import time
+import logging
 import threading
 import makerbot_driver
 import makerbot_serial as serial
@@ -17,8 +18,8 @@ class Sender(base_sender.BaseSender):
 
     def __init__(self, profile):
         base_sender.BaseSender.__init__(self, profile)
-        #self.position = ([0,0,0], None)
-        self.mb = {'preheat': False, 'heat_shutdown': False}
+        #self.mb = {'preheat': False, 'heat_shutdown': False}
+        self.logger = logging.getLogger('app.' + __name__)
         self.logger.info('Makerbot printer created')
         self.parser = None
         try:

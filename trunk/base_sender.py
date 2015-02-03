@@ -1,4 +1,3 @@
-import logging
 import collections
 
 class BaseSender:
@@ -6,13 +5,13 @@ class BaseSender:
     def __init__(self, profile):
         self.profile = profile
         self.buffer = collections.deque()
-        self.logger = logging.getLogger('app.' + __name__)
         self.stop_flag = False
         self.pause_flag = False
-        self.error_code = 0
+        self.error_code = None
         self.error_message = ''
         self.temps = [0,0]
         self.target_temps = [0,0]
+        #self._position = [0.00,0.00,0.00]
 
     def get_temps(self):
         return self.temps
@@ -35,6 +34,9 @@ class BaseSender:
     def get_error_message(self):
         return self.error_message
 
+    def is_error(self):
+        return self.error_code != None
+
     def is_paused(self):
         return self.pause_flag
 
@@ -54,3 +56,6 @@ class BaseSender:
     #     else:
     #         self.logger.info("Force close serial port forbidden: \
     #                             not serial printer or force_port_close disabled in config")
+
+    def close(self):
+        self.stop_flag = True
