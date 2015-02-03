@@ -89,7 +89,7 @@ def request(connection, payload, path, method, headers):
         connection.request(method, path, payload, headers)
         resp = connection.getresponse()
     except Exception as e:
-        logger.info(("Error during HTTP request:" + e.message))
+        logger.info("Error during HTTP request:" + str(e))
     else:
         logger.debug("Request status: %s %s" % (resp.status, resp.reason))
         try:

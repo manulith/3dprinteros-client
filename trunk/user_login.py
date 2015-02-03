@@ -19,7 +19,9 @@ class UserLogin:
 
     def login_as_user(self, login, password):
         answer = http_client.send(http_client.package_user_login, (login, password))
-        if answer:
+        if not answer:
+            return 0, "No connection to server"
+        else:
             user_token = answer.get('user_token', None)
             error = answer.get('error', None)
             if user_token and not error:
@@ -31,8 +33,9 @@ class UserLogin:
                     return
             else:
                 self.logger.warning("Error processing user_login " + str(error))
+                self.logger.error("Login rejected")
                 return error['code'], error['message']
-        self.logger.error("Login rejected")
+
 
     def wait_for_login(self):
         self.logger.debug("Waiting for correct user login...")
