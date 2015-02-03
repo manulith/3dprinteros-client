@@ -339,7 +339,7 @@ def get_logger(log_file):
                 logger.addHandler(file_handler)
             except Exception as e:
                 logger.debug('Could not create log file because' + e.message + '\n.No log mode.')
-        logger.info("Operating system : " + sys.platform)
+        logger.info('Operating system: ' + platform.system() + ' ' + platform.release())
         return logger
 
 
