@@ -17,7 +17,7 @@ class UserLogin:
             self.login_as_user(login, password)
 
     def login_as_user(self, login, password):
-        answer = http_client.send(http_client.package_user_login, (login, password))
+        answer = http_client.send(http_client.package_user_login, (login, password, http_client.MACADDR))
         if answer:
             user_token = answer.get('user_token', None)
             error = answer.get('error', None)
