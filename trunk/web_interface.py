@@ -48,7 +48,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 if not getattr(pi, 'printer_profile', False):
                     printer = 'Unknown printer'
                 else:
-                    printer = str(pi.printer_profile)
+                    printer = str(pi.printer_profile['name'])
                 printers_list.append('<b>' + printer + '</b>')
             printers = ''.join(map(lambda x: "<p>" + x + "</p>", printers_list))
             page = page.replace('!!!PRINTERS!!!', printers)
