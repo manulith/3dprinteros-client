@@ -13,14 +13,16 @@ class Sender(base_sender.BaseSender):
     pause_lift_height = 5
     pause_extrude_length = 7
 
+    TEMP_REQUEST_WAIT = 5
+
     def __init__(self, profile):
         self.logger = logging.getLogger('app.' + __name__)
         base_sender.BaseSender.__init__(self, profile)
+        self.define_regexp()
         self.select_baudrate_and_connect()
         self.extruder_count = self.profile['extruder_count']
         self.init_callbacks()
-        self.define_regexp()
-        self.gcodes = LightGCode([])
+        self.total_gcodes = 0
         self.temp_request_thread = threading.Thread(target=self.temp_request)
         self.temp_request_thread.start()
         for gcode in self.profile['end_gcodes']:
@@ -63,7 +65,9 @@ class Sender(base_sender.BaseSender):
                 time.sleep(0.1)
                 self.printcore.recvcb = self.recvcb
                 self.printcore.errorcb = self.errorcb
-                self.printcore.send("M105")
+                time.sleep(0.1)
+                self.printcore.send_now("M999")
+                self.printcore.send_now("M105")
             time.sleep(2)
             baudrate_count += 1
         self.logger.info("Successful connection! Correct baudrate is %i" % baudrates [ baudrate_count - 1 ] )
@@ -86,27 +90,23 @@ class Sender(base_sender.BaseSender):
                 self.logger.info('Printing started, startindex: ' + str(length))
         time.sleep(1)
 
-    # def temp_request(self):
-    #     temp_timeout = time.time()
-    #     while not self.stop_flag:
-    #         if temp_timeout < time.time():
-    #             for extruder_num in range(0, self.profile['extruder_count'] + 1):
-    #                 self.printcore.send_now('M105 T' + str(extruder_num))
-    #                 #self.printcore.send_now('M114')
-    #                 temp_timeout = time.time() + 5
-    #         time.sleep(1)
-
     def temp_request(self):
-        temp_timeout = time.time()
+        wait_step = 0.1
+        steps_in_cycle = int(self.TEMP_REQUEST_WAIT / wait_step)
+        counter = steps_in_cycle
         while not self.stop_flag:
-            if temp_timeout < time.time():
+            if counter >= steps_in_cycle:
                 for extruder_num in range(0, self.profile['extruder_count'] + 1):
-                    self.printcore.send_now('M105 T' + str(extruder_num))
+                    try:
+                        self.printcore.send_now('M105 T' + str(extruder_num))
+                    except:
+                        pass
                     # self.printcore.send_now('M114')
-                    temp_timeout = time.time() + 5
-            time.sleep(1)
+                    time.sleep(0.01)
+                    counter = 0
+            time.sleep(wait_step)
+            counter += 1
 
-    #also updates position now
     def tempcb(self, line):
         self.logger.debug(line)
         match = self.temp_re.match(line)
@@ -117,7 +117,6 @@ class Sender(base_sender.BaseSender):
             platform_target_temp = float(match.group(4))
             self.temps = [platform_temp, tool_temp]
             self.target_temps = [platform_target_temp, tool_target_temp]
-
         #match = self.position_re.match(line)
         #if match:
         #    self.position = [ match.group(0), match.group(1), match.group(2) ]
@@ -153,31 +152,23 @@ class Sender(base_sender.BaseSender):
         self.error_message = error
 
     def fetch_temps(self, wait_temp_line):
-        self.logger.info("_fetch_temp" + str(wait_temp_line))
         match = self.wait_tool_temp_re.match(wait_temp_line)
         if match:
-            self.tool_temp[int(match.group(2))] = float(match.group(1))
+            self.temps[int(match.group(2)) + 1] = float(match.group(1))
         match = self.wait_platform_temp_re.match(wait_temp_line)
         if match:
-            self.platform_temp = float(match.group(1))
+            self.temps[0] = float(match.group(1))
 
     def set_total_gcodes(self, length):
         self.total_gcodes = length
 
     def gcodes(self, gcodes):
         self.logger.info('len(gcodes): ' + str(len(gcodes)))
-        if len(self.gcodes) > 0:
-            self.append_buffer += gcodes
-            return
-
         if len(gcodes) > 0:
-            self.gcodes = LightGCode(gcodes[0:2000])
+            gcodes = LightGCode(gcodes)
             try:
-                if self.printcore.startprint(self.gcodes):
-                    time.sleep(2)
-                    self.append_buffer += gcodes[2000:]
-                else:
-                    self.logger.critical('Error starting print')
+                if not self.printcore.startprint(gcodes):
+                    self.logger.warning('Error starting print')
             except Exception as e:
                 self.logger.warning("Can`t start printing. Error: %s" % e.message)
 
@@ -216,13 +207,29 @@ class Sender(base_sender.BaseSender):
         return self.error_code
 
     def is_operational(self):
-        return self.printcore.online and self.printcore.read_thread.is_alive() and \
-                    (self.printcore.send_thread.is_alive() or self.printcore.print_thread.is_alive())
+        if self.printcore.printing:
+            return self.printcore.read_thread and \
+               self.printcore.read_thread.is_alive() and \
+               self.printcore.print_thread and \
+               self.printcore.print_thread.is_alive()
+        if self.printcore.paused or self.printcore.online:
+            return self.printcore.read_thread and \
+               self.printcore.read_thread.is_alive() and \
+               self.printcore.send_thread and \
+               self.printcore.send_thread.is_alive()
+        return True
+
+    def get_percent(self):
+        percent = 0
+        if self.total_gcodes:
+            percent = int( ( self.printcore.queueindex / self.total_gcodes ) * 100 )
+        return percent
 
     def close(self):
-        self.logger.debug('Printrun closing')
+        self.stop_flag = True
+        self.logger.debug('Printrun sender is closing')
         self.printcore.disconnect()
-        self.logger.debug('(Joining printrun_printer threads...')
+        self.logger.debug('(Joining printrun threads...')
         self.temp_request_thread.join(10)
         if self.temp_request_thread.isAlive():
             self.logger.error("Error stopping temperature request thread.")

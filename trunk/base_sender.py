@@ -19,9 +19,6 @@ class BaseSender:
     def get_target_temps(self):
         return self.target_temps
 
-    def get_percent(self):
-        len(self.buffer)
-
     def pause(self):
         self.pause_flag = True
 
