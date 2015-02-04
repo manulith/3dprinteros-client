@@ -81,15 +81,6 @@ class Sender(base_sender.BaseSender):
         self.wait_tool_temp_re = re.compile('T:([\d\.]+) E:(\d+)')
         self.wait_platform_temp_re = re.compile('.+B:(-?[\d\.]+)')
 
-    def gcodes(self, gcodes):
-        length = len(gcodes)
-        if not self.printcore.printing and not self.printcore.paused:
-            if not self.printcore.startprint(self.gcodes, length):
-                self.logger.warning('Error starting print, startindex: ' + str(length))
-            else:
-                self.logger.info('Printing started, startindex: ' + str(length))
-        time.sleep(1)
-
     def temp_request(self):
         wait_step = 0.1
         steps_in_cycle = int(self.TEMP_REQUEST_WAIT / wait_step)
