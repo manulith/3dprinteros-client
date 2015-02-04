@@ -13,7 +13,7 @@ class Sender(base_sender.BaseSender):
     pause_lift_height = 5
     pause_extrude_length = 7
 
-    def _init__(self, profile):
+    def __init__(self, profile):
         self.logger = logging.getLogger('app.' + __name__)
         base_sender.BaseSender.__init__(self, profile)
         self.select_baudrate_and_connect()
@@ -22,26 +22,22 @@ class Sender(base_sender.BaseSender):
         self.define_regexp()
         self.gcodes = LightGCode([])
         self.temp_request_thread = threading.Thread(target=self.temp_request)
+        self.temp_request_thread.start()
         for gcode in self.profile['end_gcodes']:
             self.printcore.send_now(gcode)
 
     def init_callbacks(self):
         self.printcore.tempcb = self.tempcb
-        self.printcore.recvcb = self.recvcb
+        #self.printcore.recvcb = self.recvcb
         self.printcore.sendcb = self.sendcb
-        self.printcore.errorcb = self.errorcb
-
-    def recvcb_for_connection_check(self, line):
-        self.logger.debug("While selecting baudrate received: %s", str(line))
-        if "ok " in line or 'echo' in line:
-            self.connected_flag = True
+        #self.printcore.errorcb = self.errorcb
 
     def select_baudrate_and_connect(self):
-        self.connected_flag = False
+        self.firmware_loaded = False
         baudrate_count = 0
         baudrates = self.profile['baudrate']
         self.logger.info('Baudrates list for %s : %s' % (self.profile['name'], str(baudrates)))
-        while not self.connected_flag:
+        while not self.firmware_loaded:
             if baudrate_count >= len(baudrates):
                 raise RuntimeError("No more baudrates to try")
             self.logger.info("Trying to connect with baudrate %i" % baudrates[baudrate_count])
@@ -65,8 +61,8 @@ class Sender(base_sender.BaseSender):
                     pass
             else:
                 time.sleep(0.1)
-                self.printcore.recvcb = self.recvcb_for_connection_check
-                #self.printcore.errorcb = self.logger.warning
+                self.printcore.recvcb = self.recvcb
+                self.printcore.errorcb = self.errorcb
                 self.printcore.send("M105")
             time.sleep(2)
             baudrate_count += 1
@@ -90,23 +86,38 @@ class Sender(base_sender.BaseSender):
                 self.logger.info('Printing started, startindex: ' + str(length))
         time.sleep(1)
 
+    # def temp_request(self):
+    #     temp_timeout = time.time()
+    #     while not self.stop_flag:
+    #         if temp_timeout < time.time():
+    #             for extruder_num in range(0, self.profile['extruder_count'] + 1):
+    #                 self.printcore.send_now('M105 T' + str(extruder_num))
+    #                 #self.printcore.send_now('M114')
+    #                 temp_timeout = time.time() + 5
+    #         time.sleep(1)
+
     def temp_request(self):
+        temp_timeout = time.time()
         while not self.stop_flag:
-            if self.temp_timeout < time.time():
-                self.temp_request_extruder = (self.temp_request_extruder + 1) % self.extruder_count
-                self.printcore.send_now('M105 T'+str(self.temp_request_extruder))
-                #self.printcore.send_now('M114')
-                self.temp_timeout = time.time() + 5
+            if temp_timeout < time.time():
+                for extruder_num in range(0, self.profile['extruder_count'] + 1):
+                    self.printcore.send_now('M105 T' + str(extruder_num))
+                    # self.printcore.send_now('M114')
+                    temp_timeout = time.time() + 5
             time.sleep(1)
 
     #also updates position now
     def tempcb(self, line):
+        self.logger.debug(line)
         match = self.temp_re.match(line)
         if match:
-            self.tool_temp[self.temp_request_extruder] = float(match.group(1))
-            self.tool_target_temp[self.temp_request_extruder] = float(match.group(2))
-            self.platform_temp = float(match.group(3))
-            self.platform_target_temp = float(match.group(4))
+            tool_temp = float(match.group(1))
+            tool_target_temp = float(match.group(2))
+            platform_temp = float(match.group(3))
+            platform_target_temp = float(match.group(4))
+            self.temps = [platform_temp, tool_temp]
+            self.target_temps = [platform_target_temp, tool_target_temp]
+
         #match = self.position_re.match(line)
         #if match:
         #    self.position = [ match.group(0), match.group(1), match.group(2) ]
@@ -115,36 +126,31 @@ class Sender(base_sender.BaseSender):
     def recvcb(self, line):
         self.logger.debug(line)
         if line[0] == 'T':
-            self.wait_heading = True
+            self.firmware_loaded = True
             self.fetch_temps(line)
-            self.logger.debug(self.debug_temp())
         elif line[0:2] == 'ok':
-            self.wait_heading = False
+            self.firmware_loaded = True
 
     def sendcb(self, command, gline):
         self.logger.info("command=" + command)
-        if 'M104' in command or 'M109' in command:
-            tool = 0
-            tool_match = re.match('.+T(\d+)', command)
-            if tool_match:
-                tool = int(tool_match.group(1))
-            temp_match = re.match('.+S([\d\.]+)', command)
-            if temp_match:
-                self.tool_target_temp[tool] = float(temp_match.group(1))
-            self.logger.debug(self.debug_temp())
-
-        elif 'M140' in command or 'M190' in command:
-            temp_match = re.match('.+S([\d\.]+)', command)
-            if temp_match:
-                self.platform_target_temp = float(temp_match.group(1))
-            self.logger.debug(self.debug_temp())
-        self.logger.debug(command)
+        # if 'M104' in command or 'M109' in command:
+        #     tool = 0
+        #     tool_match = re.match('.+T(\d+)', command)
+        #     if tool_match:
+        #         tool = int(tool_match.group(1))
+        #     temp_match = re.match('.+S([\d\.]+)', command)
+        #     if temp_match:
+        #         self.tool_target_temp[tool] = float(temp_match.group(1))
+        #
+        # elif 'M140' in command or 'M190' in command:
+        #     temp_match = re.match('.+S([\d\.]+)', command)
+        #     if temp_match:
+        #         self.platform_target_temp = float(temp_match.group(1))
 
     def errorcb(self, error):
         self.was_error = True
-        self.error_code = 'general'
+        self.error_code = 1
         self.error_message = error
-        self.logger.debug(error)
 
     def fetch_temps(self, wait_temp_line):
         self.logger.info("_fetch_temp" + str(wait_temp_line))
@@ -159,7 +165,7 @@ class Sender(base_sender.BaseSender):
         self.total_gcodes = length
 
     def gcodes(self, gcodes):
-        self.logger.info('len(gcodes): ' + str(len(gcodes)) + ', ' + self.debug_info())
+        self.logger.info('len(gcodes): ' + str(len(gcodes)))
         if len(self.gcodes) > 0:
             self.append_buffer += gcodes
             return
@@ -203,8 +209,11 @@ class Sender(base_sender.BaseSender):
     def is_paused(self):
         return self.printcore.paused
 
+    def is_printing(self):
+        return self.printcore.printing
+
     def is_error(self):
-        return not self.is_operational()
+        return self.error_code
 
     def is_operational(self):
         return self.printcore.online and self.printcore.read_thread.is_alive() and \
@@ -219,7 +228,6 @@ class Sender(base_sender.BaseSender):
             self.logger.error("Error stopping temperature request thread.")
         else:
             self.logger.debug('...done)')
-
 
     # #def debug_position(self):
     #    text  = "X:" + str(self.position[0])

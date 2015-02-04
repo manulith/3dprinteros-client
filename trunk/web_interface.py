@@ -45,11 +45,14 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 page = f.read()
             printers_list = []
             for pi in self.server.app.printer_interfaces:
+                snr = pi.usb_info['SNR']
+                if not snr:
+                    snr = ""
                 if not getattr(pi, 'printer_profile', False):
-                    printer = {'alias': "", 'name': 'Unknown printer'}
+                    profile = {'alias': "", 'name': 'Unknown printer %s:%s %s' % (pi.usb_info['PID'], pi.usb_info['VID'], snr)}
                 else:
-                    printer = pi.printer_profile
-                printers_list.append('<b>' + printer['alias'] + '</b>'+'<b>' + printer['name'] + '</b>')
+                    profile = pi.printer_profile
+                printers_list.append('<b>%s</b> %s' % (profile['name'], snr))
             printers = ''.join(map(lambda x: "<p>" + x + "</p>", printers_list))
             page = page.replace('!!!PRINTERS!!!', printers)
             self.write_with_autoreplace(page)

@@ -129,6 +129,8 @@ class PrinterInterface(threading.Thread):
                     payload = data_dict.get('payload', None)
                     if data_dict.get('is_link', False):
                         payload = http_client.download(payload)
+                        if not payload:
+                            payload = "\n"
                     elif "command" in ("gcodes", "binary_file"):
                         payload = base64.b64decode(payload)
                     if payload:
