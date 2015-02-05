@@ -16,7 +16,7 @@ class Sender(printrun_printer.Sender):
 
     def __init__(self, profile):
         self.logger = logging.getLogger("app." + __name__)
-        if profile['COM']:
+        if profile.get('COM', None):
             printrun_printer.Printer.__init__(self, profile)
         else:
             self.profile = profile
