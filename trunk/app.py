@@ -63,9 +63,12 @@ class App:
             self.time_stamp()
             self.detected_printers = usb_detect.get_printers()
             self.check_and_connect()
-            for printer in self.printer_interfaces:
-                if printer.usb_info not in self.detected_printers:
-                    self.disconnect_printer(printer)
+            for pi in self.printer_interfaces:
+                if pi.usb_info not in self.detected_printers:
+                    self.disconnect_printer(pi, 'not_detected')
+                elif not pi.is_alive():
+                    self.disconnect_printer(pi, 'error')
+
             time.sleep(2)
         # this is for quit from web interface(to release server's thread and quit)
         if self.quit_flag:
@@ -82,9 +85,9 @@ class App:
                 pi.start()
                 self.printer_interfaces.append(pi)
 
-    def disconnect_printer(self, pi):
-        self.logger.info('Disconnecting %s' % str(pi.usb_info))
-        if http_client.send(http_client.package_command_request, (pi.printer_token, pi.state_report('not_detected'))):
+    def disconnect_printer(self, pi, reason):
+        self.logger.info('Disconnecting %s %s' % (reason , str(pi.usb_info)))
+        if http_client.send(http_client.package_command_request, (pi.printer_token, pi.state_report(reason))):
             self.printer_interfaces.remove(pi)
 
     def intercept_signal(self, signal_code, frame):

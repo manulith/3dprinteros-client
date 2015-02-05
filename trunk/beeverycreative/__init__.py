@@ -12,7 +12,7 @@ import printrun_printer
 READ_TIMEOUT = 1000
 DEFAULT_READ_LENGTH = 512
 
-class Printer(printrun_printer.Printer):
+class Printer(printrun_printer.Sender):
 
     def __init__(self, profile):
         self.logger = logging.getLogger("app." + __name__)
