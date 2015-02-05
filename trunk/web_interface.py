@@ -71,7 +71,8 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.write_with_autoreplace('Not found')
 
     def snapshot_log(self):
-        result = utils.make_log_snapshot()
+        #result = utils.make_log_snapshot()
+        result = utils.make_full_log_snapshot()
         if result:
             message = open('web_interface/success_message.html').read()
         else:
