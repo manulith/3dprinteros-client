@@ -150,9 +150,12 @@ class App():
                     time.sleep(1) #remove me in release
                     continue
                 elif (time.time() - pi.creation_time) < self.READY_TIMEOUT:
+                    pi.close_hanged_port()
                     self.logger.info('Waiting for printer to become operational. %f secs' % (time.time() - pi.creation_time))
                     time.sleep(1) #remove me in release
                     continue
+                else:
+                    pi.close_hanged_port()
             else:
                 self.logger.warning(  "Printer %s %s no longer detected!" % (pi.profile['name'], pi.profile['SNR']))
             self.disconnect_printer(pi)

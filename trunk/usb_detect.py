@@ -35,9 +35,10 @@ def get_devices():
         try:
             SNR = str(usb.util.get_string(dev, dev.iSerialNumber)) #originaly it's unicode, but this provoke bugs
             if "x" in SNR:
-                 SNR = None
-        except:
+                SNR = None
+        except Exception as e:
             SNR = None
+            logger.warning(e.message)
         try:
             manufacturer = dev.manufacturer  # can provoke PIPE ERROR
         except (usb.core.USBError, AttributeError, NotImplementedError):
@@ -47,6 +48,7 @@ def get_devices():
         except (usb.core.USBError, AttributeError, NotImplementedError):
             product = None
         device_dct['SNR'] = SNR
+        #device_dct['SNR'] = None
         device_dct['Manufacturer'] = manufacturer
         device_dct['Product'] = product
         device_dct['COM'] = get_port_by_vid_pid_snr(device_dct['VID'], device_dct['PID'], SNR)
