@@ -138,6 +138,7 @@ class Sender(base_sender.BaseSender):
         #         self.platform_target_temp = float(temp_match.group(1))
 
     def errorcb(self, error):
+        self.logger.warning("Error occurred in printrun: " + str(error))
         self.was_error = True
         self.error_code = 1
         self.error_message = error
