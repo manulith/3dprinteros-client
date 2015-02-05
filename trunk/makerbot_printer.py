@@ -28,7 +28,7 @@ class Sender(base_sender.BaseSender):
             self.parser.state.values["build_name"] = '3DPrinterOS'
         except Exception as e:
             self.logger.error("Error with connecting to makerbot printer %s" % str(profile))
-            self.error_code = 'general'
+            self.error_code = 'No connection'
             self.error_message = str(e)
             raise e
         else:
@@ -143,23 +143,28 @@ class Sender(base_sender.BaseSender):
 
             except makerbot_driver.Gcode.GcodeError as e:
                 self.logger.info('makerbot_driver.Gcode.GcodeError')
-                self.close()
                 self.error_code = 'Fatal error'
                 self.error_message = str(e)
+                self.close()
+                break
+
+            except makerbot_driver.TransmissionError:
+                self.logger.warning('Unexpected error')
+                self.error_code = 'Time out'
+                self.error_message = str(e)
+                self.close()
                 break
 
             except Exception as e:
-                self.logger.exception('Unexpected error')
-                self.close()
+                self.logger.warning('Unexpected error')
                 self.error_code = 'Fatal error'
                 self.error_message = str(e)
+                self.close()
                 break
 
             else:
                 return result
 
-            # don't delete these lines, they can be helpful someday
-            #except makerbot_driver.TransmissionError as e:
             #except makerbot_driver.BuildCancelledError as e:
             #except makerbot_driver.ActiveBuildError as e:
             #except makerbot_driver.Gcode.UnspecifiedAxisLocationError as e:

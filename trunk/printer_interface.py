@@ -100,17 +100,6 @@ class PrinterInterface(threading.Thread):
             self.printer = printer
             self.logger.info("Successful connection to %s!" % (self.printer_profile['name']))
 
-    # def wait_operational(self, timeout=30):
-    #     elapsed = 0
-    #     while elapsed < timeout:
-    #         state = self.is_operational()
-    #         if state:
-    #             return state
-    #         else:
-    #             time.sleep(0.5)
-    #             elapsed += 0.5
-    #     self.logger.warning('Error. Timeout while waiting for printer to become operational.')
-
     def process_command_request(self, data_dict):
         logger = logging.getLogger("app." + __name__)
         number = data_dict.get('number', None)
