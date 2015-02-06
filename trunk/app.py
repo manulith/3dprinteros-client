@@ -86,7 +86,7 @@ class App:
                 self.printer_interfaces.append(pi)
 
     def disconnect_printer(self, pi, reason):
-        self.logger.info('Disconnecting %s %s' % (reason , str(pi.usb_info)))
+        self.logger.info('Disconnecting because of %s %s' % (reason , str(pi.usb_info)))
         if http_client.send(http_client.package_command_request, (pi.printer_token, pi.state_report(reason))):
             self.printer_interfaces.remove(pi)
 

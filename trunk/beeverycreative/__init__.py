@@ -15,7 +15,7 @@ DEFAULT_READ_LENGTH = 512
 class Sender(printrun_printer.Sender):
 
     def __init__(self, profile, usb_info):
-        printrun_printer.Sender.__init__(self, profile, usb_info)
+        self.usb_info = usb_info
         self.logger = logging.getLogger("app." + __name__)
         if usb_info.get('COM', None):
             printrun_printer.Printer.__init__(self, profile, usb_info)
