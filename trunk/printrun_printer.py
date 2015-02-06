@@ -15,9 +15,9 @@ class Sender(base_sender.BaseSender):
 
     TEMP_REQUEST_WAIT = 5
 
-    def __init__(self, profile):
+    def __init__(self, profile, usb_info):
         self.logger = logging.getLogger('app.' + __name__)
-        base_sender.BaseSender.__init__(self, profile)
+        base_sender.BaseSender.__init__(self, profile, usb_info)
         self.define_regexp()
         self.select_baudrate_and_connect()
         self.extruder_count = self.profile['extruder_count']

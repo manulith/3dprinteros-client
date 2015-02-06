@@ -16,8 +16,8 @@ class Sender(base_sender.BaseSender):
     IDLE_WAITING_STEP = 3
     TEMP_UPDATE_PERIOD = 5
 
-    def __init__(self, profile):
-        base_sender.BaseSender.__init__(self, profile)
+    def __init__(self, profile, usb_info):
+        base_sender.BaseSender.__init__(self, profile, usb_info)
         #self.mb = {'preheat': False, 'heat_shutdown': False}
         self.logger = logging.getLogger('app.' + __name__)
         self.logger.info('Makerbot printer created')

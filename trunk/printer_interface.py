@@ -93,7 +93,7 @@ class PrinterInterface(threading.Thread):
         printer_driver = __import__(self.printer_profile['driver'])
         self.logger.info("Connecting with profile: " + str(self.printer_profile))
         try:
-            printer = printer_driver.Sender(self.printer_profile)
+            printer = printer_driver.Sender(self.printer_profile, self.usb_info)
         except Exception as e:
             self.logger.warning("Error connecting to %s" % self.printer_profile['name'], exc_info=True)
         else:

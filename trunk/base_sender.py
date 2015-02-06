@@ -2,8 +2,9 @@ import collections
 
 class BaseSender:
 
-    def __init__(self, profile):
+    def __init__(self, profile, usb_info):
         self.profile = profile
+        self.usb_info = usb_info
         self.buffer = collections.deque()
         self.stop_flag = False
         self.pause_flag = False

@@ -14,34 +14,29 @@ DEFAULT_READ_LENGTH = 512
 
 class Sender(printrun_printer.Sender):
 
-    def __init__(self, profile):
+    def __init__(self, profile, usb_info):
         self.logger = logging.getLogger("app." + __name__)
-        if profile.get('COM', None):
+        if usb_info.get('COM', None):
             printrun_printer.Printer.__init__(self, profile)
         else:
-            self.profile = profile
             if self.init_raw_usb_device():
                 self.flash_firmware()
 
     def find_firmware_file(self):
         firmware_dir = os.path.join(os.getcwd(), "beeverycreative", "firmware")
         for file_name in os.listdir(firmware_dir):
-            if self.profile['name'].lower() in file_name.lower():
+            if 'beethefirst' in file_name.lower():
                 firmware = os.path.join(firmware_dir, file_name)
                 return firmware
 
-    def reset(self):
-        self._printer.send_now("M609")
-
     def emergency_stop(self):
         self._printer.send_now("M609")
-        self.stop()
 
     def init_raw_usb_device(self):
         print "Starting flashing initialization"
         # find our device
-        int_vid = int(self.profile['VID'], 16)
-        int_pid = int(self.profile['PID'], 16)
+        int_vid = int(self.usb_info['VID'], 16)
+        int_pid = int(self.usb_info['PID'], 16)
         backend_from_our_directory = usb.backend.libusb1.get_backend(find_library=utils.get_libusb_path)
         dev = usb.core.find(idVendor=int_vid, idProduct=int_pid, backend=backend_from_our_directory)
         # set the active configuration. With no arguments, the first
@@ -110,7 +105,7 @@ class Sender(printrun_printer.Sender):
 
 if __name__ == "__main__":
     profile = usb_detect.get_printers()[0]
-    printer = Printer(profile)
+    printer = Sender(profile)
     printer.reset()
     time.sleep(1)
     printer.close()

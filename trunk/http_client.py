@@ -65,9 +65,12 @@ def connect(URL):
     logger.debug("{ Connecting...")
     try:
         if HTTPS_FLAG:
-            no_verify_context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
-            no_verify_context.verify_mode = ssl.CERT_NONE
-            connection = httplib.HTTPSConnection(URL, port = 443, timeout = CONNECTION_TIMEOUT, context=no_verify_context)
+            #if ssl_has_context:
+            #    no_verify_context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+            #    no_verify_context.verify_mode = ssl.CERT_NONE
+            #else:
+            #    no_verify_context = None
+            connection = httplib.HTTPSConnection(URL, port = 443, timeout = CONNECTION_TIMEOUT)
         else:
             connection = httplib.HTTPConnection(URL, port = 80, timeout = CONNECTION_TIMEOUT)
     except httplib.error as e:
