@@ -231,7 +231,7 @@ def compress_and_send(log_file_name=None, server_path=http_client.token_send_log
         #if http_client.multipart_upload(url, {"token": read_token()}, {'files': file}):
             #os.remove(LOG_SNAPSHOTS_DIR + '/' + log_file_name)
         token = {'token': read_token()}
-        with open(zip_file_name, 'r') as f:
+        with open(zip_file_name_path, 'r') as f:
             files = {'file_data': f}
             r = requests.post(url, data=token, files=files)
         #f.close()
@@ -239,8 +239,8 @@ def compress_and_send(log_file_name=None, server_path=http_client.token_send_log
         print "Log sending response: " + result
         if '"success":true' in result:
             pass
-            os.remove(os.path.join(log_file_name))
-        os.remove(zip_file_name)
+            os.remove(os.path.join(log_file_name_path))
+        os.remove(zip_file_name_path)
 
 def send_all_snapshots():
     try:
