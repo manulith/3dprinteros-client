@@ -188,7 +188,7 @@ def make_full_log_snapshot():
     for log in os.listdir(os.path.abspath(os.path.dirname(__file__))):
         if log.startswith(config.config['log_file']):
             log_files.append(log)
-    print str(log_files)
+    #logger.info('Files to log : ' + str(log_files))
     if not log_files:
         logger.info('Log files was not created for some reason. Nothing to send')
         return
@@ -208,7 +208,6 @@ def make_full_log_snapshot():
                 for line in infile:
                     outfile.write(line)
             outfile.write('\n')
-    print 'filename : ' + filename
     return filename
 
 def compress_and_send(log_file_name=None, server_path=http_client.token_send_logs_path):
@@ -238,7 +237,6 @@ def compress_and_send(log_file_name=None, server_path=http_client.token_send_log
         result = r.text
         logger.info("Log sending response: " + result)
         if '"success":true' in result:
-            pass
             os.remove(os.path.join(log_file_name_path))
         os.remove(zip_file_name_path)
 
