@@ -68,7 +68,12 @@ class App:
             from web_interface import WebInterface
             self.web_interface = WebInterface(self)
             self.web_interface.start()
+            self.logger.debug("Waiting for webserver to start...")
+            while not self.web_interface.server:
+                time.sleep(0.01)
+            self.logger.debug("...server is up and running. Connecting browser...")
             webbrowser.open("http://127.0.0.1:8008", 2, True)
+            self.logger.debug("...done")
 
     def main_loop(self):
         while not self.stop_flag:

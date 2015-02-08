@@ -3,6 +3,7 @@ import urllib
 import logging
 import threading
 import BaseHTTPServer
+from SocketServer import ThreadingMixIn
 
 import utils
 import version
@@ -144,17 +145,22 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.end_headers()
         self.write_with_autoreplace(page)
 
+class ThreadedHTTPServer(ThreadingMixIn, BaseHTTPServer.HTTPServer):
+    """ This class allows to handle requests in separated threads.
+        No further content needed, don't touch this. """
+
 
 class WebInterface(threading.Thread):
     def __init__(self, app):
         self.logger = logging.getLogger('app.' + __name__)
         self.app = app
+        self.server = None
         threading.Thread.__init__(self)
 
     def run(self):
         self.logger.info("Starting web server...")
         try:
-            self.server = BaseHTTPServer.HTTPServer(("127.0.0.1", 8008), WebInterfaceHandler)
+            self.server = ThreadedHTTPServer(("127.0.0.1", 8008), WebInterfaceHandler)
         except Exception as e:
             self.logger.error(e)
         else:
