@@ -6,6 +6,7 @@ import os
 import time
 import signal
 import logging
+import logstash
 from subprocess import Popen
 
 import utils
@@ -35,6 +36,7 @@ class App:
         self.quit_flag = False
         self.cam = None
         self.user_login = user_login.UserLogin(self)
+        self.init_logstash()
         self.init_interface()
         self.user_login.wait_for_login()
         #self.start_camera()
@@ -49,6 +51,16 @@ class App:
                 self.cam = Popen([sys.executable, cam_path])
             except Exception as e:
                 self.logger.warning('Could not launch camera due to error:\n' + e.message)
+
+    def init_logstash(self):
+        #mac_addr = http_client.MACADDR
+        logstash_addr = config.config['logstash_addr']
+        logstash_port = config.config['logstash_port']
+        if logstash_addr and logstash_port:
+            self.logger.info("Starting logstash handler")
+            logstash_handler = logstash.TCPLogstashHandler(logstash_addr, logstash_port, version=1)
+            logstash_handler.setLevel(logging.INFO)
+            self.logger.addHandler(logstash_handler)
 
     def init_interface(self):
         if config.config['web_interface']:
@@ -127,4 +139,7 @@ class App:
         sys.exit(0)
 
 if __name__ == '__main__':
+    import stacktracer
+    stacktracer.trace_start("trace.html", interval=5, auto=True)
     app = App()
+    stacktracer.trace_stop()

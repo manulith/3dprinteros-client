@@ -79,12 +79,20 @@ class Sender(base_sender.BaseSender):
         self.lift_extruder()
 
     def pause(self):
-        self.lift_extruder()
-        self.pause_flag = True
+        if not self.pause_flag:
+            self.pause_flag = True
+            self.lift_extruder()
+            return True
+        else:
+            return False
 
     def unpause(self):
-        self.buffer.appendleft('G1 Z' + str(self.position[2]) + ' A' + str(self.position[3]) + ' B' + str(self.position[4]))
-        self.pause_flag = False
+        if self.pause_flag:
+            self.buffer.appendleft('G1 Z' + str(self.position[2]) + ' A' + str(self.position[3]) + ' B' + str(self.position[4]))
+            self.pause_flag = False
+            return True
+        else:
+            return False
 
     def get_position(self):
         position = self.parser.state.position.ToList()

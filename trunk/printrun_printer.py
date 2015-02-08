@@ -15,62 +15,67 @@ class Sender(base_sender.BaseSender):
 
     TEMP_REQUEST_WAIT = 5
 
+    DEFAULT_TIMEOUT_FOR_PRINTER_ONLINE = 15
+
     def __init__(self, profile, usb_info):
+        self.temp_request_thread = None
+        self.printcore = None
         self.logger = logging.getLogger('app.' + __name__)
         base_sender.BaseSender.__init__(self, profile, usb_info)
         self.define_regexp()
-        self.select_baudrate_and_connect()
-        self.extruder_count = self.profile['extruder_count']
-        self.init_callbacks()
-        self.total_gcodes = 0
-        self.temp_request_thread = threading.Thread(target=self.temp_request)
-        self.temp_request_thread.start()
-        for gcode in self.profile['end_gcodes']:
-            self.printcore.send_now(gcode)
-
-    def init_callbacks(self):
-        self.printcore.tempcb = self.tempcb
-        #self.printcore.recvcb = self.recvcb
-        self.printcore.sendcb = self.sendcb
-        #self.printcore.errorcb = self.errorcb
+        if self.select_baudrate_and_connect():
+            self.extruder_count = self.profile['extruder_count']
+            self.total_gcodes = 0
+            self.temp_request_thread = threading.Thread(target=self.temp_request)
+            self.temp_request_thread.start()
+            for gcode in self.profile['end_gcodes']:
+                self.printcore.send_now(gcode)
 
     def select_baudrate_and_connect(self):
-        self.firmware_loaded = False
-        baudrate_count = 0
         baudrates = self.profile['baudrate']
         self.logger.info('Baudrates list for %s : %s' % (self.profile['name'], str(baudrates)))
-        while not self.firmware_loaded:
-            if baudrate_count >= len(baudrates):
-                raise RuntimeError("No more baudrates to try")
-            self.logger.info("Trying to connect with baudrate %i" % baudrates[baudrate_count])
-            if getattr(self, "_printer", None):
-                try:
-                    self.logger.debug("Resetting")
-                    self.printcore.reset()
-                    self.logger.debug("Disconnecting")
-                    self.printcore.disconnect()
-                    self.logger.debug("Done resetting and disconnecting.")
-                except Exception as e:
-                    self.logger.debug('Error while resetting and disconnecting : \n' + e.message)
-            try:
-                self.printcore = printcore(self.profile['COM'], baudrates[baudrate_count])
-            except Exception as e:
-                self.logger.warning("Error connecting to printer with baudrate %i" % baudrates[baudrate_count])
-                try:
-                    self.printcore.reset()
-                    self.printcore.disconnect()
-                except AttributeError:
-                    pass
+        for baudrate in baudrates:
+            self.logger.info("Connecting at baudrate %i" % baudrate)
+            self.printcore = printcore()
+            self.printcore.onlinecb = self.onlinecb
+            self.printcore.errorcb = self.errorcb
+            self.printcore.connect(self.profile['COM'], baudrate)
+            if not self.printcore.printer:
+                self.logger.warning("Error connecting to printer at %i" % baudrate)
+                self.printcore.disconnect()
             else:
-                time.sleep(0.1)
-                self.printcore.recvcb = self.recvcb
-                self.printcore.errorcb = self.errorcb
-                time.sleep(0.1)
-                self.printcore.send_now("M999")
-                self.printcore.send_now("M105")
-            time.sleep(2)
-            baudrate_count += 1
-        self.logger.info("Successful connection! Correct baudrate is %i" % baudrates [ baudrate_count - 1 ] )
+                self.online_flag = False
+                wait_start_time = time.time()
+                self.logger.info("Waiting for printer online")
+                while time.time() < (wait_start_time + self.DEFAULT_TIMEOUT_FOR_PRINTER_ONLINE):
+                    if self.stop_flag:
+                        return False
+                    if self.online_flag:
+                        self.logger.info("Successful connection to printer %s:%i" % (self.profile['COM'], baudrate))
+                        self.printcore.tempcb = self.tempcb
+                        self.printcore.recvcb = self.recvcb
+                        self.printcore.sendcb = self.sendcb
+                        return True
+                self.logger.warning("Timeout while waiting for printer online. Reseting and reconnecting...")
+                self.reset()
+                time.sleep(2)
+                self.logger.warning("...done reseting.")
+        raise RuntimeError("No more baudrates to try")
+
+    def onlinecb(self):
+        self.online_flag = True
+
+    def reset(self):
+        if self.printcore:
+            self.logger.debug("Sending M999...")
+            self.printcore.send_now("M999")
+            self.logger.debug("Resetting...")
+            self.printcore.reset()
+            self.logger.debug("Disconnecting...")
+            self.printcore.disconnect()
+            self.logger.debug("Successful reset and disconnect")
+        else:
+            self.logger.warning("No printrun printcore to execute reset")
 
     def define_regexp(self):
         # ok T:29.0 /29.0 B:29.5 /29.0 @:0
@@ -122,7 +127,7 @@ class Sender(base_sender.BaseSender):
             self.firmware_loaded = True
 
     def sendcb(self, command, gline):
-        self.logger.info("command=" + command)
+        self.logger.info("Executing command: " + command)
         # if 'M104' in command or 'M109' in command:
         #     tool = 0
         #     tool_match = re.match('.+T(\d+)', command)
@@ -154,32 +159,48 @@ class Sender(base_sender.BaseSender):
     def set_total_gcodes(self, length):
         self.total_gcodes = length
 
+    def startcb(self, resuming_flag):
+        if resuming_flag:
+            self.logger.info("Printrun is resuming print")
+        else:
+            self.logger.info("Printrun is starting print")
+
     def gcodes(self, gcodes):
-        self.logger.info('len(gcodes): ' + str(len(gcodes)))
+        self.logger.info('Number of gcodes: $i' % len(gcodes))
         if len(gcodes) > 0:
             gcodes = LightGCode(gcodes)
             try:
                 if not self.printcore.startprint(gcodes):
                     self.logger.warning('Error starting print')
+                else:
+                    return True
             except Exception as e:
                 self.logger.warning("Can`t start printing. Error: %s" % e.message)
+        return False
+
 
     def pause(self):
-        self.logger.debug("Printrun pause")
+        self.logger.info("Printrun pause")
         if not self.printcore.paused:
             self.printcore.pause()
             gcode = 'G1 Z' + str(self.printcore.pauseZ + self.pause_lift_height) + \
                     ' E' + str(self.printcore.pauseE - self.pause_extrude_length)
             self.printcore.send_now(gcode)
             self.logger.info("Paused successfully")
+            return True
+        else:
+            return False
 
     def unpause(self):
-        self.logger.debug("Printrun unpause")
+        self.logger.info("Printrun unpause")
         if self.printcore.paused:
             gcode = 'G1 Z' + str(self.printcore.pauseZ) + ' E' + str(self.printcore.pauseE)
             self.printcore.send_now(gcode)
             self.printcore.resume()
             self.logger.info("Unpaused successfully")
+            return True
+        else:
+            return False
 
     def cancel(self):
         self.printcore.reset()
@@ -199,17 +220,18 @@ class Sender(base_sender.BaseSender):
         return self.error_code
 
     def is_operational(self):
-        if self.printcore.printing:
-            return self.printcore.read_thread and \
-               self.printcore.read_thread.is_alive() and \
-               self.printcore.print_thread and \
-               self.printcore.print_thread.is_alive()
-        if self.printcore.paused or self.printcore.online:
-            return self.printcore.read_thread and \
-               self.printcore.read_thread.is_alive() and \
-               self.printcore.send_thread and \
-               self.printcore.send_thread.is_alive()
-        return True
+        if self.online_flag:
+            if self.printcore.printing:
+                return self.printcore.read_thread and \
+                   self.printcore.read_thread.is_alive() and \
+                   self.printcore.print_thread and \
+                   self.printcore.print_thread.is_alive()
+            if self.printcore.paused or self.printcore.online:
+                return self.printcore.read_thread and \
+                   self.printcore.read_thread.is_alive() and \
+                   self.printcore.send_thread and \
+                   self.printcore.send_thread.is_alive()
+            return True
 
     def get_percent(self):
         percent = 0
@@ -220,13 +242,15 @@ class Sender(base_sender.BaseSender):
     def close(self):
         self.stop_flag = True
         self.logger.debug('Printrun sender is closing')
-        self.printcore.disconnect()
+        if self.printcore:
+            self.printcore.disconnect()
         self.logger.debug('(Joining printrun threads...')
-        self.temp_request_thread.join(10)
-        if self.temp_request_thread.isAlive():
-            self.logger.error("Error stopping temperature request thread.")
-        else:
-            self.logger.debug('...done)')
+        if self.temp_request_thread:
+            self.temp_request_thread.join()
+            if self.temp_request_thread.isAlive():
+                self.logger.error("Error stopping temperature request thread.")
+            else:
+                self.logger.debug('...done)')
 
     # #def debug_position(self):
     #    text  = "X:" + str(self.position[0])

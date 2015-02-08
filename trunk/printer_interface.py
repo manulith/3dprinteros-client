@@ -32,6 +32,7 @@ class PrinterInterface(threading.Thread):
         self.printer = None
         self.printer_token = None
         self.creation_time = time.time()
+        self.acknowledge = None
         self.logger = logging.getLogger('app.' + __name__)
         self.logger.info('New printer interface for %s' % str(usb_info))
         super(PrinterInterface, self).__init__()
@@ -65,6 +66,74 @@ class PrinterInterface(threading.Thread):
                 time.sleep(0.1)
                 return False
 
+    def connect_printer_driver(self):
+        printer_driver = __import__(self.printer_profile['driver'])
+        self.logger.info("Connecting with profile: " + str(self.printer_profile))
+        try:
+            printer = printer_driver.Sender(self.printer_profile, self.usb_info)
+        except RuntimeError as e:
+            self.logger.warning("Couldn`t connect %s %s\nReason:%s" % (self.printer_profile['name'], str(self.usb_info), e.message))
+        except Exception as e:
+            self.logger.warning("Error connecting to %s" % self.printer_profile['name'], exc_info=True)
+        else:
+            self.printer = printer
+            self.logger.info("Successful connection to %s!" % (self.printer_profile['name']))
+
+    def process_command_request(self, data_dict):
+        logger = logging.getLogger("app." + __name__)
+        number = data_dict.get('number', None)
+        if number:
+            logger.debug("Processing command number %i" % number)
+        error = data_dict.get('error', None)
+        if error:
+            self.logger.warning("Server command came with errors %d %s" % (error['code'], error['message']))
+        else:
+            command = data_dict.get('command', None)
+            if command:
+                if not hasattr(self.printer, command):
+                    self.logger.warning("Unknown command: " + str(command))
+                else:
+                    self.logger.info("Excecuting command %s" % str(command))
+                    method = getattr(self.printer, command)
+                    payload = data_dict.get('payload', None)
+                    if data_dict.get('is_link', False):
+                        payload = http_client.download(payload)
+                        if not payload:
+                            payload = "\n"
+                    elif "command" in ("gcodes", "binary_file"):
+                        payload = base64.b64decode(payload)
+                    if payload:
+                        if command == 'gcodes':
+                            payload = payload.split("\n")
+                        result = method(payload)
+                    else:
+                        result = method()
+                    # to reduce needless return True, we assume that when method had return None, that is success
+                    self.acknowledge = (number, result == False)
+
+    def run(self):
+        self.stop_flag = False
+        if self.connect_to_server():
+            self.connect_printer_driver()
+        time.sleep(1)
+        while not self.stop_flag and self.printer:
+            if self.printer.is_operational():
+                report = self.state_report()
+                message = (self.printer_token, report, self.acknowledge)
+                self.logger.debug("Printer %s\nRequesting command with: %s " % (self.printer_token, report))
+                answer = http_client.send(http_client.package_command_request, message)
+                self.logger.debug("Got answer: " + str(answer))
+                if answer:
+                    self.acknowledge = None
+                    self.process_command_request(answer)
+                    time.sleep(0.5)
+            else:
+                if time.time() - self.creation_time < self.printer_profile.get('start_timeout', self.DEFAULT_TIMEOUT):
+                    time.sleep(0.1)
+                else:
+                    self.printer.close()
+                    self.printer = None
+
     def get_printer_state(self):
         if self.printer.is_operational():
             if self.printer.is_paused():
@@ -89,68 +158,6 @@ class PrinterInterface(threading.Thread):
                 report["state"] = self.get_printer_state()
             return report
 
-    def connect_printer_driver(self):
-        printer_driver = __import__(self.printer_profile['driver'])
-        self.logger.info("Connecting with profile: " + str(self.printer_profile))
-        try:
-            printer = printer_driver.Sender(self.printer_profile, self.usb_info)
-        except Exception as e:
-            self.logger.warning("Error connecting to %s" % self.printer_profile['name'], exc_info=True)
-        else:
-            self.printer = printer
-            self.logger.info("Successful connection to %s!" % (self.printer_profile['name']))
-
-    def process_command_request(self, data_dict):
-        logger = logging.getLogger("app." + __name__)
-        number = data_dict.get('number', None)
-        if number:
-            logger.info("Processing command number %i" % number)
-        error = data_dict.get('error', None)
-        if error:
-            self.logger.warning("Server command came with errors %d %s" % (error['code'], error['message']))
-        else:
-            command = data_dict.get('command', None)
-            if command:
-                if not hasattr(self.printer, command):
-                    self.logger.warning("Unknown command: " + str(command))
-                else:
-                    method = getattr(self.printer, command)
-                    payload = data_dict.get('payload', None)
-                    if data_dict.get('is_link', False):
-                        payload = http_client.download(payload)
-                        if not payload:
-                            payload = "\n"
-                    elif "command" in ("gcodes", "binary_file"):
-                        payload = base64.b64decode(payload)
-                    if payload:
-                        if command == 'gcodes':
-                            payload = payload.split("\n")
-                        method(payload)
-                    else:
-                        method()
-                    return True
-
-    def run(self):
-        self.stop_flag = False
-        if self.connect_to_server():
-            self.connect_printer_driver()
-        time.sleep(1)
-        while not self.stop_flag and self.printer:
-            if self.printer.is_operational():
-                report = self.state_report()
-                self.logger.debug("Printer %s\nRequesting command with: %s " % (self.printer_token, report))
-                answer = http_client.send(http_client.package_command_request, (self.printer_token, report))
-                self.logger.debug("Got answer: " + str(answer))
-                if answer:
-                    self.process_command_request(answer)
-                    time.sleep(0.5)
-            else:
-                if time.time() - self.creation_time < self.printer_profile.get('start_timeout', self.DEFAULT_TIMEOUT):
-                    time.sleep(0.1)
-                else:
-                    self.printer.close()
-                    self.printer = None
-
     def close(self):
         self.stop_flag = True
         if self.printer:
@@ -160,3 +167,4 @@ class PrinterInterface(threading.Thread):
             self.printer = None
         else:
             self.logger.debug('Nothing to close')
+

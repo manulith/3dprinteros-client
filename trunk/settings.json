@@ -3,6 +3,8 @@
   "AUX_URL": "acorn.3dprinteros.com",
   "HTTPS": true,
   "log_file": "3dprinteros_client.log",
+  "logstash_addr": "ec2-54-67-60-43.us-west-1.compute.amazonaws.com",
+  "logstash_port": 5000,
   "web_interface": true,
   "camera": {
     "enabled" : true,

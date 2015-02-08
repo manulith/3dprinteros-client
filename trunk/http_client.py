@@ -38,20 +38,30 @@ def load_json(jdata):
 
 #packagers
 
-def package_user_login(username, password, platform, error = {}):
-    data = { 'login': {'user': username, 'password': password}, 'host_mac': MACADDR, platform: platform, 'error': error}
+def package_user_login(username, password, platform, error = None):
+    data = { 'login': {'user': username, 'password': password}, 'host_mac': MACADDR, platform: platform}
+    if error:
+        data['error'] = error
     return json.dumps(data), user_login_path
 
-def package_printer_login(user_token, printer_profile, error = {}):
-    data = { 'user_token': user_token, 'printer': printer_profile, 'error': error }
+def package_printer_login(user_token, printer_profile, error = None):
+    data = { 'user_token': user_token, 'printer': printer_profile }
+    if error:
+        data['error'] = error
     return json.dumps(data), printer_login_path
 
-def package_command_request(printer_token, state, error = {}):
+def package_command_request(printer_token, state, acknowledge, error = None):
     data = { 'printer_token': printer_token, 'report': state, 'error': error }
+    if acknowledge:
+        data['command_ack'] = acknowledge
+    if error:
+        data['error'] = error
     return json.dumps(data), command_path
 
-def package_camera_send(user_token, camera_number, camera_name, data, error = {}):
-    data = {'user_token': user_token, 'camera_number': camera_number, 'camera_name': camera_name, 'file_data': data, 'error': error, 'host_mac': MACADDR}
+def package_camera_send(user_token, camera_number, camera_name, data, error = None):
+    data = {'user_token': user_token, 'camera_number': camera_number, 'camera_name': camera_name, 'file_data': data, 'host_mac': MACADDR}
+    if error:
+        data['error'] = error
     return json.dumps(data), camera_path
 
 def package_cloud_sync_upload(token, file_data, file_name):
