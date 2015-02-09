@@ -39,9 +39,9 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.send_response(200)
             self.end_headers()
             if self.server.app.user_login.user_token:
-                name = self.working_dir + '/web_interface/main_loop_form.html'
+                name = os.path.join(self.working_dir, 'web_interface/main_loop_form.html')
             else:
-                name = self.working_dir + '/web_interface/login.html'
+                name = os.path.join(self.working_dir, 'web_interface/login.html')
             with open(name) as f:
                 page = f.read()
             printers_list = []
@@ -77,14 +77,14 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.write_with_autoreplace('Not found')
 
     def download_logs(self):
-        page = open(self.working_dir + '/web_interface/download_logs.html').read()
+        page = open(os.path.join(self.working_dir, 'web_interface/download_logs.html')).read()
         self.send_response(200)
         self.end_headers()
         self.write_with_autoreplace(page)
 
     def snapshot_log(self):
         result = utils.make_log_snapshot()
-        message = open(self.working_dir + '/web_interface/message.html', 'r').read()
+        message = open(os.path.join(self.working_dir, 'web_interface/message.html')).read()
         if result:
             message = message.replace('!!!MESSAGE!!!', 'Success!')
         else:
@@ -95,7 +95,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
     def send_log_snapshots(self):
         result = utils.send_all_snapshots()
-        message = open(self.working_dir + '/web_interface/message.html', 'r').read()
+        message = open(os.path.join(self.working_dir, 'web_interface/message.html')).read()
         if result:
             message = message.replace('!!!MESSAGE!!!', 'Success!')
         else:
@@ -107,7 +107,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     def quit_main_app(self):
         self.send_response(200)
         self.end_headers()
-        page = open(self.working_dir + '/web_interface/goodbye.html', 'r').read()
+        page = open(os.path.join(self.working_dir, 'web_interface/goodbye.html')).read()
         self.write_with_autoreplace(page)
         self.server.app.stop_flag = True
         self.server.app.quit_flag = True
@@ -122,7 +122,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             raw_login, password = body.split("&password=")
             login = raw_login.replace("login=", "")
         error = self.server.app.user_login.login_as_user(login, password)
-        message = open(self.working_dir + '/web_interface/message.html').read()
+        message = open(os.path.join(self.working_dir, 'web_interface/message.html')).read()
         if error:
             message = message.replace('!!!MESSAGE!!!', str(error[1]))
         else:
@@ -137,7 +137,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 os.remove('login_info.bin')
             except Exception as e:
                 self.logger.error('Failed to logout: ' + e.message)
-        page = open(self.working_dir + '/web_interface/logout.html', 'r').read()
+        page = open(os.path.join(self.working_dir, 'web_interface/logout.html')).read()
         self.send_response(200)
         self.end_headers()
         self.write_with_autoreplace(page)
