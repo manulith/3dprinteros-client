@@ -10,6 +10,7 @@ import version
 class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
     def setup(self):
+        self.working_dir = os.path.dirname(os.path.abspath(__file__))
         self.logger = logging.getLogger('app.' + __name__)
         BaseHTTPServer.BaseHTTPRequestHandler.setup(self)
         self.request.settimeout(120)
@@ -38,9 +39,9 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.send_response(200)
             self.end_headers()
             if self.server.app.user_login.user_token:
-                name = 'web_interface/main_loop_form.html'
+                name = self.working_dir + '/web_interface/main_loop_form.html'
             else:
-                name = 'web_interface/login.html'
+                name = self.working_dir + '/web_interface/login.html'
             with open(name) as f:
                 page = f.read()
             printers_list = []
@@ -76,18 +77,17 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.write_with_autoreplace('Not found')
 
     def download_logs(self):
-        page = open('web_interface/download_logs.html').read()
+        page = open(self.working_dir + '/web_interface/download_logs.html').read()
         self.send_response(200)
         self.end_headers()
         self.write_with_autoreplace(page)
 
     def snapshot_log(self):
         result = utils.make_log_snapshot()
+        message = open(self.working_dir + '/web_interface/message.html', 'r').read()
         if result:
-            message = open('web_interface/message.html', 'r').read()
             message = message.replace('!!!MESSAGE!!!', 'Success!')
         else:
-            message = open('web_interface/message.html', 'r').read()
             message = message.replace('!!!MESSAGE!!!', 'Error!')
         self.send_response(200)
         self.end_headers()
@@ -95,11 +95,10 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
     def send_log_snapshots(self):
         result = utils.send_all_snapshots()
+        message = open(self.working_dir + '/web_interface/message.html', 'r').read()
         if result:
-            message = open('web_interface/message.html', 'r').read()
             message = message.replace('!!!MESSAGE!!!', 'Success!')
         else:
-            message = open('web_interface/message.html', 'r').read()
             message = message.replace('!!!MESSAGE!!!', 'Error!')
         self.send_response(200)
         self.end_headers()
@@ -108,7 +107,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     def quit_main_app(self):
         self.send_response(200)
         self.end_headers()
-        page = open('web_interface/goodbye.html', 'r').read()
+        page = open(self.working_dir + '/web_interface/goodbye.html', 'r').read()
         self.write_with_autoreplace(page)
         self.server.app.stop_flag = True
         self.server.app.quit_flag = True
@@ -123,11 +122,10 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             raw_login, password = body.split("&password=")
             login = raw_login.replace("login=", "")
         error = self.server.app.user_login.login_as_user(login, password)
+        message = open(self.working_dir + '/web_interface/message.html').read()
         if error:
-            message = open('web_interface/message.html').read()
             message = message.replace('!!!MESSAGE!!!', str(error[1]))
         else:
-            message = open('web_interface/message.html', 'r').read()
             message = message.replace('!!!MESSAGE!!!', 'Login successful!<br><br>Processing...')
         self.send_response(200)
         self.end_headers()
@@ -139,7 +137,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 os.remove('login_info.bin')
             except Exception as e:
                 self.logger.error('Failed to logout: ' + e.message)
-        page = open('web_interface/logout.html', 'r').read()
+        page = open(self.working_dir + '/web_interface/logout.html', 'r').read()
         self.send_response(200)
         self.end_headers()
         self.write_with_autoreplace(page)
