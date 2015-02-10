@@ -144,7 +144,6 @@ class Sender(base_sender.BaseSender):
 
     def errorcb(self, error):
         self.logger.warning("Error occurred in printrun: " + str(error))
-        self.was_error = True
         self.error_code = 1
         self.error_message = error
 
