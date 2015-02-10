@@ -144,7 +144,4 @@ class App:
         sys.exit(0)
 
 if __name__ == '__main__':
-    import stacktracer
-    stacktracer.trace_start("trace.html", interval=5, auto=True)
     app = App()
-    stacktracer.trace_stop()
