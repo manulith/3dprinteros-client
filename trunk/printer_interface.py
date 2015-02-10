@@ -9,7 +9,8 @@ import http_client
 
 class PrinterInterface(threading.Thread):
 
-    DEFAULT_TIMEOUT = 45
+    DEFAULT_TIMEOUT = 10
+    NO_COMMAND_SLEEP = 3
 
     def protection(func):
         def decorator(self, *args, **kwargs):
@@ -119,18 +120,22 @@ class PrinterInterface(threading.Thread):
         while not self.stop_flag and self.printer:
             report = self.state_report()
             message = (self.printer_token, report, self.acknowledge)
-            self.acknowledge = None
             self.logger.debug("Printer %s\nRequesting command with: %s " % (self.printer_token, report))
-            answer = http_client.send(http_client.package_command_request, message)
-            self.logger.debug("Got answer: " + str(answer))
-            if answer:
-                if self.printer.is_operational():
+            if self.printer.is_operational():
+                answer = http_client.send(http_client.package_command_request, message)
+                self.logger.debug("Got answer: " + str(answer))
+                if answer:
                     self.acknowledge = self.process_command_request(answer)
                 else:
-                    self.acknowledge = (answer['number'], False)
-            elif time.time() - self.creation_time < self.printer_profile.get('start_timeout', self.DEFAULT_TIMEOUT):
+                    time.sleep(self.NO_COMMAND_SLEEP)
+            elif (time.time() - self.creation_time < self.printer_profile.get('start_timeout', self.DEFAULT_TIMEOUT)) and not self.stop_flag:
                 time.sleep(0.1)
             else:
+                self.logger.warning("Printer has become not operational:\n%s\n%s" % (str(self.usb_info), str(self.profile)))
+                answer = None
+                while not answer or not self.stop_flag:
+                    answer = http_client.send(http_client.package_command_request, message)
+                #self.acknowledge = (answer['number'], False) #right now is useless
                 self.printer.close()
                 self.printer = None
 
