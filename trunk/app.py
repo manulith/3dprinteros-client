@@ -35,11 +35,11 @@ class App:
         self.stop_flag = False
         self.quit_flag = False
         self.cam = None
-        self.init_logstash()
         self.user_login = user_login.UserLogin(self)
+        self.init_logstash()
         self.init_interface()
         self.user_login.wait_for_login()
-        #self.start_camera()
+        self.start_camera()
         self.main_loop()
 
     def start_camera(self):
@@ -114,6 +114,8 @@ class App:
 
     def quit(self):
         self.stop_flag = True
+        if self.cam:
+            self.cam.terminate()
         for pi in self.printer_interfaces:
             pi.close()
         time.sleep(0.1) #to reduce logging spam in next
@@ -144,7 +146,4 @@ class App:
         sys.exit(0)
 
 if __name__ == '__main__':
-    #import stacktracer
-    #stacktracer.trace_start("trace.html", interval=5, auto=True)
     app = App()
-    #stacktracer.trace_stop()
