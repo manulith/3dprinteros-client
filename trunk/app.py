@@ -39,7 +39,7 @@ class App:
         self.init_logstash()
         self.init_interface()
         self.user_login.wait_for_login()
-        #self.start_camera()
+        self.start_camera()
         self.main_loop()
 
     def start_camera(self):
@@ -114,6 +114,8 @@ class App:
 
     def quit(self):
         self.stop_flag = True
+        if self.cam:
+            self.cam.terminate()
         for pi in self.printer_interfaces:
             pi.close()
         time.sleep(0.1) #to reduce logging spam in next
