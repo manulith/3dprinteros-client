@@ -35,8 +35,8 @@ class App:
         self.stop_flag = False
         self.quit_flag = False
         self.cam = None
-        self.user_login = user_login.UserLogin(self)
         self.init_logstash()
+        self.user_login = user_login.UserLogin(self)
         self.init_interface()
         self.user_login.wait_for_login()
         #self.start_camera()
@@ -144,7 +144,7 @@ class App:
         sys.exit(0)
 
 if __name__ == '__main__':
-    import stacktracer
-    stacktracer.trace_start("trace.html", interval=5, auto=True)
+    #import stacktracer
+    #stacktracer.trace_start("trace.html", interval=5, auto=True)
     app = App()
-    stacktracer.trace_stop()
+    #stacktracer.trace_stop()
