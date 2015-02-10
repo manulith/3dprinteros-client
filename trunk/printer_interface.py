@@ -111,7 +111,7 @@ class PrinterInterface(threading.Thread):
                     else:
                         result = method()
                     # to reduce needless return True, we assume that when method had return None, that is success
-                    return (number, not result == False)
+                    return (number, result or result == None)
 
     def run(self):
         if self.connect_to_server():
