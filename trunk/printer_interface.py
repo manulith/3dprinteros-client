@@ -110,7 +110,7 @@ class PrinterInterface(threading.Thread):
                     else:
                         result = method()
                     # to reduce needless return True, we assume that when method had return None, that is success
-                    self.acknowledge = (number, not result == False)
+                    return (number, not result == False)
 
     def run(self):
         if self.connect_to_server():
@@ -119,13 +119,15 @@ class PrinterInterface(threading.Thread):
         while not self.stop_flag and self.printer:
             report = self.state_report()
             message = (self.printer_token, report, self.acknowledge)
+            self.acknowledge = None
             self.logger.debug("Printer %s\nRequesting command with: %s " % (self.printer_token, report))
             answer = http_client.send(http_client.package_command_request, message)
             self.logger.debug("Got answer: " + str(answer))
-            if answer and self.printer.is_operational():
-                self.acknowledge = None
-                self.process_command_request(answer)
-                time.sleep(0.5)
+            if answer:
+                if self.printer.is_operational():
+                    self.acknowledge = self.process_command_request(answer)
+                else:
+                    self.acknowledge = (answer['number'], False)
             elif time.time() - self.creation_time < self.printer_profile.get('start_timeout', self.DEFAULT_TIMEOUT):
                 time.sleep(0.1)
             else:
