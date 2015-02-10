@@ -98,7 +98,7 @@ class Sender(base_sender.BaseSender):
         position = self.parser.state.position.ToList()
         if position[2] is None or position[3] is None or position[4] is None:
             self.logger.warning(
-                'It seems that Pause command was called in wrong command sequence(positions are None)')
+                'It seems that Pause/Cancel command was called in wrong command sequence(positions are None)')
             return None
         return position
 
