@@ -156,8 +156,8 @@ class Sender(base_sender.BaseSender):
                 self.close()
                 break
 
-            except makerbot_driver.TransmissionError as e:
-                self.logger.warning('Transmission error')
+            except makerbot_driver.TransmissionError:
+                self.logger.warning('Unexpected error')
                 self.error_code = 'Time out'
                 self.error_message = str(e)
                 self.close()
