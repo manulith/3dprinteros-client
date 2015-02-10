@@ -33,6 +33,7 @@ class PrinterInterface(threading.Thread):
         self.printer_token = None
         self.creation_time = time.time()
         self.acknowledge = None
+        self.stop_flag = False
         self.logger = logging.getLogger('app.' + __name__)
         self.logger.info('New printer interface for %s' % str(usb_info))
         super(PrinterInterface, self).__init__()
@@ -112,27 +113,24 @@ class PrinterInterface(threading.Thread):
                     self.acknowledge = (number, not result == False)
 
     def run(self):
-        self.stop_flag = False
         if self.connect_to_server():
             self.connect_printer_driver()
         time.sleep(1)
         while not self.stop_flag and self.printer:
-            if self.printer.is_operational():
-                report = self.state_report()
-                message = (self.printer_token, report, self.acknowledge)
-                self.logger.debug("Printer %s\nRequesting command with: %s " % (self.printer_token, report))
-                answer = http_client.send(http_client.package_command_request, message)
-                self.logger.debug("Got answer: " + str(answer))
-                if answer:
-                    self.acknowledge = None
-                    self.process_command_request(answer)
-                    time.sleep(0.5)
+            report = self.state_report()
+            message = (self.printer_token, report, self.acknowledge)
+            self.logger.debug("Printer %s\nRequesting command with: %s " % (self.printer_token, report))
+            answer = http_client.send(http_client.package_command_request, message)
+            self.logger.debug("Got answer: " + str(answer))
+            if answer and self.printer.is_operational():
+                self.acknowledge = None
+                self.process_command_request(answer)
+                time.sleep(0.5)
+            elif time.time() - self.creation_time < self.printer_profile.get('start_timeout', self.DEFAULT_TIMEOUT):
+                time.sleep(0.1)
             else:
-                if time.time() - self.creation_time < self.printer_profile.get('start_timeout', self.DEFAULT_TIMEOUT):
-                    time.sleep(0.1)
-                else:
-                    self.printer.close()
-                    self.printer = None
+                self.printer.close()
+                self.printer = None
 
     def get_printer_state(self):
         if self.printer.is_operational():
