@@ -30,7 +30,7 @@ class UserLogin:
                 config.update_profiles(all_profiles)
                 if utils.write_login(login, password):
                     self.user_token = answer["user_token"]
-                    self.logger.info("Successful login from user " + login)
+                    self.logger.info("Successful login from user " + login, extra={'login': login})
                     return
             else:
                 self.logger.warning("Error processing user_login " + str(error))
