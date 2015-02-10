@@ -220,18 +220,17 @@ class Sender(base_sender.BaseSender):
         return self.error_code
 
     def is_operational(self):
-        if self.online_flag:
-            if self.printcore.printing:
-                return self.printcore.read_thread and \
-                   self.printcore.read_thread.is_alive() and \
-                   self.printcore.print_thread and \
-                   self.printcore.print_thread.is_alive()
-            if self.printcore.paused or self.printcore.online:
-                return self.printcore.read_thread and \
-                   self.printcore.read_thread.is_alive() and \
-                   self.printcore.send_thread and \
-                   self.printcore.send_thread.is_alive()
-            return True
+        if self.printcore.printing:
+            return self.printcore.read_thread and \
+               self.printcore.read_thread.is_alive() and \
+               self.printcore.print_thread and \
+               self.printcore.print_thread.is_alive()
+        if self.printcore.paused or self.printcore.online:
+            return self.printcore.read_thread and \
+               self.printcore.read_thread.is_alive() and \
+               self.printcore.send_thread and \
+               self.printcore.send_thread.is_alive()
+        return False
 
     def get_percent(self):
         percent = 0
