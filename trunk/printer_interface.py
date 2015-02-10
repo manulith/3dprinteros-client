@@ -131,10 +131,13 @@ class PrinterInterface(threading.Thread):
             elif (time.time() - self.creation_time < self.printer_profile.get('start_timeout', self.DEFAULT_TIMEOUT)) and not self.stop_flag:
                 time.sleep(0.1)
             else:
-                self.logger.warning("Printer has become not operational:\n%s\n%s" % (str(self.usb_info), str(self.profile)))
+                self.logger.warning("Printer has become not operational:\n%s\n%s" % (str(self.usb_info), str(self.printer_profile)))
                 answer = None
-                while not answer or not self.stop_flag:
+                while not answer and not self.stop_flag:
+                    self.logger.debug("Trying to report error to server...")
                     answer = http_client.send(http_client.package_command_request, message)
+                    time.sleep(2)
+                self.logger.debug("...done")
                 #self.acknowledge = (answer['number'], False) #right now is useless
                 self.printer.close()
                 self.printer = None
