@@ -11,7 +11,7 @@ MACADDR = hex(uuid.getnode())
 CONNECTION_TIMEOUT = 6
 URL = config.config['URL']
 AUX_URL = config.config['AUX_URL']
-HTTPS_FLAG = config.config['HTTPS']
+HTTPS_FLAG =
 streamer_prefix = "/streamerapi"
 user_login_path = streamer_prefix + "/user_login"
 printer_login_path = streamer_prefix + "/printer_login"
@@ -70,11 +70,11 @@ def package_cloud_sync_upload(token, file_data, file_name):
 
 #senders
 
-def connect(URL):
+def connect(URL, https_mode = config.config['HTTPS']):
     logger = logging.getLogger('app.' +__name__)
     logger.debug("{ Connecting...")
     try:
-        if HTTPS_FLAG:
+        if https_mode:
             #if ssl_has_context:
             #    no_verify_context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
             #    no_verify_context.verify_mode = ssl.CERT_NONE
@@ -142,7 +142,8 @@ def download(url):
     except AttributeError:
         logger.warning("Unparsable link: " + url)
     else:
-        connection = connect(domain)
+        https_mode = url.startswith("https")
+        connection = connect(domain, https_mode)
         if connection:
             logger.debug("Got connection to download server")
             return get_request(connection, None, path)

@@ -136,6 +136,7 @@ class PrinterInterface(threading.Thread):
                 while not answer and not self.stop_flag:
                     self.logger.debug("Trying to report error to server...")
                     answer = http_client.send(http_client.package_command_request, message)
+                    self.logger.debug("Ignoring answer: " + str(answer))
                     time.sleep(2)
                 self.logger.debug("...done")
                 #self.acknowledge = (answer['number'], False) #right now is useless
