@@ -11,7 +11,6 @@ MACADDR = hex(uuid.getnode())
 CONNECTION_TIMEOUT = 6
 URL = config.config['URL']
 AUX_URL = config.config['AUX_URL']
-HTTPS_FLAG =
 streamer_prefix = "/streamerapi"
 user_login_path = streamer_prefix + "/user_login"
 printer_login_path = streamer_prefix + "/printer_login"
