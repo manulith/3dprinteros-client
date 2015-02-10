@@ -109,7 +109,7 @@ class PrinterInterface(threading.Thread):
                     else:
                         result = method()
                     # to reduce needless return True, we assume that when method had return None, that is success
-                    self.acknowledge = (number, result == False)
+                    self.acknowledge = (number, not result == False)
 
     def run(self):
         self.stop_flag = False
