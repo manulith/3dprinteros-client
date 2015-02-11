@@ -104,7 +104,7 @@ class App:
 
     def disconnect_printer(self, pi, reason):
         self.logger.info('Disconnecting because of %s %s' % (reason , str(pi.usb_info)))
-        if http_client.send(http_client.package_command_request, (pi.printer_token, pi.state_report(reason))):
+        if http_client.send(http_client.package_command_request, (pi.printer_token, pi.state_report(reason), pi.acknowledge)):
             self.printer_interfaces.remove(pi)
 
     def intercept_signal(self, signal_code, frame):
