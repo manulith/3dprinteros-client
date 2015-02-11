@@ -122,6 +122,8 @@ class Sender(base_sender.BaseSender):
                 self.logger.warning("Number %d attempt to execute %s" % (retries, str(command)))
             if retries > self.MAX_EXECUTION_RETRIES:
                 self.logger.warning("Max number of retries reached while executing %s" % str(command))
+                self.error_code = 1
+                self.error_message = "Serial or protocol exception. Max retry count."
                 self.close()
                 break
             try:
@@ -164,7 +166,7 @@ class Sender(base_sender.BaseSender):
                 break
 
             except Exception as e:
-                self.logger.warning('Unexpected error')
+                self.logger.warning('Unexpected error: ' + e.message)
                 self.error_code = 'Fatal error'
                 self.error_message = str(e)
                 self.close()
