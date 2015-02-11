@@ -99,14 +99,14 @@ def get_request(connection, payload, path, headers={}):
 
 def request(connection, payload, path, method, headers):
     logger = logging.getLogger('app.' +__name__)
-    logger.debug("{ Requesting...")
+    #logger.debug("{ Requesting...")
     try:
         connection.request(method, path, payload, headers)
         resp = connection.getresponse()
     except Exception as e:
         logger.info("Error during HTTP request:" + str(e))
     else:
-        logger.debug("Request status: %s %s" % (resp.status, resp.reason))
+        #logger.debug("Request status: %s %s" % (resp.status, resp.reason))
         try:
             received = resp.read()
         except httplib.error as e:
@@ -114,13 +114,13 @@ def request(connection, payload, path, method, headers):
         else:
             if resp.status == httplib.OK and resp.reason == "OK":
                 connection.close()
-                logger.debug("...success }")
+                #logger.debug("...success }")
                 return received
             else:
                 logger.warning("Error: server response is not 200 OK\nMessage:%s" % received)
         finally:
             connection.close()
-    logger.debug("...failed }")
+    logger.warning("Error. Failed http request!}")
 
 def send(packager, payloads):
     if type(payloads) != tuple:
