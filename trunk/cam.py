@@ -117,6 +117,7 @@ class CameraImageSender(threading.Thread):
         if not self.token:
             self.stop_flag = True
             self.error = 'No_Token'
+        self.connection = http_client.connect(http_client.camera_path)
         super(CameraImageSender, self).__init__()
 
     def take_a_picture(self):
@@ -132,8 +133,10 @@ class CameraImageSender(threading.Thread):
 
     def send_picture(self, picture):
         picture = base64.b64encode(str(picture))
+        #payload = http_client.package_camera_send(self.token, self.camera_number, self.camera_name, picture)
+        #answer = http_client.post_request(self.connection, payload, http_client.camera_path)
         answer =  http_client.send(http_client.package_camera_send, (self.token, self.camera_number, self.camera_name, picture, http_client.MACADDR))
-        self.logger.debug(self.camera_name + ' streaming response: ' + str(answer))
+        #self.logger.debug(self.camera_name + ' streaming response: ' + str(answer))
 
     def close(self):
         self.stop_flag = True
