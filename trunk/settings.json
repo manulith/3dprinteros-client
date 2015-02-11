@@ -7,7 +7,7 @@
   "logstash_port": 5000,
   "web_interface": true,
   "camera": {
-    "enabled" : false,
+    "enabled" : true,
     "img_ext" : ".jpg",
     "img_qual" : 90,
     "camera_min_loop_time" : 1,
