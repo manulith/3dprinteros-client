@@ -71,7 +71,7 @@ def package_cloud_sync_upload(token, file_data, file_name):
 
 def connect(URL, https_mode = config.config['HTTPS']):
     logger = logging.getLogger('app.' +__name__)
-    logger.debug("{ Connecting...")
+    #logger.debug("{ Connecting...")
     try:
         if https_mode:
             #if ssl_has_context:
@@ -84,9 +84,10 @@ def connect(URL, https_mode = config.config['HTTPS']):
             connection = httplib.HTTPConnection(URL, port = 80, timeout = CONNECTION_TIMEOUT)
     except httplib.error as e:
         logger.info("Error during HTTP connection: " + str(e))
-        logger.debug("...failed }")
+        #logger.debug("...failed }")
+        logger.warning("Warning: connection to %s failed." % URL)
     else:
-        logger.debug("...success }")
+        #logger.debug("...success }")
         return connection
 
 def post_request(connection, payload, path, headers=None):
@@ -120,7 +121,7 @@ def request(connection, payload, path, method, headers):
                 logger.warning("Error: server response is not 200 OK\nMessage:%s" % received)
         finally:
             connection.close()
-    logger.warning("Error. Failed http request!}")
+    logger.warning("Warning: http request failed!")
 
 def send(packager, payloads):
     if type(payloads) != tuple:
