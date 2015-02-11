@@ -165,7 +165,7 @@ class Sender(base_sender.BaseSender):
             self.logger.info("Printrun is starting print")
 
     def gcodes(self, gcodes):
-        self.logger.info('Number of gcodes: $i' % len(gcodes))
+        self.logger.info('Number of gcodes: %i' % len(gcodes))
         if len(gcodes) > 0:
             gcodes = LightGCode(gcodes)
             try:
@@ -176,7 +176,6 @@ class Sender(base_sender.BaseSender):
             except Exception as e:
                 self.logger.warning("Can`t start printing. Error: %s" % e.message)
         return False
-
 
     def pause(self):
         self.logger.info("Printrun pause")
