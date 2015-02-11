@@ -53,6 +53,11 @@ def package_command_request(printer_token, state, acknowledge=None, error = None
     data = { 'printer_token': printer_token, 'report': state, 'error': error }
     if acknowledge:
         data['command_ack'] = acknowledge
+        print data
+        print data
+        print data
+        print data
+        print data
     if error:
         data['error'] = error
     return json.dumps(data), command_path
