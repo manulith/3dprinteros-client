@@ -111,7 +111,7 @@ class PrinterInterface(threading.Thread):
                     else:
                         result = method()
                     # to reduce needless return True, we assume that when method had return None, that is success
-                    return (number, result or result == None)
+                    return {"number" : number, "result" : (result or result == None)}
 
     def run(self):
         if self.connect_to_server():
@@ -136,10 +136,10 @@ class PrinterInterface(threading.Thread):
                 while not answer and not self.stop_flag:
                     self.logger.debug("Trying to report error to server...")
                     answer = http_client.send(http_client.package_command_request, message)
-                    self.logger.debug("Ignoring answer: " + str(answer))
+                    self.acknowledge = {"number": answer['number'], "result": False}
+                    self.logger.debug("Could not execute command: " + str(answer))
                     time.sleep(2)
                 self.logger.debug("...done")
-                #self.acknowledge = (answer['number'], False) #right now is useless
                 self.printer.close()
                 self.printer = None
 
