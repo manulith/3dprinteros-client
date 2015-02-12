@@ -121,6 +121,7 @@ class printcore():
 
     @locked
     def disconnect(self):
+        print "PRINTRUN DISCONNETING..."
         """Disconnects from printer and pauses the print
         """
         if self.printer:
@@ -141,6 +142,7 @@ class printcore():
         self.printer = None
         self.online = False
         self.printing = False
+        print "... DONE PRINTRUN DISCONNETING"
 
     @locked
     def connect(self, port = None, baud = None):
