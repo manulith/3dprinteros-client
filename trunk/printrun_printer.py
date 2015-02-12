@@ -92,7 +92,9 @@ class Sender(base_sender.BaseSender):
             if counter >= steps_in_cycle:
                 for extruder_num in range(0, self.profile['extruder_count'] + 1):
                     try:
+                        print "Sending M105..."
                         self.printcore.send_now('M105 T' + str(extruder_num))
+                        print "done sending M105"
                     except:
                         pass
                     # self.printcore.send_now('M114')
@@ -100,6 +102,9 @@ class Sender(base_sender.BaseSender):
                     counter = 0
             time.sleep(wait_step)
             counter += 1
+        print "Exit temp_request"
+        print "Exit temp_request"
+        print "Exit temp_request"
 
     def tempcb(self, line):
         self.logger.debug(line)
@@ -246,7 +251,7 @@ class Sender(base_sender.BaseSender):
             self.printcore.disconnect()
         self.logger.debug('(Joining printrun threads...')
         if self.temp_request_thread:
-            self.temp_request_thread.join()
+            self.temp_request_thread.join(10)
             if self.temp_request_thread.isAlive():
                 self.logger.error("Error stopping temperature request thread.")
             else:
