@@ -50,10 +50,12 @@ def locked(f):
 def control_ttyhup(port, disable_hup):
     """Controls the HUPCL"""
     if platform.system() == "Linux":
+        print "DOING HUP..."
         if disable_hup:
             os.system("stty -F %s -hup" % port)
         else:
             os.system("stty -F %s hup" % port)
+        print "...DONE"
 
 def enable_hup(port):
     control_ttyhup(port, False)
@@ -63,6 +65,9 @@ def disable_hup(port):
 
 class printcore():
     def __init__(self, port = None, baud = None):
+        print 1
+        print 1
+        print 1
         """Initializes a printcore instance. Pass the port and baud rate to
            connect immediately"""
         self.baud = None
@@ -208,6 +213,7 @@ class printcore():
             self._start_sender()
 
     def reset(self):
+        print 2
         """Reset the printer
         """
         if self.printer and not self.printer_tcp:
@@ -216,6 +222,7 @@ class printcore():
             self.printer.setDTR(0)
 
     def _readline(self):
+        print 3
         try:
             try:
                 line = self.printer.readline()
@@ -251,6 +258,7 @@ class printcore():
             return None
 
     def _listen_can_continue(self):
+        print 4
         if self.printer_tcp:
             return not self.stop_read_thread and self.printer
         return (not self.stop_read_thread
@@ -258,6 +266,7 @@ class printcore():
                 and self.printer.isOpen())
 
     def _listen_until_online(self):
+        print 5
         while not self.online and self._listen_can_continue():
             self._send("M105")
             if self.writefailures >= 4:
@@ -289,12 +298,14 @@ class printcore():
                     return
 
     def _listen(self):
+        print 6
         """This function acts on messages from the firmware
         """
         self.clear = True
         if not self.printing:
             self._listen_until_online()
         while self._listen_can_continue():
+            print 7
             line = self._readline()
             if line is None:
                 break
@@ -466,6 +477,7 @@ class printcore():
             self.logError(_("Not connected to printer."))
 
     def send_now(self, command, wait = 0):
+        print 8
         """Sends a command to the printer ahead of the command queue, without a
         checksum"""
         if self.online:
