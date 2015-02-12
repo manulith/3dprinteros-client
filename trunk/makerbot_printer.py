@@ -194,6 +194,11 @@ class Sender(base_sender.BaseSender):
 
         #self.position      = self.execute(lambda: self.parser.s3g.get_extended_position())
 
+    def reset(self):
+        self.buffer.clear()
+        #self.buffer.append(lambda: )
+        self.execute(self.parser.s3g.reset)
+
     def is_error(self):
         return self.error_code
 
