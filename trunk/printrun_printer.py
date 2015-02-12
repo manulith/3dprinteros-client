@@ -12,9 +12,7 @@ class Sender(base_sender.BaseSender):
 
     pause_lift_height = 5
     pause_extrude_length = 7
-
     TEMP_REQUEST_WAIT = 5
-
     DEFAULT_TIMEOUT_FOR_PRINTER_ONLINE = 15
 
     def __init__(self, profile, usb_info):
@@ -218,6 +216,11 @@ class Sender(base_sender.BaseSender):
         return self.error_code
 
     def is_operational(self):
+        print "ONLINE: " + str(self.printcore.isonline)
+        print "ONLINE: " + str(self.printcore.isonline)
+        print "ONLINE: " + str(self.printcore.isonline)
+        print "ONLINE: " + str(self.printcore.isonline)
+        print "ONLINE: " + str(self.printcore.isonline)
         if self.printcore.printing:
             return self.printcore.read_thread and \
                self.printcore.read_thread.is_alive() and \
