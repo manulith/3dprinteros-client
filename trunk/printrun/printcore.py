@@ -132,11 +132,15 @@ class printcore():
         if self.printer:
             if self.read_thread:
                 self.stop_read_thread = True
+                print "PRINTRUN JOINING READ THREAD..."
                 self.read_thread.join()
+                print "...DONE PRINTRUN JOINING READ THREAD"
                 self.read_thread = None
             if self.print_thread:
                 self.printing = False
+                print "PRINTRUN JOINING PRINT THREAD..."
                 self.print_thread.join()
+                print "...DONE PRINTRUN JOINING PRINT THREAD"
             self._stop_sender()
             try:
                 self.printer.close()

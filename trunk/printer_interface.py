@@ -68,13 +68,13 @@ class PrinterInterface(threading.Thread):
                 time.sleep(0.1)
                 return False
 
-    def connect_printer_driver(self):
+    def connect_to_printer(self):
         printer_driver = __import__(self.printer_profile['driver'])
         self.logger.info("Connecting with profile: " + str(self.printer_profile))
         try:
             printer = printer_driver.Sender(self.printer_profile, self.usb_info)
         except RuntimeError as e:
-            self.logger.warning("Couldn`t connect %s %s\nReason:%s" % (self.printer_profile['name'], str(self.usb_info), e.message))
+            self.logger.warning("Can't connect to printer %s %s\nReason:%s" % (self.printer_profile['name'], str(self.usb_info), e.message))
         except Exception as e:
             self.logger.warning("Error connecting to %s" % self.printer_profile['name'], exc_info=True)
         else:
@@ -115,7 +115,7 @@ class PrinterInterface(threading.Thread):
 
     def run(self):
         if self.connect_to_server():
-            self.connect_printer_driver()
+            self.connect_to_printer()
         time.sleep(1)
         while not self.stop_flag and self.printer:
             report = self.state_report()

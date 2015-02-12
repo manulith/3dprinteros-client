@@ -67,8 +67,10 @@ class Sender(base_sender.BaseSender):
         if self.printcore:
             self.logger.debug("Sending M999...")
             self.printcore.send_now("M999")
+            time.sleep(1)
             self.logger.debug("Resetting...")
             self.printcore.reset()
+            time.sleep(1)
             self.logger.debug("Disconnecting...")
             self.printcore.disconnect()
             self.logger.debug("Successful reset and disconnect")
