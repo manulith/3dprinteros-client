@@ -147,6 +147,20 @@ def get_libusb_path(lib):
 #         logger.debug('Token was writen to ' + path)
 #         return True
 
+def get_paths_to_login_info():
+    abs_path_to_users_home = os.path.abspath(os.path.expanduser("~"))
+    if sys.platform.startswith('win'):
+        abs_path_to_appdata = os.path.abspath(os.getenv('APPDATA'))
+        path = os.path.join(abs_path_to_appdata, '3dprinteros')
+    elif sys.platform.startswith('linux'):
+        path = os.path.join(abs_path_to_users_home, ".3dprinteros")
+    elif sys.platform.startswith('darwin'):
+        path = os.path.join(abs_path_to_users_home, "Library", "Application Support")
+    else:
+        raise EnvironmentError('Could not detect OS. Only GNU/LINUX, MAC OS X and MS WIN VISTA/7/8 are supported.')
+    local_path = os.path.dirname(os.path.abspath(__file__))
+    return (local_path, path)
+
 def read_login():
     logger = logging.getLogger('app.' + __name__)
     pack_name = 'login_info.bin'
@@ -260,35 +274,50 @@ def send_all_snapshots():
 
 def pack_info_zip(package_name, *args):
     logger = logging.getLogger('app.' + __name__)
-    if package_name in os.listdir(os.getcwd()):
+    path = get_paths_to_login_info()[1]
+    if not os.path.isdir(path):
+        os.mkdir(path)
+        logger.info('Working dir created: ' + str(path))
+    package_path = os.path.join(path, package_name)
+    if os.path.exists(package_path):
         logger.warning(package_name + ' found in the working dir.')
         return
-    file_name = 'info'
-    temp_file = open(file_name, 'w')
+    temp_file_path = os.path.join(path, 'info')
+    temp_file = open(temp_file_path, 'w')
     for arg in args:
         arg = base64.b64encode(arg)
         temp_file.write(arg + '\n')
     temp_file.close()
     try:
-        zf = zipfile.ZipFile(package_name, mode='w')
-        zf.write(file_name)
+        zf = zipfile.ZipFile(package_path, mode='w')
+        if sys.platform.startswith('win'):
+            s = "\\"
+        else:
+            s = "/"
+        zf.write(temp_file_path, temp_file_path.split(s)[-1])
         zf.setpassword('d0nTfe_artH_er1PPe_r')
         zf.close()
     except Exception as e:
         logger.error('Packing error: ' + e.message)
         return
-    os.remove(file_name)
+    os.remove(temp_file_path)
     return True
 
 def read_info_zip(package_name):
-    if package_name in os.listdir(os.getcwd()):
-        zf = zipfile.ZipFile(package_name, 'r')
+    logger = logging.getLogger('app.' + __name__)
+    path = get_paths_to_login_info()[1]
+    package_path = os.path.join(path, package_name)
+    if os.path.exists(package_path):
+        zf = zipfile.ZipFile(package_path, 'r')
         packed_info = zf.read('info', pwd='d0nTfe_artH_er1PPe_r')
         packed_info = packed_info.split('\n')
         packed_info.remove('')
         for number in range(0, len(packed_info)):
             packed_info[number] = base64.b64decode(packed_info[number])
         return packed_info
+    else:
+        logger.error(package_name + ' not found')
+        return
 
 def kill_makerbot_conveyor(self):
     logger = logging.getLogger("app.kill_makerbot_conveyor")
