@@ -181,8 +181,9 @@ def read_login():
 def write_login(login, password):
     logger = logging.getLogger('app.' + __name__)
     package_name = 'login_info.bin' #probably it shoud be read from config
+    path = get_paths_to_login_info()[0]
     try:
-        result = pack_info_zip(package_name, login, password)
+        result = pack_info_zip(package_name, path, login, password)
     except Exception as e:
         logger.warning('Login info writing error! ' + e.message)
     else:
@@ -274,9 +275,9 @@ def send_all_snapshots():
             compress_and_send(file_name)
         return  True
 
-def pack_info_zip(package_name, *args):
+def pack_info_zip(package_name, path, *args):
     logger = logging.getLogger('app.' + __name__)
-    path = get_paths_to_login_info()[0]
+    path = path
     if not os.path.isdir(path):
         os.mkdir(path)
         logger.info('Working dir created: ' + str(path))
