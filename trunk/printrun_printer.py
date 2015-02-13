@@ -237,7 +237,7 @@ class Sender(base_sender.BaseSender):
     def get_percent(self):
         percent = 0
         if self.total_gcodes:
-            percent = int( ( self.printcore.queueindex / self.total_gcodes ) * 100 )
+            percent = int( self.printcore.queueindex / float(self.total_gcodes) * 100 )
         return percent
 
     def close(self):
