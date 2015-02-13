@@ -175,7 +175,7 @@ def read_login():
         except Exception as e:
             logger.warning('Failed loading login from ' + path + '. Error: ' + e.message)
         logger.info("Can't read login info in %s" % str(path))
-    logger.info('No logger info found')
+    logger.info('No login info found')
     return (None, None)
 
 def write_login(login, password):
