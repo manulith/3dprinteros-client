@@ -173,7 +173,7 @@ class Sender(base_sender.BaseSender):
         if len(gcodes) > 0:
             self.gcodes = LightGCode(gcodes)
             try:
-                if not self.printcore.startprint(self.codes):
+                if not self.printcore.startprint(self.gcodes):
                     self.logger.warning('Error starting print')
                 else:
                     return True
