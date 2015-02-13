@@ -151,7 +151,7 @@ def get_paths_to_login_info():
     abs_path_to_users_home = os.path.abspath(os.path.expanduser("~"))
     if sys.platform.startswith('win'):
         abs_path_to_appdata = os.path.abspath(os.getenv('APPDATA'))
-        path = os.path.join(abs_path_to_appdata, '3DPrinterOS')
+        path = os.path.join(abs_path_to_appdata, '3dprinteros')
     elif sys.platform.startswith('linux'):
         path = os.path.join(abs_path_to_users_home, ".3dprinteros")
     elif sys.platform.startswith('darwin'):
@@ -290,7 +290,11 @@ def pack_info_zip(package_name, *args):
     temp_file.close()
     try:
         zf = zipfile.ZipFile(package_path, mode='w')
-        zf.write(temp_file_path, temp_file_path.split('/')[-1])
+        if sys.platform.startswith('win'):
+            s = "\\"
+        else:
+            s = "/"
+        zf.write(temp_file_path, temp_file_path.split(s)[-1])
         zf.setpassword('d0nTfe_artH_er1PPe_r')
         zf.close()
     except Exception as e:
