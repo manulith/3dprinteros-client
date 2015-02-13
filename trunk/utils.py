@@ -148,7 +148,6 @@ def get_libusb_path(lib):
 #         return True
 
 def get_paths_to_login_info():
-    login_info_file_name = "login_info.bin"
     abs_path_to_users_home = os.path.abspath(os.path.expanduser("~"))
     if sys.platform.startswith('win'):
         abs_path_to_appdata = os.path.abspath(os.getenv('APPDATA'))
@@ -160,7 +159,6 @@ def get_paths_to_login_info():
     else:
         raise EnvironmentError('Could not detect OS. Only GNU/LINUX, MAC OS X and MS WIN VISTA/7/8 are supported.')
     local_path = os.path.dirname(os.path.abspath(__file__))
-    local_path = os.path.join(local_path, login_info_file_name)
     return (local_path, path)
 
 def read_login():
@@ -277,9 +275,10 @@ def send_all_snapshots():
 def pack_info_zip(package_name, *args):
     logger = logging.getLogger('app.' + __name__)
     path = get_paths_to_login_info()[1]
-    package_path = os.path.join(path, package_name)
     if not os.path.isdir(path):
         os.mkdir(path)
+        logger.info('Working dir created: ' + str(path))
+    package_path = os.path.join(path, package_name)
     if os.path.exists(package_path):
         logger.warning(package_name + ' found in the working dir.')
         return
