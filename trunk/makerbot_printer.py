@@ -9,11 +9,9 @@ import base_sender
 
 class Sender(base_sender.BaseSender):
 
-    MAX_EXECUTION_RETRIES = 30
-    EXECUTION_RETRY_WAIT = 0.05
-    PAUSE_STEP_TIME = 0.1
-    BUFFER_OVERFLOW_WAIT = 0.1
-    IDLE_WAITING_STEP = 3
+    PAUSE_STEP_TIME = 0.5
+    BUFFER_OVERFLOW_WAIT = 0.01
+    IDLE_WAITING_STEP = 0.1
     TEMP_UPDATE_PERIOD = 5
 
     def __init__(self, profile, usb_info):
@@ -23,6 +21,7 @@ class Sender(base_sender.BaseSender):
         self.logger.info('Makerbot printer created')
         self.parser = None
         self.position = None
+        self.lock = threading.Lock()
         try:
             self.parser = self.create_parser()
             self.parser.state.values["build_name"] = '3DPrinterOS'
@@ -74,13 +73,15 @@ class Sender(base_sender.BaseSender):
     def cancel(self):
         self.buffer.clear()
         self.printing_flag = False
-        self.execute(lambda: self.parser.s3g.abort_immediately())
-        #self.buffer.append()
+        self.execute(lambda: self.parser.s3g.clear_buffer)
         self.lift_extruder()
+        self.execute(lambda: self.parser.s3g.abort_immediately)
+        #self.buffer.append()
 
     def pause(self):
         if not self.pause_flag:
             self.pause_flag = True
+            time.sleep(0.1)
             self.lift_extruder()
             return True
         else:
@@ -116,69 +117,42 @@ class Sender(base_sender.BaseSender):
             raise RuntimeError("Failed to join printing thread in makerbot_printer")
 
     def execute(self, command):
-        retries = 0
-        while not self.stop_flag:
-            if retries > 0:
-                self.logger.warning("Number %d attempt to execute %s" % (retries, str(command)))
-            if retries > self.MAX_EXECUTION_RETRIES:
-                self.logger.warning("Max number of retries reached while executing %s" % str(command))
-                self.error_code = 1
-                self.error_message = "Serial or protocol exception. Max retry count."
-                self.close()
-                break
-            try:
-                if isinstance(command, str):
-                    text = command
-                    self.parser.execute_line(command)
-                    self.logger.debug("Executing command: " + command)
-                    result = None
+        with self.lock:
+            buffer_overflow_flag = False
+            while not self.stop_flag:
+                try:
+                    if isinstance(command, str):
+                        text = command
+                        self.parser.execute_line(command)
+                        self.logger.debug("Executing command: " + command)
+                        result = None
+                    else:
+                        text = command.__name__
+                        result = command()
+
+                except makerbot_driver.BufferOverflowError:
+                    if not buffer_overflow_flag:
+                        self.logger.info('Makerbot BufferOverflow on ' + text)
+                        buffer_overflow_flag = True
+                    time.sleep(self.BUFFER_OVERFLOW_WAIT)
+
+                except serial.serialutil.SerialException as e:
+                    self.logger.warning("Makerbot is retrying " + text)
+
+                except Exception as e:
+                    self.logger.warning("Makerbot can't continue because of: " + e.message)
+                    self.error_code = 9
+                    self.error_message = e.message
+                    self.close()
+                    break
+
                 else:
-                    text = 'Makebot driver call'
-                    result = command()
+                    return result
 
-            except makerbot_driver.BufferOverflowError:
-                self.logger.info('BufferOverflow on ' + text)
-                self.read_state()
-                time.sleep(self.BUFFER_OVERFLOW_WAIT)
-
-            except (serial.serialutil.SerialException, makerbot_driver.ProtocolError) as e:
-                self.logger.warning(e)
-                retries += 1
-                time.sleep(self.EXECUTION_RETRY_WAIT)
-
-            except makerbot_driver.ExternalStopError:
-                self.logger.info('External Stop received')
-                self.close()
-                break
-
-            except makerbot_driver.Gcode.GcodeError as e:
-                self.logger.info('makerbot_driver.Gcode.GcodeError')
-                self.error_code = 'Fatal error'
-                self.error_message = str(e)
-                self.close()
-                break
-
-            except makerbot_driver.TransmissionError as e:
-                self.logger.warning('Unexpected error')
-                self.error_code = 'Time out'
-                self.error_message = str(e)
-                self.close()
-                break
-
-            except Exception as e:
-                self.logger.warning('Unexpected error: ' + e.message)
-                self.error_code = 'Fatal error'
-                self.error_message = str(e)
-                self.close()
-                break
-
-            else:
-                return result
-
-            #except makerbot_driver.BuildCancelledError as e:
-            #except makerbot_driver.ActiveBuildError as e:
-            #except makerbot_driver.Gcode.UnspecifiedAxisLocationError as e:
-            #except makerbot_driver.Gcode.UnrecognizedCommandError as e:
+                #except makerbot_driver.BuildCancelledError as e:
+                #except makerbot_driver.ActiveBuildError as e:
+                #except makerbot_driver.Gcode.UnspecifiedAxisLocationError as e:
+                #except makerbot_driver.Gcode.UnrecognizedCommandError as e:
 
     def read_state(self):
         platform_temp          = self.execute(lambda: self.parser.s3g.get_platform_temperature(1))
@@ -196,8 +170,12 @@ class Sender(base_sender.BaseSender):
 
     def reset(self):
         self.buffer.clear()
-        #self.buffer.append(lambda: )
-        self.execute(self.parser.s3g.reset)
+        try:
+            self.parser.s3g.reset()
+        except Exception as e:
+            self.logger.warning("Error when trying to reset makebot printer: %s" % e.message)
+            self.logger.debug("DEBUG: ", exc_info=True)
+        self.parser.s3g.clear_buffer()
 
     def is_error(self):
         return self.error_code
