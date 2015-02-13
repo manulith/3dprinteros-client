@@ -46,6 +46,7 @@ class Sender(base_sender.BaseSender):
                 wait_start_time = time.time()
                 self.logger.info("Waiting for printer online")
                 while time.time() < (wait_start_time + self.DEFAULT_TIMEOUT_FOR_PRINTER_ONLINE):
+                    print "Printcore.printer=", self.printcore.printer
                     if self.stop_flag:
                         return False
                     if self.online_flag:
@@ -68,9 +69,9 @@ class Sender(base_sender.BaseSender):
             self.logger.debug("Sending M999...")
             self.printcore.send_now("M999")
             time.sleep(1)
-            self.logger.debug("Resetting...")
-            self.printcore.reset()
-            time.sleep(1)
+            #self.logger.debug("Resetting...")
+            #self.printcore.reset()
+            #time.sleep(1)
             self.logger.debug("Disconnecting...")
             self.printcore.disconnect()
             self.logger.debug("Successful reset and disconnect")
@@ -94,19 +95,15 @@ class Sender(base_sender.BaseSender):
             if counter >= steps_in_cycle:
                 for extruder_num in range(0, self.profile['extruder_count'] + 1):
                     try:
-                        print "Sending M105..."
                         self.printcore.send_now('M105 T' + str(extruder_num))
-                        print "done sending M105"
+                        # self.printcore.send_now('M114')
                     except:
                         pass
-                    # self.printcore.send_now('M114')
+
                     time.sleep(0.01)
                     counter = 0
             time.sleep(wait_step)
             counter += 1
-        print "Exit temp_request"
-        print "Exit temp_request"
-        print "Exit temp_request"
 
     def tempcb(self, line):
         self.logger.debug(line)
@@ -172,9 +169,9 @@ class Sender(base_sender.BaseSender):
     def gcodes(self, gcodes):
         self.logger.info('Number of gcodes: %i' % len(gcodes))
         if len(gcodes) > 0:
-            gcodes = LightGCode(gcodes)
+            self.gcodes = LightGCode(gcodes)
             try:
-                if not self.printcore.startprint(gcodes):
+                if not self.printcore.startprint(self.codes):
                     self.logger.warning('Error starting print')
                 else:
                     return True
@@ -223,11 +220,6 @@ class Sender(base_sender.BaseSender):
         return self.error_code
 
     def is_operational(self):
-        print "ONLINE: " + str(self.printcore.isonline)
-        print "ONLINE: " + str(self.printcore.isonline)
-        print "ONLINE: " + str(self.printcore.isonline)
-        print "ONLINE: " + str(self.printcore.isonline)
-        print "ONLINE: " + str(self.printcore.isonline)
         if self.printcore.printing:
             return self.printcore.read_thread and \
                self.printcore.read_thread.is_alive() and \
