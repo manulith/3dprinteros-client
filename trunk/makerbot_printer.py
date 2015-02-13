@@ -26,10 +26,9 @@ class Sender(base_sender.BaseSender):
             self.parser = self.create_parser()
             self.parser.state.values["build_name"] = '3DPrinterOS'
         except Exception as e:
-            self.logger.error("Error with connecting to makerbot printer %s" % str(profile))
             self.error_code = 'No connection'
             self.error_message = str(e)
-            raise e
+            raise RuntimeError("Error with connecting to makerbot printer %s" % str(profile))
         else:
             self.sending_thread = threading.Thread(target=self.send_gcodes, name='PR')
             self.sending_thread.start()
@@ -65,6 +64,7 @@ class Sender(base_sender.BaseSender):
         self.parser.s3g.set_RGB_LED(255, 255, 255, 0)
 
     def gcodes(self, gcodes):
+        gcodes = gcodes.split("\n")
         self.set_total_gcodes()
         self.logger.info('Enqueued block: ' + str(len(gcodes)) + ', total: ' + str(len(self.buffer)))
         for code in gcodes:
@@ -73,9 +73,7 @@ class Sender(base_sender.BaseSender):
     def cancel(self):
         self.buffer.clear()
         self.printing_flag = False
-        self.execute(lambda: self.parser.s3g.clear_buffer)
-        self.lift_extruder()
-        self.execute(lambda: self.parser.s3g.abort_immediately)
+        self.execute(lambda: self.parser.s3g.reset)
         #self.buffer.append()
 
     def pause(self):

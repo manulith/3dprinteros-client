@@ -34,6 +34,7 @@ class PrinterInterface(threading.Thread):
         self.printer_token = None
         self.creation_time = time.time()
         self.acknowledge = None
+        self.sender_error = None
         self.stop_flag = False
         self.logger = logging.getLogger('app.' + __name__)
         self.logger.info('New printer interface for %s' % str(usb_info))
@@ -104,14 +105,17 @@ class PrinterInterface(threading.Thread):
                             payload = "\n"
                     elif "command" in ("gcodes", "binary_file"):
                         payload = base64.b64decode(payload)
-                    if payload:
-                        if command == 'gcodes':
-                            payload = payload.split("\n")
-                        result = method(payload)
-                    else:
-                        result = method()
+                    arguments = []
+                    arguments.append(payload)
+                    try:
+                        result = method(*arguments)
+                    except Exception as e:
+                        self.logger.error("Error while executing command %s, number %i.\t%s" % (command, number, e.message), exc_info=True)
+                        self.sender_error = {"code": 0, "message": e.message}
+                        result = False
+                    ack = {"number": number, "result": (result or result == None)}
                     # to reduce needless return True, we assume that when method had return None, that is success
-                    return {"number" : number, "result" : (result or result == None)}
+                    return ack
 
     def run(self):
         if self.connect_to_server():
@@ -119,12 +123,13 @@ class PrinterInterface(threading.Thread):
         time.sleep(1)
         while not self.stop_flag and self.printer:
             report = self.state_report()
-            message = (self.printer_token, report, self.acknowledge)
+            message = (self.printer_token, report, self.acknowledge, self.sender_error)
             self.logger.debug("Printer %s\nRequesting command with: %s " % (self.printer_token, report))
             if self.printer.is_operational():
                 answer = http_client.send(http_client.package_command_request, message)
                 self.logger.debug("Got answer: " + str(answer))
                 if answer:
+                    self.error = None
                     self.acknowledge = self.process_command_request(answer)
                 else:
                     time.sleep(self.NO_COMMAND_SLEEP)

@@ -167,6 +167,8 @@ class Sender(base_sender.BaseSender):
             self.logger.info("Printrun is starting print")
 
     def gcodes(self, gcodes):
+        gcodes = gcodes.split("\n")
+        self.set_total_gcodes(len(gcodes))
         self.logger.info('Number of gcodes: %i' % len(gcodes))
         if len(gcodes) > 0:
             self.gcodes = LightGCode(gcodes)
