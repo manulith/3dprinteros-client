@@ -106,7 +106,8 @@ class PrinterInterface(threading.Thread):
                     elif "command" in ("gcodes", "binary_file"):
                         payload = base64.b64decode(payload)
                     arguments = []
-                    arguments.append(payload)
+                    if payload:
+                        arguments.append(payload)
                     try:
                         result = method(*arguments)
                     except Exception as e:
@@ -124,7 +125,7 @@ class PrinterInterface(threading.Thread):
         while not self.stop_flag and self.printer:
             report = self.state_report()
             message = (self.printer_token, report, self.acknowledge, self.sender_error)
-            self.logger.debug("Printer %s\nRequesting command with: %s " % (self.printer_token, report))
+            self.logger.debug("Printer %s\nRequesting command with: %s " % str(message))
             if self.printer.is_operational():
                 answer = http_client.send(http_client.package_command_request, message)
                 self.logger.debug("Got answer: " + str(answer))
