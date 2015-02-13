@@ -159,28 +159,31 @@ def get_paths_to_login_info():
     else:
         raise EnvironmentError('Could not detect OS. Only GNU/LINUX, MAC OS X and MS WIN VISTA/7/8 are supported.')
     local_path = os.path.dirname(os.path.abspath(__file__))
-    return (local_path, path)
+    return (path, local_path)
 
 def read_login():
     logger = logging.getLogger('app.' + __name__)
     pack_name = 'login_info.bin'
-    logger.debug("Searching for login info in %s" % pack_name)
-    try:
-        login_info = read_info_zip(pack_name)
-        logger.debug('Login info loaded from ' + pack_name)
-    except Exception as e:
-        logger.warning('Failed login loading! ' + e.message)
-    else:
-        if not login_info:
-            login_info = None, None
-        return login_info
-    logger.debug('Error while loading login info in paths: %s' % str(pack_name) )
+    paths = get_paths_to_login_info()
+    for path in paths:
+        logger.info("Searching for login info in %s" % path)
+        try:
+            login_info = read_info_zip(pack_name, path)
+            if login_info:
+                logger.info('Login info loaded from ' + path)
+                return login_info
+        except Exception as e:
+            logger.warning('Failed loading login from ' + path + '. Error: ' + e.message)
+        logger.info("Can't read login info in %s" % str(path))
+    logger.info('No login info found')
+    return (None, None)
 
 def write_login(login, password):
     logger = logging.getLogger('app.' + __name__)
     package_name = 'login_info.bin' #probably it shoud be read from config
+    path = get_paths_to_login_info()[0]
     try:
-        result = pack_info_zip(package_name, login, password)
+        result = pack_info_zip(package_name, path, login, password)
     except Exception as e:
         logger.warning('Login info writing error! ' + e.message)
     else:
@@ -272,9 +275,9 @@ def send_all_snapshots():
             compress_and_send(file_name)
         return  True
 
-def pack_info_zip(package_name, *args):
+def pack_info_zip(package_name, path, *args):
     logger = logging.getLogger('app.' + __name__)
-    path = get_paths_to_login_info()[1]
+    path = path
     if not os.path.isdir(path):
         os.mkdir(path)
         logger.info('Working dir created: ' + str(path))
@@ -303,9 +306,9 @@ def pack_info_zip(package_name, *args):
     os.remove(temp_file_path)
     return True
 
-def read_info_zip(package_name):
+def read_info_zip(package_name, path):
     logger = logging.getLogger('app.' + __name__)
-    path = get_paths_to_login_info()[1]
+    path = path
     package_path = os.path.join(path, package_name)
     if os.path.exists(package_path):
         zf = zipfile.ZipFile(package_path, 'r')
@@ -317,7 +320,6 @@ def read_info_zip(package_name):
         return packed_info
     else:
         logger.error(package_name + ' not found')
-        return
 
 def kill_makerbot_conveyor(self):
     logger = logging.getLogger("app.kill_makerbot_conveyor")
