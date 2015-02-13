@@ -133,9 +133,10 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.write_with_autoreplace(message)
 
     def process_logout(self):
-        if os.path.isfile('login_info.bin') == True:
+        login_info_path = os.path.join(utils.get_paths_to_login_info()[1], 'login_info.bin')
+        if os.path.isfile(login_info_path) == True:
             try:
-                os.remove('login_info.bin')
+                os.remove(login_info_path)
             except Exception as e:
                 self.logger.error('Failed to logout: ' + e.message)
         page = open(os.path.join(self.working_dir, 'web_interface/logout.html')).read()
