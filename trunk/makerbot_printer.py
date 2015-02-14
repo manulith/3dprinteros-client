@@ -28,7 +28,7 @@ class Sender(base_sender.BaseSender):
         except Exception as e:
             self.error_code = 'No connection'
             self.error_message = str(e)
-            raise RuntimeError("Error with connecting to makerbot printer %s" % str(profile))
+            raise RuntimeError("No connection to makerbot printer %s" % str(profile))
         else:
             self.sending_thread = threading.Thread(target=self.send_gcodes, name='PR')
             self.sending_thread.start()
@@ -73,8 +73,9 @@ class Sender(base_sender.BaseSender):
     def cancel(self):
         self.buffer.clear()
         self.printing_flag = False
-        self.execute(lambda: self.parser.s3g.reset)
-        #self.buffer.append()
+        self.execute(lambda: self.parser.s3g.abort_immediately)
+        self.execute(lambda: self.parser.s3g.find_axes_maximums(['x', 'y'], 500, 60))
+        self.execute(lambda: self.parser.s3g.find_axes_minimums(['z'], 500, 60))
 
     def pause(self):
         if not self.pause_flag:
