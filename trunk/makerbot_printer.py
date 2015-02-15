@@ -80,9 +80,9 @@ class Sender(base_sender.BaseSender):
             self.buffer.clear()
             self.pause_flag = False
         self.execute(lambda: self.parser.s3g.abort_immediately())
-        if go_home:
-            self.execute(lambda: self.parser.s3g.find_axes_maximums(['x', 'y'], 500, 60))
-            self.execute(lambda: self.parser.s3g.find_axes_minimums(['z'], 500, 60))
+        #if go_home:
+        #    self.execute(lambda: self.parser.s3g.find_axes_maximums(['x', 'y'], 500, 60))
+        #    self.execute(lambda: self.parser.s3g.find_axes_minimums(['z'], 500, 60))
 
     def pause(self):
         if not self.pause_flag:
@@ -163,8 +163,8 @@ class Sender(base_sender.BaseSender):
                 self.execution_lock.release()
 
     def read_state(self):
-        platform_temp          = self.execute(lambda: self.parser.s3g.get_platform_temperature(1))
-        platform_ttemp         = self.execute(lambda: self.parser.s3g.get_platform_target_temperature(1))
+        platform_temp          = self.execute(lambda: self.parser.s3g.get_platform_temperature(0))
+        platform_ttemp         = self.execute(lambda: self.parser.s3g.get_platform_target_temperature(0))
         head_temp1  = self.execute(lambda: self.parser.s3g.get_toolhead_temperature(0))
         head_temp2 = self.execute(lambda: self.parser.s3g.get_toolhead_temperature(1))
         head_ttemp1 = self.execute(lambda: self.parser.s3g.get_toolhead_target_temperature(0))
