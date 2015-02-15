@@ -144,7 +144,6 @@ class Sender(base_sender.BaseSender):
                 if command_is_gcode:
                     if self.cancel_flag:
                         self.cancel_flag = False
-                        self.execution_lock.release()
                         break
                     text = command
                     self.printing_flag = True
