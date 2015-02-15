@@ -14,6 +14,7 @@ class Sender(base_sender.BaseSender):
     IDLE_WAITING_STEP = 0.1
     TEMP_UPDATE_PERIOD = 5
     GODES_BETWEEN_READ_STATE = 100
+    BUFFER_OVERFLOWS_BETWEEN_STATE_UPDATE = 20
 
     def __init__(self, profile, usb_info):
         base_sender.BaseSender.__init__(self, profile, usb_info)
@@ -127,40 +128,37 @@ class Sender(base_sender.BaseSender):
     def execute(self, command):
         buffer_overflow_counter = 0
         while not self.stop_flag:
+            if buffer_overflow_counter > self.BUFFER_OVERFLOWS_BETWEEN_STATE_UPDATE:
+                self.logger.info('Makerbot BufferOverflow on ' + text)
+                buffer_overflow_counter = 0
+                self.read_state()
             try:
                 command_is_gcode = isinstance(command, str)
+                self.execution_lock.acquire()
                 if command_is_gcode:
                     text = command
                     self.printing_flag = True
-                    self.execution_lock.acquire()
                     self.parser.execute_line(command)
                     self.logger.debug("Executing: " + command)
                     result = None
                 else:
                     text = command.__name__
-                    self.execution_lock.acquire()
                     result = command()
             except (makerbot_driver.BufferOverflowError):
-                self.execution_lock.release()
                 buffer_overflow_counter += 1
-                if buffer_overflow_counter > self.GODES_BETWEEN_READ_STATE:
-                    self.logger.info('Makerbot BufferOverflow on ' + text)
-                    buffer_overflow_counter = 0
-                    self.read_state()
                 time.sleep(self.BUFFER_OVERFLOW_WAIT)
             except (serial.serialutil.SerialException, makerbot_driver.ProtocolError):
                 self.logger.warning("Makerbot is retrying " + text)
-                self.execution_lock.release()
             except Exception as e:
                 self.logger.warning("Makerbot can't continue because of: " + e.message)
                 self.error_code = 1
                 self.error_message = e.message
-                self.execution_lock.release()
                 self.close()
                 break
             else:
-                self.execution_lock.release()
                 return result
+            finally:
+                self.execution_lock.release()
 
     def read_state(self):
         platform_temp          = self.execute(lambda: self.parser.s3g.get_platform_temperature(1))
