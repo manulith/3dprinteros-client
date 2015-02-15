@@ -68,10 +68,10 @@ class Sender(base_sender.BaseSender):
     def gcodes(self, gcodes):
         gcodes = gcodes.split("\n")
         self.set_total_gcodes()
-        self.logger.info('Enqueued block: ' + str(len(gcodes)) + ', total: ' + str(len(self.buffer)))
         for code in gcodes:
             with self.buffer_lock:
                 self.buffer.append(code)
+        self.logger.info('Enqueued block: ' + str(len(gcodes)) + ', total: ' + str(len(self.buffer)))
 
     def cancel(self, go_home=True):
         self.buffer.clear()
@@ -185,7 +185,7 @@ class Sender(base_sender.BaseSender):
         return self.error_code
 
     def is_operational(self):
-        return not self.is_error() and self.parser and self.parser.s3g.is_open()
+        return not self.is_error() and self.parser and self.parser.s3g.is_open() and self.sending_thread.is_alive()
 
     # def set_target_temps(self, command):
     #     result = self.platform_ttemp_regexp.match(command)
@@ -220,6 +220,7 @@ class Sender(base_sender.BaseSender):
                     self.printing_flag = False
                 time.sleep(self.IDLE_WAITING_STEP)
             else:
+                self.buffer_lock.release()
                 self.execute(command)
         self.logger.info("Makerbot sender: sender thread ends.")
 
