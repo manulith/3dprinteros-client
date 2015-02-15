@@ -85,7 +85,6 @@ class App:
                     self.disconnect_printer(pi, 'not_detected')
                 elif not pi.is_alive():
                     self.disconnect_printer(pi, 'error')
-
             time.sleep(2)
         # this is for quit from web interface(to release server's thread and quit)
         if self.quit_flag:

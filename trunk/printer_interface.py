@@ -142,12 +142,13 @@ class PrinterInterface(threading.Thread):
                 while not answer and not self.stop_flag:
                     self.logger.debug("Trying to report error to server...")
                     answer = http_client.send(http_client.package_command_request, message)
-                    self.acknowledge = {"number": answer['number'], "result": False}
+                    command_number = answer.get("number", False)
+                    if command_number:
+                        self.acknowledge = {"number": command_number, "result": False}
                     self.logger.debug("Could not execute command: " + str(answer))
                     time.sleep(2)
                 self.logger.debug("...done")
-                self.printer.close()
-                self.printer = None
+                self.close_printer_sender()
 
     def get_printer_state(self):
         if self.printer.is_operational():
@@ -173,13 +174,16 @@ class PrinterInterface(threading.Thread):
                 report["state"] = self.get_printer_state()
             return report
 
+    def close_printer_sender(self):
+        self.logger.info('Closing ' + str(self.printer_profile))
+        self.printer.close()
+        self.printer = None
+        self.logger.info('...closed.')
+
     def close(self):
         self.stop_flag = True
         if self.printer:
-            self.logger.info('Closing ' + str(self.printer_profile))
-            self.printer.close()
-            self.logger.info('...closed.')
-            self.printer = None
+            self.close_printer_sender()
         else:
             self.logger.debug('Nothing to close')
 
