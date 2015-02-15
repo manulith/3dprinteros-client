@@ -184,9 +184,9 @@ class Sender(base_sender.BaseSender):
         if length:
             self.buffer = LightGCode(gcodes)
             if self.printcore.startprint(self.buffer):
-                self.logger.info('...done loading gcodes' % length)
+                self.logger.info('...done loading gcodes.')
                 return True
-        self.logger.warning('...error loading gcodes')
+        self.logger.warning('...failed to load gcodes.')
         return False
 
     def pause(self):
