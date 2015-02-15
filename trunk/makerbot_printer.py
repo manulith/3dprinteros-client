@@ -113,7 +113,7 @@ class Sender(base_sender.BaseSender):
         self.execute(self.parser.s3g.pause)
 
     def close(self):
-        self.logger
+        self.logger.info("Makerbot sender is closing...")
         self.stop_flag = True
         if threading.current_thread() != self.sending_thread:
             self.sending_thread.join(10)
@@ -122,41 +122,50 @@ class Sender(base_sender.BaseSender):
         if self.parser:
             if self.parser.s3g:
                 self.parser.s3g.close()
+        self.logger.info("...done closing makerbot sender.")
 
     def execute(self, command):
-        with self.execution_lock:
-            first_buffer_overflow_flag = True
-            while not self.stop_flag:
-                try:
-                    command_is_gcode = isinstance(command, str)
-                    if command_is_gcode:
-                        text = command
-                        self.printing_flag = True
-                        self.parser.execute_line(command)
-                        self.logger.debug("Executing command: " + command)
-                        result = None
-                    else:
-                        text = command.__name__
-                        result = command()
-                except (makerbot_driver.BufferOverflowError):
-                    if first_buffer_overflow_flag:
-                        self.logger.info('Makerbot BufferOverflow on ' + text)
-                        first_buffer_overflow_flag = False
-                    time.sleep(self.BUFFER_OVERFLOW_WAIT)
-                except (serial.serialutil.SerialException, makerbot_driver.ProtocolError):
-                    self.logger.warning("Makerbot is retrying " + text)
-                except Exception as e:
-                    self.logger.warning("Makerbot can't continue because of: " + e.message)
-                    self.error_code = 1
-                    self.error_message = e.message
-                    self.close()
-                    break
+        buffer_overflow_counter = 0
+        while not self.stop_flag:
+            try:
+                command_is_gcode = isinstance(command, str)
+                if command_is_gcode:
+                    text = command
+                    self.printing_flag = True
+                    self.execution_lock.acquire()
+                    self.parser.execute_line(command)
+                    self.logger.debug("Executing command: " + command)
+                    result = None
                 else:
-                    return result
-                # except makerbot_driver.BuildCancelledError as e:
-                #except makerbot_driver.ActiveBuildError as e:
-                #except makerbot_driver.Gcode.UnspecifiedAxisLocationError as e:
-                #except makerbot_driver.Gcode.UnrecognizedCommandError as e:
+                    text = command.__name__
+                    self.execution_lock.acquire()
+                    result = command()
+            except (makerbot_driver.BufferOverflowError):
+                self.execution_lock.release()
+                if not buffer_overflow_counter:
+                    self.logger.info('Makerbot BufferOverflow on ' + text)
+                    buffer_overflow_counter += 1
+                    if buffer_overflow_counter > self.GODES_BETWEEN_READ_STATE:
+                        buffer_overflow_counter = 0
+                        self.read_state()
+                time.sleep(self.BUFFER_OVERFLOW_WAIT)
+            except (serial.serialutil.SerialException, makerbot_driver.ProtocolError):
+                self.logger.warning("Makerbot is retrying " + text)
+                self.execution_lock.release()
+            except Exception as e:
+                self.logger.warning("Makerbot can't continue because of: " + e.message)
+                self.error_code = 1
+                self.error_message = e.message
+                self.execution_lock.release()
+                self.close()
+                break
+            else:
+                self.execution_lock.release()
+                return result
+            # except makerbot_driver.BuildCancelledError as e:
+            #except makerbot_driver.ActiveBuildError as e:
+            #except makerbot_driver.Gcode.UnspecifiedAxisLocationError as e:
+            #except makerbot_driver.Gcode.UnrecognizedCommandError as e:
 
     def read_state(self):
         platform_temp          = self.execute(lambda: self.parser.s3g.get_platform_temperature(1))
