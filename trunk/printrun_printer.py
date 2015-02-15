@@ -20,7 +20,7 @@ class Sender(base_sender.BaseSender):
         self.printcore = None
         self.logger = logging.getLogger('app.' + __name__)
         base_sender.BaseSender.__init__(self, profile, usb_info)
-        self.define_regexp()
+        self.define_regexps()
         if self.select_baudrate_and_connect():
             self.extruder_count = self.profile['extruder_count']
             self.total_gcodes = 0
@@ -78,7 +78,7 @@ class Sender(base_sender.BaseSender):
         else:
             self.logger.warning("No printrun printcore to execute reset")
 
-    def define_regexp(self):
+    def define_regexps(self):
         # ok T:29.0 /29.0 B:29.5 /29.0 @:0
         self.temp_re = re.compile('.*ok T:([\d\.]+) /([\d\.]+) B:(-?[\d\.]+) /(-?[\d\.]+)')
         #self.position_re = re.compile('.*X:([\d\.]+) Y:([\d\.]+) Z:([\d\.]+).*')
@@ -99,7 +99,6 @@ class Sender(base_sender.BaseSender):
                         # self.printcore.send_now('M114')
                     except:
                         pass
-
                     time.sleep(0.01)
                     counter = 0
             time.sleep(wait_step)
@@ -123,10 +122,10 @@ class Sender(base_sender.BaseSender):
     def recvcb(self, line):
         self.logger.debug(line)
         if line[0] == 'T':
-            self.firmware_loaded = True
+            self.online_flag = True
             self.fetch_temps(line)
-        elif line[0:2] == 'ok':
-            self.firmware_loaded = True
+        # elif line[0:2] == 'ok':
+        #     self.ready_flag = True
 
     def sendcb(self, command, gline):
         self.logger.info("Executing command: " + command)
@@ -252,9 +251,3 @@ class Sender(base_sender.BaseSender):
                 self.logger.error("Error stopping temperature request thread.")
             else:
                 self.logger.debug('...done)')
-
-    # #def debug_position(self):
-    #    text  = "X:" + str(self.position[0])
-    #    text += " Y:" + str(self.position[1])
-    #    text += " Z:" + str(self.position[2])
-    #    return text

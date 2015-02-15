@@ -13,6 +13,7 @@ class Sender(base_sender.BaseSender):
     BUFFER_OVERFLOW_WAIT = 0.01
     IDLE_WAITING_STEP = 0.1
     TEMP_UPDATE_PERIOD = 5
+    GODES_BETWEEN_READ_STATE = 100
 
     def __init__(self, profile, usb_info):
         base_sender.BaseSender.__init__(self, profile, usb_info)
@@ -21,7 +22,8 @@ class Sender(base_sender.BaseSender):
         self.logger.info('Makerbot printer created')
         self.parser = None
         self.position = None
-        self.lock = threading.Lock()
+        self.execution_lock = threading.Lock()
+        self.buffer_lock = threading.Lock()
         try:
             self.parser = self.create_parser()
             self.parser.state.values["build_name"] = '3DPrinterOS'
@@ -68,14 +70,16 @@ class Sender(base_sender.BaseSender):
         self.set_total_gcodes()
         self.logger.info('Enqueued block: ' + str(len(gcodes)) + ', total: ' + str(len(self.buffer)))
         for code in gcodes:
-            self.buffer.append(code)
+            with self.buffer_lock:
+                self.buffer.append(code)
 
-    def cancel(self):
+    def cancel(self, go_home=True):
         self.buffer.clear()
         self.printing_flag = False
         self.execute(lambda: self.parser.s3g.abort_immediately)
-        self.execute(lambda: self.parser.s3g.find_axes_maximums(['x', 'y'], 500, 60))
-        self.execute(lambda: self.parser.s3g.find_axes_minimums(['z'], 500, 60))
+        if go_home:
+            self.execute(lambda: self.parser.s3g.find_axes_maximums(['x', 'y'], 500, 60))
+            self.execute(lambda: self.parser.s3g.find_axes_minimums(['z'], 500, 60))
 
     def pause(self):
         if not self.pause_flag:
@@ -97,61 +101,62 @@ class Sender(base_sender.BaseSender):
     def get_position(self):
         position = self.parser.state.position.ToList()
         if position[2] is None or position[3] is None or position[4] is None:
-            self.logger.warning(
-                'It seems that Pause/Cancel command was called in wrong command sequence(positions are None)')
-            return None
-        return position
+            self.logger.warning("Can't get current tool position to execute extruder lift")
+            # TODO check this is real print(can cause misprints)
+            # self.position = self.execute(lambda: self.parser.s3g.get_extended_position())
+            return position
 
     def emergency_stop(self):
-        self.cancel()
+        self.cancel(False)
+
+    def immediate_pause(self):
+        self.execute(self.parser.s3g.pause)
 
     def close(self):
         self.stop_flag = True
-        self.sending_thread.join(10)
-        if self.parser is not None:
-            if self.parser.s3g is not None:
+        if threading.current_thread() != self.sending_thread:
+            self.sending_thread.join(10)
+            if self.sending_thread.isAlive():
+                self.logger.error("Failed to join printing thread in makerbot_printer")
+        if self.parser:
+            if self.parser.s3g:
                 self.parser.s3g.close()
-        if self.sending_thread.isAlive():
-            self.logger.error("Failed to join printing thread in makerbot_printer")
-            raise RuntimeError("Failed to join printing thread in makerbot_printer")
 
     def execute(self, command):
-        with self.lock:
-            buffer_overflow_flag = False
+        with self.execution_lock:
+            first_buffer_overflow_flag = True
             while not self.stop_flag:
                 try:
-                    if isinstance(command, str):
+                    command_is_gcode = isinstance(command, str)
+                    if command_is_gcode:
                         text = command
+                        self.printing_flag = True
                         self.parser.execute_line(command)
                         self.logger.debug("Executing command: " + command)
-                        result = None
                     else:
                         text = command.__name__
                         result = command()
-
-                except makerbot_driver.BufferOverflowError:
-                    if not buffer_overflow_flag:
+                except (makerbot_driver.BufferOverflowError):
+                    if first_buffer_overflow_flag:
                         self.logger.info('Makerbot BufferOverflow on ' + text)
-                        buffer_overflow_flag = True
+                        first_buffer_overflow_flag = False
                     time.sleep(self.BUFFER_OVERFLOW_WAIT)
-
-                except serial.serialutil.SerialException as e:
+                except (serial.serialutil.SerialException, makerbot_driver.ProtocolError):
                     self.logger.warning("Makerbot is retrying " + text)
-
                 except Exception as e:
                     self.logger.warning("Makerbot can't continue because of: " + e.message)
-                    self.error_code = 9
+                    self.error_code = 1
                     self.error_message = e.message
                     self.close()
                     break
-
                 else:
                     return result
-
-                #except makerbot_driver.BuildCancelledError as e:
+                # except makerbot_driver.BuildCancelledError as e:
                 #except makerbot_driver.ActiveBuildError as e:
                 #except makerbot_driver.Gcode.UnspecifiedAxisLocationError as e:
                 #except makerbot_driver.Gcode.UnrecognizedCommandError as e:
+            return None #make sure that no exception occures
+
 
     def read_state(self):
         platform_temp          = self.execute(lambda: self.parser.s3g.get_platform_temperature(1))
@@ -160,7 +165,7 @@ class Sender(base_sender.BaseSender):
         head_temp2 = self.execute(lambda: self.parser.s3g.get_toolhead_temperature(1))
         head_ttemp1 = self.execute(lambda: self.parser.s3g.get_toolhead_target_temperature(0))
         head_ttemp2 = self.execute(lambda: self.parser.s3g.get_toolhead_target_temperature(1))
-        self.mb            = self.execute(lambda: self.parser.s3g.get_motherboard_status())
+        #self.mb            = self.execute(lambda: self.parser.s3g.get_motherboard_status())
 
         self.temps = [platform_temp, head_temp1, head_temp2]
         self.target_temps = [platform_ttemp, head_ttemp1, head_ttemp2]
@@ -170,7 +175,7 @@ class Sender(base_sender.BaseSender):
     def reset(self):
         self.buffer.clear()
         try:
-            self.parser.s3g.reset()
+            self.execute(lambda: self.parser.s3g.reset())
         except Exception as e:
             self.logger.warning("Error when trying to reset makebot printer: %s" % e.message)
             self.logger.debug("DEBUG: ", exc_info=True)
@@ -180,7 +185,7 @@ class Sender(base_sender.BaseSender):
         return self.error_code
 
     def is_operational(self):
-        return not self.is_error()
+        return not self.is_error() and self.parser and self.parser.s3g.is_open()
 
     # def set_target_temps(self, command):
     #     result = self.platform_ttemp_regexp.match(command)
@@ -195,29 +200,27 @@ class Sender(base_sender.BaseSender):
 
     def send_gcodes(self):
         last_time = time.time()
-        #self.buffer.appendleft('G28 X0 Y0 Z0')
+        counter = 0
         while not self.stop_flag:
+            current_time = time.time()
+            if (counter >= self.GODES_BETWEEN_READ_STATE) or (current_time - last_time > self.TEMP_UPDATE_PERIOD):
+                counter = 0
+                last_time = current_time
+                self.read_state()
             if self.pause_flag:
                 self.printing_flag = False
                 time.sleep(self.PAUSE_STEP_TIME)
-                self.read_state()
                 continue
             try:
+                if not self.buffer_lock.acquire(False):
+                    raise RuntimeError
                 command = self.buffer.popleft()
-            except IndexError:
-                if self.parser.s3g.is_finished():
+            except (IndexError, RuntimeError):
+                if self.execute(lambda: self.parser.s3g.is_finished()):
                     self.printing_flag = False
                 time.sleep(self.IDLE_WAITING_STEP)
-                self.read_state()
             else:
-                if time.time() - last_time > self.TEMP_UPDATE_PERIOD:
-                    self.read_state()
-                self.printing_flag = True
                 self.execute(command)
-                #self.logger.debug('Executed GCode: ' + command)
-                #self.set_target_temps(result)
-                #TODO check this is real print(can cause misprints)
-                #self.position = self.execute(lambda: self.parser.s3g.get_extended_position())
         self.logger.info("Makerbot sender: sender thread ends.")
 
     def is_printing(self):
