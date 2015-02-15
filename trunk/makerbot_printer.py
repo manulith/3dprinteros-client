@@ -170,8 +170,8 @@ class Sender(base_sender.BaseSender):
                 self.execution_lock.release()
 
     def read_state(self):
-        platform_temp          = self.execute(lambda: self.parser.s3g.get_platform_temperature(0))
-        platform_ttemp         = self.execute(lambda: self.parser.s3g.get_platform_target_temperature(0))
+        platform_temp          = self.execute(lambda: self.parser.s3g.get_platform_temperature(1))
+        platform_ttemp         = self.execute(lambda: self.parser.s3g.get_platform_target_temperature(1))
         head_temp1  = self.execute(lambda: self.parser.s3g.get_toolhead_temperature(0))
         head_temp2 = self.execute(lambda: self.parser.s3g.get_toolhead_temperature(1))
         head_ttemp1 = self.execute(lambda: self.parser.s3g.get_toolhead_target_temperature(0))
@@ -207,6 +207,7 @@ class Sender(base_sender.BaseSender):
         last_time = time.time()
         counter = 0
         while not self.stop_flag:
+            counter += 1
             current_time = time.time()
             if (counter >= self.GODES_BETWEEN_READ_STATE) or (current_time - last_time > self.TEMP_UPDATE_PERIOD):
                 counter = 0

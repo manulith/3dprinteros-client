@@ -130,7 +130,7 @@ class PrinterInterface(threading.Thread):
                 answer = http_client.send(http_client.package_command_request, message)
                 self.logger.debug("Got answer: " + str(answer))
                 if answer:
-                    self.error = None
+                    self.sender_error = None
                     self.acknowledge = self.process_command_request(answer)
                 else:
                     time.sleep(self.NO_COMMAND_SLEEP)
