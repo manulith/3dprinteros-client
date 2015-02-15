@@ -142,12 +142,11 @@ class Sender(base_sender.BaseSender):
                     result = command()
             except (makerbot_driver.BufferOverflowError):
                 self.execution_lock.release()
-                if not buffer_overflow_counter:
+                buffer_overflow_counter += 1
+                if buffer_overflow_counter > self.GODES_BETWEEN_READ_STATE:
                     self.logger.info('Makerbot BufferOverflow on ' + text)
-                    buffer_overflow_counter += 1
-                    if buffer_overflow_counter > self.GODES_BETWEEN_READ_STATE:
-                        buffer_overflow_counter = 0
-                        self.read_state()
+                    buffer_overflow_counter = 0
+                    self.read_state()
                 time.sleep(self.BUFFER_OVERFLOW_WAIT)
             except (serial.serialutil.SerialException, makerbot_driver.ProtocolError):
                 self.logger.warning("Makerbot is retrying " + text)
