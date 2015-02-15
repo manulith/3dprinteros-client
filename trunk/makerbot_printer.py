@@ -78,6 +78,7 @@ class Sender(base_sender.BaseSender):
     def cancel(self, go_home=True):
         with self.buffer_lock:
             self.buffer.clear()
+            self.pause_flag = False
         self.execute(lambda: self.parser.s3g.abort_immediately())
         if go_home:
             self.execute(lambda: self.parser.s3g.find_axes_maximums(['x', 'y'], 500, 60))
