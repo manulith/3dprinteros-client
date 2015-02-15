@@ -123,6 +123,7 @@ class Sender(base_sender.BaseSender):
                 self.logger.error("Failed to join printing thread in makerbot_printer")
         if self.parser:
             if self.parser.s3g:
+                self.execute(lambda: self.parser.s3g.abort_immediately())
                 self.parser.s3g.close()
         self.logger.info("...done closing makerbot sender.")
 
