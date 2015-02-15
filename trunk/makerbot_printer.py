@@ -74,8 +74,8 @@ class Sender(base_sender.BaseSender):
         self.logger.info('Enqueued block: ' + str(len(gcodes)) + ', total: ' + str(len(self.buffer)))
 
     def cancel(self, go_home=True):
-        self.buffer.clear()
-        self.printing_flag = False
+        with self.buffer_lock:
+            self.buffer.clear()
         self.execute(lambda: self.parser.s3g.abort_immediately)
         if go_home:
             self.execute(lambda: self.parser.s3g.find_axes_maximums(['x', 'y'], 500, 60))
@@ -134,7 +134,7 @@ class Sender(base_sender.BaseSender):
                     self.printing_flag = True
                     self.execution_lock.acquire()
                     self.parser.execute_line(command)
-                    self.logger.debug("Executing command: " + command)
+                    self.logger.debug("Executing: " + command)
                     result = None
                 else:
                     text = command.__name__
@@ -162,10 +162,6 @@ class Sender(base_sender.BaseSender):
             else:
                 self.execution_lock.release()
                 return result
-            # except makerbot_driver.BuildCancelledError as e:
-            #except makerbot_driver.ActiveBuildError as e:
-            #except makerbot_driver.Gcode.UnspecifiedAxisLocationError as e:
-            #except makerbot_driver.Gcode.UnrecognizedCommandError as e:
 
     def read_state(self):
         platform_temp          = self.execute(lambda: self.parser.s3g.get_platform_temperature(1))
