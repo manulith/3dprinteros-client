@@ -99,7 +99,6 @@ class PrinterInterface(threading.Thread):
                     self.logger.info("Excecuting command %s" % str(command))
                     method = getattr(self.printer, command)
                     payload = data_dict.get('payload', None)
-                    failed = False
                     if data_dict.get('is_link', False):
                         payload = http_client.download(payload)
                         if not payload:
