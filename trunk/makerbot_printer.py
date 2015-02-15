@@ -134,6 +134,7 @@ class Sender(base_sender.BaseSender):
                         self.printing_flag = True
                         self.parser.execute_line(command)
                         self.logger.debug("Executing command: " + command)
+                        result = None
                     else:
                         text = command.__name__
                         result = command()
@@ -156,8 +157,6 @@ class Sender(base_sender.BaseSender):
                 #except makerbot_driver.ActiveBuildError as e:
                 #except makerbot_driver.Gcode.UnspecifiedAxisLocationError as e:
                 #except makerbot_driver.Gcode.UnrecognizedCommandError as e:
-            return None #make sure that no exception occures
-
 
     def read_state(self):
         platform_temp          = self.execute(lambda: self.parser.s3g.get_platform_temperature(1))
