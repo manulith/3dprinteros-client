@@ -55,7 +55,13 @@ class Sender(base_sender.BaseSender):
                         self.printcore.tempcb = self.tempcb
                         self.printcore.recvcb = self.recvcb
                         self.printcore.sendcb = self.sendcb
+                        time.sleep(0.1)
+                        self.logger.info("Sending homing gcodes...")
+                        for gcode in self.profile["end_gcodes"]:
+                            self.printcore.send_now(gcode)
+                        self.logger.info("...done homing")
                         return True
+
                 self.logger.warning("Timeout while waiting for printer online. Reseting and reconnecting...")
                 self.reset()
                 time.sleep(2)
@@ -208,8 +214,8 @@ class Sender(base_sender.BaseSender):
 
     def cancel(self):
         self.printcore.cancelprint()
-        for gcode in self.profile["end_gcodes"]:
-            self.printcore.send_now(gcode)
+        self.printcore.reset()
+        self.printcore.disconnect()
         self.logger.info("Cancelled successfully")
 
     def emergency_stop(self):
