@@ -22,6 +22,7 @@ class Sender(base_sender.BaseSender):
         self.logger = logging.getLogger('app.' + __name__)
         self.logger.info('Makerbot printer created')
         self.parser = None
+        self.cancel_flag = False
         self.execution_lock = threading.Lock()
         self.buffer_lock = threading.Lock()
         try:
@@ -78,11 +79,10 @@ class Sender(base_sender.BaseSender):
     def cancel(self, go_home=True):
         with self.buffer_lock:
             self.buffer.clear()
-            self.pause_flag = False
+        self.pause_flag = False
+        self.cancel_flag = True
+        time.sleep(0.1)
         self.execute(lambda: self.parser.s3g.abort_immediately())
-        #if go_home:
-        #    self.execute(lambda: self.parser.s3g.find_axes_maximums(['x', 'y'], 500, 60))
-        #    self.execute(lambda: self.parser.s3g.find_axes_minimums(['z'], 500, 60))
 
     def pause(self):
         if not self.pause_flag:
@@ -138,6 +138,10 @@ class Sender(base_sender.BaseSender):
                 command_is_gcode = isinstance(command, str)
                 self.execution_lock.acquire()
                 if command_is_gcode:
+                    if self.cancel_flag:
+                        self.cancel_flag = False
+                        self.execution_lock.release()
+                        break
                     text = command
                     self.printing_flag = True
                     self.parser.execute_line(command)
@@ -161,6 +165,7 @@ class Sender(base_sender.BaseSender):
                 return result
             finally:
                 self.execution_lock.release()
+
 
     def read_state(self):
         platform_temp          = self.execute(lambda: self.parser.s3g.get_platform_temperature(0))
