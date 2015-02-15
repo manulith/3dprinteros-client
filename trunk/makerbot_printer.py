@@ -123,7 +123,11 @@ class Sender(base_sender.BaseSender):
                 self.logger.error("Failed to join printing thread in makerbot_printer")
         if self.parser:
             if self.parser.s3g:
-                self.execute(lambda: self.parser.s3g.abort_immediately())
+                try:
+                    self.parser.s3g.abort_immediately()
+                except Exception:
+                    pass
+                time.sleep(0.1)
                 self.parser.s3g.close()
         self.logger.info("...done closing makerbot sender.")
 
@@ -166,7 +170,6 @@ class Sender(base_sender.BaseSender):
             finally:
                 self.execution_lock.release()
 
-
     def read_state(self):
         platform_temp          = self.execute(lambda: self.parser.s3g.get_platform_temperature(0))
         platform_ttemp         = self.execute(lambda: self.parser.s3g.get_platform_target_temperature(0))
@@ -175,10 +178,8 @@ class Sender(base_sender.BaseSender):
         head_ttemp1 = self.execute(lambda: self.parser.s3g.get_toolhead_target_temperature(0))
         head_ttemp2 = self.execute(lambda: self.parser.s3g.get_toolhead_target_temperature(1))
         #self.mb            = self.execute(lambda: self.parser.s3g.get_motherboard_status())
-
         self.temps = [platform_temp, head_temp1, head_temp2]
         self.target_temps = [platform_ttemp, head_ttemp1, head_ttemp2]
-
         #self.position      = self.execute(lambda: self.parser.s3g.get_extended_position())
 
     def reset(self):
