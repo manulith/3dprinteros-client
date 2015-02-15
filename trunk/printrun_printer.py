@@ -166,14 +166,16 @@ class Sender(base_sender.BaseSender):
         else:
             self.logger.info("Printrun is starting print")
 
-    def gcodes(self, gcodes):
-        gcodes = gcodes.split("\n")
+    def gcodes(self, gcodes_text):
+        gcodes = gcodes_text.split("\n")
+        while gcodes[-1] in ("\n", "\r\n", "\t", " ", "", None):
+            gcodes.pop()
         self.set_total_gcodes(len(gcodes))
         self.logger.info('Number of gcodes: %i' % len(gcodes))
         if len(gcodes) > 0:
             self.buffer = LightGCode(gcodes)
             try:
-                if not self.printcore.startprint(self.gcodes):
+                if not self.printcore.startprint(gcodes):
                     self.logger.warning('Error starting print')
                 else:
                     return True
@@ -228,7 +230,7 @@ class Sender(base_sender.BaseSender):
                self.printcore.read_thread.is_alive() and \
                self.printcore.print_thread and \
                self.printcore.print_thread.is_alive()
-        elif self.printcore.online:
+        elif self.printcore.paused or self.printcore.online:
             return self.printcore.read_thread and \
                self.printcore.read_thread.is_alive() and \
                self.printcore.send_thread and \
