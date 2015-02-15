@@ -148,6 +148,8 @@ class Sender(base_sender.BaseSender):
         self.logger.warning("Error occurred in printrun: " + str(error))
         self.error_code = 1
         self.error_message = error
+        if "M999" in error:
+            self.reset()
 
     def fetch_temps(self, wait_temp_line):
         match = self.wait_tool_temp_re.match(wait_temp_line)
@@ -170,17 +172,15 @@ class Sender(base_sender.BaseSender):
         gcodes = gcodes_text.split("\n")
         while gcodes[-1] in ("\n", "\r\n", "\t", " ", "", None):
             gcodes.pop()
-        self.set_total_gcodes(len(gcodes))
-        self.logger.info('Number of gcodes: %i' % len(gcodes))
-        if len(gcodes) > 0:
+        length = len(gcodes)
+        self.set_total_gcodes(length)
+        self.logger.info('Loading %i gcodes in printcore...' % length)
+        if length:
             self.buffer = LightGCode(gcodes)
-            try:
-                if not self.printcore.startprint(gcodes):
-                    self.logger.warning('Error starting print')
-                else:
-                    return True
-            except Exception as e:
-                self.logger.warning("Can`t start printing. Error: %s" % e.message)
+            if self.printcore.startprint(self.buffer):
+                self.logger.info('...done loading gcodes' % length)
+                return True
+        self.logger.warning('...error loading gcodes')
         return False
 
     def pause(self):
