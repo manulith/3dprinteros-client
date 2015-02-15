@@ -22,11 +22,11 @@ class Sender(base_sender.BaseSender):
         self.logger = logging.getLogger('app.' + __name__)
         self.logger.info('Makerbot printer created')
         self.parser = None
-        self.position = None
         self.execution_lock = threading.Lock()
         self.buffer_lock = threading.Lock()
         try:
             self.parser = self.create_parser()
+            self.execute(lambda: self.parser.s3g.abort_immediately())
             self.parser.state.values["build_name"] = '3DPrinterOS'
         except Exception as e:
             self.error_code = 'No connection'
@@ -50,10 +50,11 @@ class Sender(base_sender.BaseSender):
     #     self.platform_ttemp_regexp = re.compile('\s*M109\s*S(\d+)\s*T(\d+)')
     #     self.extruder_ttemp_regexp = re.compile('\s*M104\s*S(\d+)\s*T(\d+)')
 
-    def lift_extruder(self):
+    def append_position_and_lift_extruder(self):
         position = self.get_position()
         if position:
-            self.position = position
+            with self.buffer_lock:
+                self.buffer.appendleft('G1 Z' + str(position[2]) + ' A' + str(position[3]) + ' B' + str(position[4]))
             z = min(160, position[2] + 30)
             a = max(0, position[3] - 5)
             b = max(0, position[4] - 5)
@@ -64,7 +65,7 @@ class Sender(base_sender.BaseSender):
         self.parser.state.values["build_name"] = '3DPrinterOS'
         self.parser.state.percentage = 0
         self.logger.info('Begin of GCodes')
-        self.parser.s3g.set_RGB_LED(255, 255, 255, 0)
+        self.execute(lambda: self.parser.s3g.set_RGB_LED(255, 255, 255, 0))
 
     def gcodes(self, gcodes):
         gcodes = gcodes.split("\n")
@@ -77,7 +78,7 @@ class Sender(base_sender.BaseSender):
     def cancel(self, go_home=True):
         with self.buffer_lock:
             self.buffer.clear()
-        self.execute(lambda: self.parser.s3g.abort_immediately)
+        self.execute(lambda: self.parser.s3g.abort_immediately())
         if go_home:
             self.execute(lambda: self.parser.s3g.find_axes_maximums(['x', 'y'], 500, 60))
             self.execute(lambda: self.parser.s3g.find_axes_minimums(['z'], 500, 60))
@@ -86,14 +87,13 @@ class Sender(base_sender.BaseSender):
         if not self.pause_flag:
             self.pause_flag = True
             time.sleep(0.1)
-            self.lift_extruder()
+            self.append_position_and_lift_extruder()
             return True
         else:
             return False
 
     def unpause(self):
         if self.pause_flag:
-            self.buffer.appendleft('G1 Z' + str(self.position[2]) + ' A' + str(self.position[3]) + ' B' + str(self.position[4]))
             self.pause_flag = False
             return True
         else:
@@ -111,7 +111,7 @@ class Sender(base_sender.BaseSender):
         self.cancel(False)
 
     def immediate_pause(self):
-        self.execute(self.parser.s3g.pause)
+        self.execute(self.parser.s3g.pause())
 
     def close(self):
         self.logger.info("Makerbot sender is closing...")
@@ -176,12 +176,8 @@ class Sender(base_sender.BaseSender):
 
     def reset(self):
         self.buffer.clear()
-        try:
-            self.execute(lambda: self.parser.s3g.reset())
-        except Exception as e:
-            self.logger.warning("Error when trying to reset makebot printer: %s" % e.message)
-            self.logger.debug("DEBUG: ", exc_info=True)
-        self.parser.s3g.clear_buffer()
+        self.execute(lambda: self.parser.s3g.reset())
+        self.execute(lambda: self.parser.s3g.clear_buffer())
 
     def is_error(self):
         return self.error_code

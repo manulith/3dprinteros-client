@@ -70,9 +70,9 @@ class Sender(base_sender.BaseSender):
             self.logger.debug("Sending M999...")
             self.printcore.send_now("M999")
             time.sleep(1)
-            #self.logger.debug("Resetting...")
-            #self.printcore.reset()
-            #time.sleep(1)
+            self.logger.debug("Resetting...")
+            self.printcore.reset()
+            time.sleep(1)
             self.logger.debug("Disconnecting...")
             self.printcore.disconnect()
             self.logger.debug("Successful reset and disconnect")
@@ -205,8 +205,9 @@ class Sender(base_sender.BaseSender):
             return False
 
     def cancel(self):
-        self.printcore.reset()
-        self.printcore.disconnect()
+        self.printcore.cancelprint()
+        for gcode in self.profile["end_gcodes"]:
+            self.printcore.send_now(gcode)
         self.logger.info("Cancelled successfully")
 
     def emergency_stop(self):
@@ -227,7 +228,7 @@ class Sender(base_sender.BaseSender):
                self.printcore.read_thread.is_alive() and \
                self.printcore.print_thread and \
                self.printcore.print_thread.is_alive()
-        if self.printcore.paused or self.printcore.online:
+        elif self.printcore.online:
             return self.printcore.read_thread and \
                self.printcore.read_thread.is_alive() and \
                self.printcore.send_thread and \

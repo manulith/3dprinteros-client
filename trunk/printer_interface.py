@@ -83,21 +83,21 @@ class PrinterInterface(threading.Thread):
             self.logger.info("Successful connection to %s!" % (self.printer_profile['name']))
 
     def process_command_request(self, data_dict):
-        logger = logging.getLogger("app." + __name__)
-        number = data_dict.get('number', None)
-        if number:
-            logger.debug("Processing command number %i" % number)
         error = data_dict.get('error', None)
         if error:
             self.logger.warning("Server command came with errors %d %s" % (error['code'], error['message']))
         else:
             command = data_dict.get('command', None)
             if command:
-                if not hasattr(self.printer, command):
+                method = getattr(self.printer, command, None)
+                if not method:
                     self.logger.warning("Unknown command: " + str(command))
                 else:
-                    self.logger.info("Excecuting command %s" % str(command))
-                    method = getattr(self.printer, command)
+                    number = data_dict.get('number', None)
+                    if not number:
+                        self.logger.error("No number field in servers answer")
+                        raise RuntimeError("No number field in servers answer")
+                    self.logger.info("Excecuting command number %i : %s" % (number, str(command)))
                     payload = data_dict.get('payload', None)
                     if data_dict.get('is_link', False):
                         payload = http_client.download(payload)
