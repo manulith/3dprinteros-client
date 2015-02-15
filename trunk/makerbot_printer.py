@@ -113,6 +113,7 @@ class Sender(base_sender.BaseSender):
         self.execute(self.parser.s3g.pause)
 
     def close(self):
+        self.logger
         self.stop_flag = True
         if threading.current_thread() != self.sending_thread:
             self.sending_thread.join(10)
@@ -215,7 +216,10 @@ class Sender(base_sender.BaseSender):
                 if not self.buffer_lock.acquire(False):
                     raise RuntimeError
                 command = self.buffer.popleft()
-            except (IndexError, RuntimeError):
+            except RuntimeError:
+                time.sleep(self.IDLE_WAITING_STEP)
+            except IndexError:
+                self.buffer_lock.release()
                 if self.execute(lambda: self.parser.s3g.is_finished()):
                     self.printing_flag = False
                 time.sleep(self.IDLE_WAITING_STEP)
