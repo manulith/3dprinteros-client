@@ -249,9 +249,6 @@ class Sender(base_sender.BaseSender):
         self.stop_flag = True
         self.logger.debug('Printrun sender is closing')
         if self.printcore:
-            if self.printcore.printer:
-                for gcode in self.profile["end_codes"]:
-                    self.printcore.send_now(gcode)
             self.printcore.disconnect()
         self.logger.debug('(Joining printrun threads...')
         if self.temp_request_thread:
