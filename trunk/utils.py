@@ -147,7 +147,7 @@ def get_libusb_path(lib):
 #         logger.debug('Token was writen to ' + path)
 #         return True
 
-def get_paths_to_login_info():
+def get_paths_to_settings_folder():
     abs_path_to_users_home = os.path.abspath(os.path.expanduser("~"))
     if sys.platform.startswith('win'):
         abs_path_to_appdata = os.path.abspath(os.getenv('APPDATA'))
@@ -164,7 +164,7 @@ def get_paths_to_login_info():
 def read_login():
     logger = logging.getLogger('app.' + __name__)
     pack_name = 'login_info.bin'
-    paths = get_paths_to_login_info()
+    paths = get_paths_to_settings_folder()
     for path in paths:
         logger.info("Searching for login info in %s" % path)
         try:
@@ -181,7 +181,7 @@ def read_login():
 def write_login(login, password):
     logger = logging.getLogger('app.' + __name__)
     package_name = 'login_info.bin' #probably it shoud be read from config
-    path = get_paths_to_login_info()[0]
+    path = get_paths_to_settings_folder()[0]
     try:
         result = pack_info_zip(package_name, path, login, password)
     except Exception as e:
@@ -278,9 +278,6 @@ def send_all_snapshots():
 def pack_info_zip(package_name, path, *args):
     logger = logging.getLogger('app.' + __name__)
     path = path
-    if not os.path.isdir(path):
-        os.mkdir(path)
-        logger.info('Working dir created: ' + str(path))
     package_path = os.path.join(path, package_name)
     if os.path.exists(package_path):
         logger.warning(package_name + ' found in the working dir.')
