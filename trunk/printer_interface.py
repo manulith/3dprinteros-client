@@ -36,6 +36,7 @@ class PrinterInterface(threading.Thread):
         self.acknowledge = None
         self.sender_error = None
         self.stop_flag = False
+        self.report = None
         self.logger = logging.getLogger('app.' + __name__)
         self.logger.info('New printer interface for %s' % str(usb_info))
         super(PrinterInterface, self).__init__()
@@ -114,7 +115,7 @@ class PrinterInterface(threading.Thread):
                         self.logger.error("Error while executing command %s, number %i.\t%s" % (command, number, e.message), exc_info=True)
                         self.sender_error = {"code": 0, "message": e.message}
                         result = False
-                    ack = {"number": number, "result": (result or result == None)}
+                    ack = {"number": number, "result": bool(result or result == None)}
                     # to reduce needless return True, we assume that when method had return None, that is success
                     return ack
 
@@ -124,6 +125,7 @@ class PrinterInterface(threading.Thread):
         time.sleep(1)
         while not self.stop_flag and self.printer:
             report = self.state_report()
+            self.report = report # for web_interface
             message = (self.printer_token, report, self.acknowledge, self.sender_error)
             self.logger.debug("Requesting with: %s" % str(message))
             if self.printer.is_operational():
