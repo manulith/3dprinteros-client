@@ -26,6 +26,7 @@ class Sender(base_sender.BaseSender):
             self.total_gcodes = 0
             self.temp_request_thread = threading.Thread(target=self.temp_request)
             self.temp_request_thread.start()
+            self.stop_flag = False
             for gcode in self.profile['end_gcodes']:
                 self.printcore.send_now(gcode)
 
