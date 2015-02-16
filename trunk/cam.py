@@ -18,7 +18,12 @@ class CameraMaster():
         self.logger = utils.get_logger(config.config["camera"]["log_file"])
         signal.signal(signal.SIGINT, self.intercept_signal)
         signal.signal(signal.SIGTERM, self.intercept_signal)
+        self.stop_flag = False
         self.cameras = []
+        self.logger.info('Camera module login...')
+        ul = user_login.UserLogin(self)
+        ul.wait_for_login()
+        self.user_token = ul.user_token
         if len(self.get_camera_names()) != self.get_number_of_cameras():
             message = "Malfunction in get_camera_names. Number of cameras doesn't equal to number of camera names"
             self.logger.error(message)
@@ -30,7 +35,7 @@ class CameraMaster():
         cam_names = self.get_camera_names()
         for num in cam_names:
             cap = cv2.VideoCapture(num)
-            cam = CameraImageSender(num+1, cam_names[num], cap)
+            cam = CameraImageSender(num+1, cam_names[num], cap, self.user_token)
             cam.start()
             self.cameras.append(cam)
 
@@ -48,6 +53,7 @@ class CameraMaster():
             sender.join(1)
             if sender.isAlive():
                 self.logger.warning("Failed to close camera %s" % sender.name)
+        self.stop_flag = True
         logging.shutdown()
         sys.exit(0)
 
@@ -104,16 +110,13 @@ class CameraMaster():
 
 
 class CameraImageSender(threading.Thread):
-    def __init__(self, camera_number, camera_name, cap):
+    def __init__(self, camera_number, camera_name, cap, user_token):
         self.logger = logging.getLogger("app." + __name__)
         self.stop_flag = False
         self.camera_number = camera_number
         self.camera_name = camera_name
         self.cap = cap
-        ul = user_login.UserLogin(self)
-        self.logger.info(self.camera_name + ' login...')
-        ul.wait_for_login()
-        self.token = ul.user_token
+        self.token = user_token
         if not self.token:
             self.stop_flag = True
             self.error = 'No_Token'
