@@ -159,7 +159,7 @@ class Sender(base_sender.BaseSender):
             except serial.serialutil.SerialException:
                 self.logger.warning("Makerbot is retrying " + text)
             except Exception as e:
-                self.logger.warning("Makerbot can't continue because of: " + e.message)
+                self.logger.warning("Makerbot can't continue because of: %s %s" % (str(e), e.message))
                 self.error_code = 1
                 self.error_message = e.message
                 self.close()
