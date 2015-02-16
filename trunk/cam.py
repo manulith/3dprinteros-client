@@ -20,8 +20,8 @@ class CameraMaster():
         signal.signal(signal.SIGTERM, self.intercept_signal)
         self.stop_flag = False
         self.cameras = []
-        ul = user_login.UserLogin(self)
         self.logger.info('Camera module login...')
+        ul = user_login.UserLogin(self)
         ul.wait_for_login()
         self.user_token = ul.user_token
         if len(self.get_camera_names()) != self.get_number_of_cameras():
