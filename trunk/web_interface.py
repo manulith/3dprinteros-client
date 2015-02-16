@@ -58,7 +58,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 if not pi.printer_token:
                     printer = printer + '<br>' + 'Waiting type selection from server'
                 if pi.report:
-                    printer = printer + '<br>' + pi.report['state']
+                    printer = printer + '<br>' + pi.report('state')
                 printers_list.append(printer)
             printers = ''.join(map(lambda x: "<p>" + x + "</p>", printers_list))
             page = page.replace('!!!PRINTERS!!!', printers)
