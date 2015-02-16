@@ -12,6 +12,7 @@ class UserLogin:
     def __init__(self, parent_obj):
         self.logger = logging.getLogger("app." + __name__)
         self.parent = parent_obj
+        self.login = None
         self.user_token = None
         login, password = utils.read_login()
         if login:
@@ -29,6 +30,7 @@ class UserLogin:
                 all_profiles = json.loads(profiles_str)
                 config.update_profiles(all_profiles)
                 if utils.write_login(login, password):
+                    self.login = login # for web_interface to display
                     self.user_token = answer["user_token"]
                     self.logger.info("Successful login from user " + login, extra={'login': login})
                     return
