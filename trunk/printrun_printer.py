@@ -101,14 +101,9 @@ class Sender(base_sender.BaseSender):
         counter = steps_in_cycle
         while not self.stop_flag:
             if counter >= steps_in_cycle:
-                for extruder_num in range(0, self.profile['extruder_count'] + 1):
-                    try:
-                        self.printcore.send_now('M105 T' + str(extruder_num))
-                        # self.printcore.send_now('M114')
-                    except:
-                        pass
-                    time.sleep(0.01)
-                    counter = 0
+                self.printcore.send_now('M105 T0')
+                time.sleep(0.01)
+                counter = 0
             time.sleep(wait_step)
             counter += 1
 
