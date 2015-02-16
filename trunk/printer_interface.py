@@ -126,7 +126,9 @@ class PrinterInterface(threading.Thread):
         while not self.stop_flag and self.printer:
             report = self.state_report()
             self.report = report # for web_interface
-            message = (self.printer_token, report, self.acknowledge, self.sender_error)
+            message = [self.printer_token, report, self.acknowledge, self.sender_error]
+            if not message[2] and self.printer:
+                message[2] = {"code": self.printer.error_code, "message": self.printer.error_message}
             self.logger.debug("Requesting with: %s" % str(message))
             if self.printer.is_operational():
                 answer = http_client.send(http_client.package_command_request, message)
