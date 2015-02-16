@@ -21,22 +21,24 @@ class Sender(base_sender.BaseSender):
         #self.mb = {'preheat': False, 'heat_shutdown': False}
         self.logger = logging.getLogger('app.' + __name__)
         self.logger.info('Makerbot printer created')
-        self.parser = None
-        self.cancel_flag = False
         self.execution_lock = threading.Lock()
         self.buffer_lock = threading.Lock()
+        self.parser = None
         try:
             self.parser = self.create_parser()
-            self.execute(lambda: self.parser.s3g.abort_immediately())
+            time.sleep(0.1)
             self.parser.state.values["build_name"] = '3DPrinterOS'
         except Exception as e:
             self.error_code = 'No connection'
             self.error_message = str(e)
             raise RuntimeError("No connection to makerbot printer %s" % str(profile))
         else:
-            self.sending_thread = threading.Thread(target=self.send_gcodes, name='PR')
-            self.sending_thread.start()
+            self.stop_flag = False
+            self.pause_flag = False
             self.printing_flag = False
+            self.cancel_flag = False
+            self.sending_thread = threading.Thread(target=self.send_gcodes)
+            self.sending_thread.start()
 
     def create_parser(self):
         factory = makerbot_driver.MachineFactory()
@@ -63,6 +65,7 @@ class Sender(base_sender.BaseSender):
 
     # length argument is used for unification with Printrun. DON'T REMOVE IT!
     def set_total_gcodes(self, length=0):
+        self.execute(lambda: self.parser.s3g.abort_immediately())
         self.parser.state.values["build_name"] = '3DPrinterOS'
         self.parser.state.percentage = 0
         self.logger.info('Begin of GCodes')
@@ -185,6 +188,9 @@ class Sender(base_sender.BaseSender):
         self.buffer.clear()
         self.execute(lambda: self.parser.s3g.reset())
         self.execute(lambda: self.parser.s3g.clear_buffer())
+
+    def is_paused(self):
+        return self.pause_flag
 
     def is_error(self):
         return self.error_code

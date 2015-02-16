@@ -180,10 +180,11 @@ class PrinterInterface(threading.Thread):
 
     def close_printer_sender(self):
         if self.printer:
-            self.logger.info('Closing ' + str(self.printer_profile))
-            self.printer.close()
-            self.printer = None
-            self.logger.info('...closed.')
+            if not self.printer.stop_flag:
+                self.logger.info('Closing ' + str(self.printer_profile))
+                self.printer.close()
+                self.printer = None
+                self.logger.info('...closed.')
         else:
             self.logger.debug('No printer module to close')
 
