@@ -40,6 +40,7 @@ class Sender(base_sender.BaseSender):
             self.printcore.onlinecb = self.onlinecb
             self.printcore.errorcb = self.errorcb
             self.printcore.connect(self.profile['COM'], baudrate)
+            time.sleep(0.1)
             if not self.printcore.printer:
                 self.logger.warning("Error connecting to printer at %i" % baudrate)
                 self.printcore.disconnect()
