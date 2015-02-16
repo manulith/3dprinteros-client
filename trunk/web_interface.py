@@ -54,11 +54,12 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                     profile = {'alias': "", 'name': 'Unknown printer %s:%s %s' % (pi.usb_info['PID'], pi.usb_info['VID'], snr)}
                 else:
                     profile = pi.printer_profile
-                printers_list.append('<b>%s</b> %s' % (profile['name'], snr))
+                printer = '<b>%s</b> %s' % (profile['name'], snr)
                 if not pi.printer_token:
-                    printers_list.append('Waiting type selection from server')
+                    printer = printer + '<br>' + 'Waiting type selection from server'
                 if pi.report:
-                    printers_list.append(str(pi.report['state']))
+                    printer = printer + '<br>' + pi.report['state']
+                printers_list.append(printer)
             printers = ''.join(map(lambda x: "<p>" + x + "</p>", printers_list))
             page = page.replace('!!!PRINTERS!!!', printers)
             self.write_with_autoreplace(page)
