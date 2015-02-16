@@ -22,9 +22,6 @@ def load_config():
             return config
 
 def update_config(config):
-    path = utils.get_paths_to_settings_folder()[0]
-    if not os.path.isdir(path):
-        os.mkdir(path)
     with open(get_config_file_path(), 'w') as config_file:
         try:
             jdata = json.dumps(config)
@@ -34,6 +31,9 @@ def update_config(config):
             config_file.write(jdata)
 
 def update_profiles(profiles):
+    path = utils.get_paths_to_settings_folder()[0]
+    if not os.path.isdir(path):
+        os.mkdir(path)
     with open(get_profiles_file_path(), 'w') as profiles_file:
         try:
             jdata = json.dumps(profiles)

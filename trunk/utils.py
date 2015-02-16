@@ -278,8 +278,6 @@ def send_all_snapshots():
 def pack_info_zip(package_name, path, *args):
     logger = logging.getLogger('app.' + __name__)
     path = path
-    if not os.path.isdir(path):
-        os.mkdir(path)
     package_path = os.path.join(path, package_name)
     if os.path.exists(package_path):
         logger.warning(package_name + ' found in the working dir.')
