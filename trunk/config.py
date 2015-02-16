@@ -1,6 +1,6 @@
 import os
 import json
-
+import utils
 # use import config ; config.config to get config
 
 def get_config_file_path():
@@ -22,6 +22,9 @@ def load_config():
             return config
 
 def update_config(config):
+    path = utils.get_paths_to_settings_folder()[0]
+    if not os.path.isdir(path):
+        os.mkdir(path)
     with open(get_config_file_path(), 'w') as config_file:
         try:
             jdata = json.dumps(config)

@@ -133,7 +133,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.write_with_autoreplace(message)
 
     def process_logout(self):
-        paths = utils.get_paths_to_login_info()
+        paths = utils.get_paths_to_settings_folder()
         for path in paths:
             login_info_path = os.path.join(path, 'login_info.bin')
             if os.path.isfile(login_info_path) == True:
