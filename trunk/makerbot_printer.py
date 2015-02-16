@@ -156,7 +156,7 @@ class Sender(base_sender.BaseSender):
             except (makerbot_driver.BufferOverflowError):
                 buffer_overflow_counter += 1
                 time.sleep(self.BUFFER_OVERFLOW_WAIT)
-            except (serial.serialutil.SerialException, makerbot_driver.ProtocolError):
+            except serial.serialutil.SerialException:
                 self.logger.warning("Makerbot is retrying " + text)
             except Exception as e:
                 self.logger.warning("Makerbot can't continue because of: " + e.message)
