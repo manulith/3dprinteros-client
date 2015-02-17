@@ -106,7 +106,9 @@ class PrinterInterface(threading.Thread):
                     if data_dict.get('is_link', False):
                         payload = http_client.download(payload)
                         if not payload:
+                            self.sender_error = {"code": 777, "message": "Can't download file from storage"}
                             return {"number": number, "result": False}
+
                     elif "command" in ("gcodes", "binary_file"):
                         payload = base64.b64decode(payload)
                     arguments = []

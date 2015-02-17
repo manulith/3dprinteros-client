@@ -63,7 +63,6 @@ class Sender(base_sender.BaseSender):
                             self.printcore.send_now(gcode)
                         self.logger.info("...done homing")
                         return True
-
                 self.logger.warning("Timeout while waiting for printer online. Reseting and reconnecting...")
                 self.reset()
                 time.sleep(2)
