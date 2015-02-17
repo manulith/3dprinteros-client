@@ -127,7 +127,7 @@ class PrinterInterface(threading.Thread):
             report = self.state_report()
             self.report = report # for web_interface
             message = [self.printer_token, report, self.acknowledge, self.sender_error]
-            if not message[3] and self.printer:
+            if not message[3] and self.printer and self.printer.error_code:
                 message[3] = {"code": self.printer.error_code, "message": self.printer.error_message}
             self.logger.debug("Requesting with: %s" % str(message))
             if self.printer.is_operational():
