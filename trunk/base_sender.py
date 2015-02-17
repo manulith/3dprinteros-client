@@ -3,7 +3,7 @@ import collections
 class BaseSender:
 
     def __init__(self, profile, usb_info):
-        self.stop_flag = True
+        self.stop_flag = False
         self.profile = profile
         self.usb_info = usb_info
         self.error_code = None
