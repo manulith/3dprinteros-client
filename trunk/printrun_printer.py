@@ -126,7 +126,6 @@ class Sender(base_sender.BaseSender):
     def recvcb(self, line):
         self.logger.debug(line)
         if line[0] == 'T':
-            self.online_flag = True
             self.fetch_temps(line)
         # elif line[0:2] == 'ok':
         #     self.ready_flag = True
