@@ -40,6 +40,9 @@ class Sender(base_sender.BaseSender):
             self.printcore = printcore()
             self.printcore.onlinecb = self.onlinecb
             self.printcore.errorcb = self.errorcb
+            self.printcore.tempcb = self.tempcb
+            self.printcore.recvcb = self.recvcb
+            self.printcore.sendcb = self.sendcb
             self.printcore.connect(self.profile['COM'], baudrate)
             time.sleep(0.1)
             if not self.printcore.printer:
@@ -54,9 +57,6 @@ class Sender(base_sender.BaseSender):
                         return False
                     if self.online_flag:
                         self.logger.info("Successful connection to printer %s:%i" % (self.profile['COM'], baudrate))
-                        self.printcore.tempcb = self.tempcb
-                        self.printcore.recvcb = self.recvcb
-                        self.printcore.sendcb = self.sendcb
                         time.sleep(0.1)
                         self.logger.info("Sending homing gcodes...")
                         for gcode in self.profile["end_gcodes"]:
@@ -75,12 +75,12 @@ class Sender(base_sender.BaseSender):
 
     def reset(self):
         if self.printcore:
-            self.logger.debug("Sending M999...")
-            self.printcore.send_now("M999")
-            time.sleep(1)
+            #self.logger.debug("Sending M999...")
+            #self.printcore.send_now("M999")
+            #time.sleep(1)
             self.logger.debug("Resetting...")
             self.printcore.reset()
-            time.sleep(1)
+            time.sleep(0.2)
             self.logger.debug("Disconnecting...")
             self.printcore.disconnect()
             self.logger.debug("Successful reset and disconnect")
@@ -228,16 +228,17 @@ class Sender(base_sender.BaseSender):
         return self.error_code
 
     def is_operational(self):
-        if self.printcore.printing:
-            return self.printcore.read_thread and \
-               self.printcore.read_thread.is_alive() and \
-               self.printcore.print_thread and \
-               self.printcore.print_thread.is_alive()
-        elif self.printcore.paused or self.printcore.online:
-            return self.printcore.read_thread and \
-               self.printcore.read_thread.is_alive() and \
-               self.printcore.send_thread and \
-               self.printcore.send_thread.is_alive()
+        if self.printcore:
+            if self.printcore.printing:
+                return self.printcore.read_thread and \
+                   self.printcore.read_thread.is_alive() and \
+                   self.printcore.print_thread and \
+                   self.printcore.print_thread.is_alive()
+            elif self.printcore.paused or self.printcore.online:
+                return self.printcore.read_thread and \
+                   self.printcore.read_thread.is_alive() and \
+                   self.printcore.send_thread and \
+                   self.printcore.send_thread.is_alive()
         return False
 
     def get_percent(self):
