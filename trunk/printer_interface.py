@@ -108,7 +108,6 @@ class PrinterInterface(threading.Thread):
                         if not payload:
                             self.sender_error = {"code": 777, "message": "Can't download file from storage"}
                             return {"number": number, "result": False}
-
                     elif "command" in ("gcodes", "binary_file"):
                         payload = base64.b64decode(payload)
                     arguments = []

@@ -150,8 +150,8 @@ class Sender(base_sender.BaseSender):
         self.logger.warning("Error occurred in printrun: " + str(error))
         self.error_code = 1
         self.error_message = error
-        if "M999" in error:
-            self.reset()
+        #if "M999" in error:
+        #    self.reset()
 
     def fetch_temps(self, wait_temp_line):
         match = self.wait_tool_temp_re.match(wait_temp_line)
