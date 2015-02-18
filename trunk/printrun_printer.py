@@ -101,7 +101,7 @@ class Sender(base_sender.BaseSender):
         counter = steps_in_cycle
         while not self.stop_flag:
             if counter >= steps_in_cycle:
-                self.printcore.send_now('M105 T0')
+                self.printcore.send_now('M105')
                 time.sleep(0.01)
                 counter = 0
             time.sleep(wait_step)
@@ -123,7 +123,6 @@ class Sender(base_sender.BaseSender):
         #self.logger.debug(self.debug_position())
 
     def recvcb(self, line):
-        print 1
         self.logger.debug(line)
         if line[0] == 'T':
             self.fetch_temps(line)
@@ -131,20 +130,19 @@ class Sender(base_sender.BaseSender):
         #     self.ready_flag = True
 
     def sendcb(self, command, gline):
-        self.logger.info("Executing command: " + command)
-        # if 'M104' in command or 'M109' in command:
-        #     tool = 0
-        #     tool_match = re.match('.+T(\d+)', command)
-        #     if tool_match:
-        #         tool = int(tool_match.group(1))
-        #     temp_match = re.match('.+S([\d\.]+)', command)
-        #     if temp_match:
-        #         self.tool_target_temp[tool] = float(temp_match.group(1))
-        #
-        # elif 'M140' in command or 'M190' in command:
-        #     temp_match = re.match('.+S([\d\.]+)', command)
-        #     if temp_match:
-        #         self.platform_target_temp = float(temp_match.group(1))
+        self.logger.debug("Executing command: " + command)
+        if 'M104' in command or 'M109' in command:
+            tool = 0
+            tool_match = re.match('.+T(\d+)', command)
+            if tool_match:
+                tool = int(tool_match.group(1))
+            temp_match = re.match('.+S([\d\.]+)', command)
+            if temp_match:
+                self.target_temps[tool + 1] = float(temp_match.group(1))
+        elif 'M140' in command or 'M190' in command:
+            temp_match = re.match('.+S([\d\.]+)', command)
+            if temp_match:
+                self.target_temps[0] = float(temp_match.group(1))
 
     def errorcb(self, error):
         self.logger.warning("Error occurred in printrun: " + str(error))
