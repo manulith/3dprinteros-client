@@ -1,3 +1,4 @@
+import re
 import time
 import logging
 import threading
@@ -21,22 +22,25 @@ class Sender(base_sender.BaseSender):
         #self.mb = {'preheat': False, 'heat_shutdown': False}
         self.logger = logging.getLogger('app.' + __name__)
         self.logger.info('Makerbot printer created')
-        self.parser = None
-        self.cancel_flag = False
+        self.init_target_temp_regexps()
         self.execution_lock = threading.Lock()
         self.buffer_lock = threading.Lock()
+        self.parser = None
         try:
             self.parser = self.create_parser()
-            self.execute(lambda: self.parser.s3g.abort_immediately())
+            time.sleep(0.1)
             self.parser.state.values["build_name"] = '3DPrinterOS'
         except Exception as e:
             self.error_code = 'No connection'
             self.error_message = str(e)
             raise RuntimeError("No connection to makerbot printer %s" % str(profile))
         else:
-            self.sending_thread = threading.Thread(target=self.send_gcodes, name='PR')
-            self.sending_thread.start()
+            self.stop_flag = False
+            self.pause_flag = False
             self.printing_flag = False
+            self.cancel_flag = False
+            self.sending_thread = threading.Thread(target=self.send_gcodes)
+            self.sending_thread.start()
 
     def create_parser(self):
         factory = makerbot_driver.MachineFactory()
@@ -47,9 +51,9 @@ class Sender(base_sender.BaseSender):
         parser.environment.update(variables)
         return parser
 
-    # def init_target_temp_regexps(self):
-    #     self.platform_ttemp_regexp = re.compile('\s*M109\s*S(\d+)\s*T(\d+)')
-    #     self.extruder_ttemp_regexp = re.compile('\s*M104\s*S(\d+)\s*T(\d+)')
+    def init_target_temp_regexps(self):
+        self.platform_ttemp_regexp = re.compile('\s*M109\s*S(\d+)\s*T(\d+)')
+        self.extruder_ttemp_regexp = re.compile('\s*M104\s*S(\d+)\s*T(\d+)')
 
     def append_position_and_lift_extruder(self):
         position = self.get_position()
@@ -63,6 +67,7 @@ class Sender(base_sender.BaseSender):
 
     # length argument is used for unification with Printrun. DON'T REMOVE IT!
     def set_total_gcodes(self, length=0):
+        self.execute(lambda: self.parser.s3g.abort_immediately())
         self.parser.state.values["build_name"] = '3DPrinterOS'
         self.parser.state.percentage = 0
         self.logger.info('Begin of GCodes')
@@ -74,6 +79,8 @@ class Sender(base_sender.BaseSender):
         for code in gcodes:
             with self.buffer_lock:
                 self.buffer.append(code)
+        #with self.buffer_lock:
+            #self.buffer.extend(gcodes)
         self.logger.info('Enqueued block: ' + str(len(gcodes)) + ', total: ' + str(len(self.buffer)))
 
     def cancel(self, go_home=True):
@@ -148,6 +155,7 @@ class Sender(base_sender.BaseSender):
                     text = command
                     self.printing_flag = True
                     self.parser.execute_line(command)
+                    self.set_target_temps(command)
                     self.logger.debug("Executing: " + command)
                     result = None
                 else:
@@ -186,22 +194,25 @@ class Sender(base_sender.BaseSender):
         self.execute(lambda: self.parser.s3g.reset())
         self.execute(lambda: self.parser.s3g.clear_buffer())
 
+    def is_paused(self):
+        return self.pause_flag
+
     def is_error(self):
         return self.error_code
 
     def is_operational(self):
         return not self.is_error() and self.parser and self.parser.s3g.is_open() and self.sending_thread.is_alive()
 
-    # def set_target_temps(self, command):
-    #     result = self.platform_ttemp_regexp.match(command)
-    #     if result is not None:
-    #         self.target_temps[0] = int(result.group(1))
-    #         self.logger.info('Heating platform to ' + str(result.group(1)))
-    #     result = self.extruder_ttemp_regexp.match(command)
-    #     if result is not None:
-    #         extruder_number = int(result.group(2)) + 1
-    #         self.target_temps[extruder_number] = int(result.group(1))
-    #         self.logger.info('Heating toolhead ' + str(extruder_number) + ' to ' + str(result.group(1)))
+    def set_target_temps(self, command):
+        result = self.platform_ttemp_regexp.match(command)
+        if result:
+            self.target_temps[0] = int(result.group(1))
+            self.logger.info('Heating platform to ' + str(result.group(1)))
+        result = self.extruder_ttemp_regexp.match(command)
+        if result:
+            extruder_number = int(result.group(2)) + 1
+            self.target_temps[extruder_number] = int(result.group(1))
+            self.logger.info('Heating toolhead ' + str(extruder_number) + ' to ' + str(result.group(1)))
 
     def send_gcodes(self):
         last_time = time.time()

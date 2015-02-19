@@ -73,6 +73,9 @@ class PrinterInterface(threading.Thread):
     def connect_to_printer(self):
         printer_driver = __import__(self.printer_profile['driver'])
         self.logger.info("Connecting with profile: " + str(self.printer_profile))
+        if "baudrates" in self.printer_profile and not self.usb_info.get("COM", False): # indication of serial printer, but no serial port
+            self.sender_error = {"code": 901, "message": "No serial port for serial printer. No drivers or printer firmware hanged."}
+            return
         try:
             printer = printer_driver.Sender(self.printer_profile, self.usb_info)
         except RuntimeError as e:
@@ -103,7 +106,8 @@ class PrinterInterface(threading.Thread):
                     if data_dict.get('is_link', False):
                         payload = http_client.download(payload)
                         if not payload:
-                            return {"number": number, "result": False}
+                            self.sender_error = {"code": 777, "message": "Can't download file from storage"}
+                            return { "number": number, "result": False }
                     elif "command" in ("gcodes", "binary_file"):
                         payload = base64.b64decode(payload)
                     arguments = []
@@ -126,7 +130,9 @@ class PrinterInterface(threading.Thread):
         while not self.stop_flag and self.printer:
             report = self.state_report()
             self.report = report # for web_interface
-            message = (self.printer_token, report, self.acknowledge, self.sender_error)
+            message = [self.printer_token, report, self.acknowledge, self.sender_error]
+            if not message[3] and self.printer and self.printer.error_code:
+                message[3] = {"code": self.printer.error_code, "message": self.printer.error_message}
             self.logger.debug("Requesting with: %s" % str(message))
             if self.printer.is_operational():
                 answer = http_client.send(http_client.package_command_request, message)
@@ -161,7 +167,10 @@ class PrinterInterface(threading.Thread):
             else:
                 state = "ready"
         else:
-            state = "error"
+            if self.sender_error:
+                state = "error"
+            else:
+                state = "connecting"
         return state
 
     def state_report(self, outer_state=None):
@@ -177,15 +186,17 @@ class PrinterInterface(threading.Thread):
             return report
 
     def close_printer_sender(self):
-        self.logger.info('Closing ' + str(self.printer_profile))
-        self.printer.close()
-        self.printer = None
-        self.logger.info('...closed.')
+        if self.printer:
+            if not self.printer.stop_flag:
+                self.logger.info('Closing ' + str(self.printer_profile))
+                self.printer.close()
+                self.printer = None
+                self.logger.info('...closed.')
+        else:
+            self.logger.debug('No printer module to close')
 
     def close(self):
         self.stop_flag = True
-        if self.printer:
-            self.close_printer_sender()
-        else:
-            self.logger.debug('Nothing to close')
+        self.close_printer_sender()
+
 

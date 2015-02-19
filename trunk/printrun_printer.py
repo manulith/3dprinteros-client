@@ -26,6 +26,7 @@ class Sender(base_sender.BaseSender):
             self.total_gcodes = 0
             self.temp_request_thread = threading.Thread(target=self.temp_request)
             self.temp_request_thread.start()
+            self.stop_flag = False
             for gcode in self.profile['end_gcodes']:
                 self.printcore.send_now(gcode)
 
@@ -39,6 +40,9 @@ class Sender(base_sender.BaseSender):
             self.printcore = printcore()
             self.printcore.onlinecb = self.onlinecb
             self.printcore.errorcb = self.errorcb
+            self.printcore.tempcb = self.tempcb
+            self.printcore.recvcb = self.recvcb
+            self.printcore.sendcb = self.sendcb
             self.printcore.connect(self.profile['COM'], baudrate)
             time.sleep(0.1)
             if not self.printcore.printer:
@@ -53,16 +57,12 @@ class Sender(base_sender.BaseSender):
                         return False
                     if self.online_flag:
                         self.logger.info("Successful connection to printer %s:%i" % (self.profile['COM'], baudrate))
-                        self.printcore.tempcb = self.tempcb
-                        self.printcore.recvcb = self.recvcb
-                        self.printcore.sendcb = self.sendcb
                         time.sleep(0.1)
                         self.logger.info("Sending homing gcodes...")
                         for gcode in self.profile["end_gcodes"]:
                             self.printcore.send_now(gcode)
                         self.logger.info("...done homing")
                         return True
-
                 self.logger.warning("Timeout while waiting for printer online. Reseting and reconnecting...")
                 self.reset()
                 time.sleep(2)
@@ -74,12 +74,12 @@ class Sender(base_sender.BaseSender):
 
     def reset(self):
         if self.printcore:
-            self.logger.debug("Sending M999...")
-            self.printcore.send_now("M999")
-            time.sleep(1)
+            #self.logger.debug("Sending M999...")
+            #self.printcore.send_now("M999")
+            #time.sleep(1)
             self.logger.debug("Resetting...")
             self.printcore.reset()
-            time.sleep(1)
+            time.sleep(0.2)
             self.logger.debug("Disconnecting...")
             self.printcore.disconnect()
             self.logger.debug("Successful reset and disconnect")
@@ -101,14 +101,9 @@ class Sender(base_sender.BaseSender):
         counter = steps_in_cycle
         while not self.stop_flag:
             if counter >= steps_in_cycle:
-                for extruder_num in range(0, self.profile['extruder_count'] + 1):
-                    try:
-                        self.printcore.send_now('M105 T' + str(extruder_num))
-                        # self.printcore.send_now('M114')
-                    except:
-                        pass
-                    time.sleep(0.01)
-                    counter = 0
+                self.printcore.send_now('M105')
+                time.sleep(0.01)
+                counter = 0
             time.sleep(wait_step)
             counter += 1
 
@@ -130,33 +125,31 @@ class Sender(base_sender.BaseSender):
     def recvcb(self, line):
         self.logger.debug(line)
         if line[0] == 'T':
-            self.online_flag = True
             self.fetch_temps(line)
         # elif line[0:2] == 'ok':
         #     self.ready_flag = True
 
     def sendcb(self, command, gline):
-        self.logger.info("Executing command: " + command)
-        # if 'M104' in command or 'M109' in command:
-        #     tool = 0
-        #     tool_match = re.match('.+T(\d+)', command)
-        #     if tool_match:
-        #         tool = int(tool_match.group(1))
-        #     temp_match = re.match('.+S([\d\.]+)', command)
-        #     if temp_match:
-        #         self.tool_target_temp[tool] = float(temp_match.group(1))
-        #
-        # elif 'M140' in command or 'M190' in command:
-        #     temp_match = re.match('.+S([\d\.]+)', command)
-        #     if temp_match:
-        #         self.platform_target_temp = float(temp_match.group(1))
+        self.logger.debug("Executing command: " + command)
+        if 'M104' in command or 'M109' in command:
+            tool = 0
+            tool_match = re.match('.+T(\d+)', command)
+            if tool_match:
+                tool = int(tool_match.group(1))
+            temp_match = re.match('.+S([\d\.]+)', command)
+            if temp_match:
+                self.target_temps[tool + 1] = float(temp_match.group(1))
+        elif 'M140' in command or 'M190' in command:
+            temp_match = re.match('.+S([\d\.]+)', command)
+            if temp_match:
+                self.target_temps[0] = float(temp_match.group(1))
 
     def errorcb(self, error):
         self.logger.warning("Error occurred in printrun: " + str(error))
         self.error_code = 1
         self.error_message = error
-        if "M999" in error:
-            self.reset()
+        #if "M999" in error:
+        #    self.reset()
 
     def fetch_temps(self, wait_temp_line):
         match = self.wait_tool_temp_re.match(wait_temp_line)
@@ -232,16 +225,17 @@ class Sender(base_sender.BaseSender):
         return self.error_code
 
     def is_operational(self):
-        if self.printcore.printing:
-            return self.printcore.read_thread and \
-               self.printcore.read_thread.is_alive() and \
-               self.printcore.print_thread and \
-               self.printcore.print_thread.is_alive()
-        elif self.printcore.paused or self.printcore.online:
-            return self.printcore.read_thread and \
-               self.printcore.read_thread.is_alive() and \
-               self.printcore.send_thread and \
-               self.printcore.send_thread.is_alive()
+        if self.printcore:
+            if self.printcore.printing:
+                return self.printcore.read_thread and \
+                   self.printcore.read_thread.is_alive() and \
+                   self.printcore.print_thread and \
+                   self.printcore.print_thread.is_alive()
+            elif self.printcore.paused or self.printcore.online:
+                return self.printcore.read_thread and \
+                   self.printcore.read_thread.is_alive() and \
+                   self.printcore.send_thread and \
+                   self.printcore.send_thread.is_alive()
         return False
 
     def get_percent(self):
@@ -254,9 +248,6 @@ class Sender(base_sender.BaseSender):
         self.stop_flag = True
         self.logger.debug('Printrun sender is closing')
         if self.printcore:
-            if self.printcore.printer:
-                for gcode in self.profile["end_codes"]:
-                    self.printcore.send_now(gcode)
             self.printcore.disconnect()
         self.logger.debug('(Joining printrun threads...')
         if self.temp_request_thread:

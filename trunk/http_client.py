@@ -124,7 +124,7 @@ def request(connection, payload, path, method, headers):
     logger.warning("Warning: http request failed!")
 
 def send(packager, payloads):
-    if type(payloads) != tuple:
+    if type(payloads) not in (tuple, list):
         payloads = [ payloads ]
     connection = connect(URL)
     if connection:

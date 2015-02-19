@@ -3,15 +3,15 @@ import collections
 class BaseSender:
 
     def __init__(self, profile, usb_info):
+        self.stop_flag = False
         self.profile = profile
         self.usb_info = usb_info
-        self.buffer = collections.deque()
-        self.stop_flag = False
-        self.pause_flag = False
         self.error_code = None
         self.error_message = ''
         self.temps = [0,0]
         self.target_temps = [0,0]
+        self.total_gcodes = None
+        self.buffer = collections.deque()
         #self._position = [0.00,0.00,0.00]
 
     def get_temps(self):
