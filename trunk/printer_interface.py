@@ -167,7 +167,10 @@ class PrinterInterface(threading.Thread):
             else:
                 state = "ready"
         else:
-            state = "error"
+            if self.sender_error:
+                state = "error"
+            else:
+                state = "connecting"
         return state
 
     def state_report(self, outer_state=None):
