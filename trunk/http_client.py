@@ -1,25 +1,27 @@
 import re
+import ssl
 import json
+import uuid
 import httplib
 import logging
-import requests
 
 import config
 
+MACADDR = hex(uuid.getnode())
 CONNECTION_TIMEOUT = 6
 URL = config.config['URL']
 AUX_URL = config.config['AUX_URL']
-HTTPS_FLAG = config.config['HTTPS']
-user_login_path = "/user_login"
-printer_login_path = "/printer_login"
-command_path = "/command"
+streamer_prefix = "/streamerapi"
+user_login_path = streamer_prefix + "/user_login"
+printer_login_path = streamer_prefix + "/printer_login"
+command_path = streamer_prefix + "/command"
+camera_path = streamer_prefix + "/camera" #json['image': base64_image ]
 cloudsync_path = "/autoupload"
-token_jobs_path = "/getJobs"
-token_login_path = "/sendRequestToken" #json['token': token]
-token_camera_path = "/oldliveview/setLiveView" #json['image': basebase64_image ]
-token_send_logs_path = "/oldliveview/sendLogs"
+token_send_logs_path = "/oldliveview/sendLogs" #rename me!
 
 domain_path_re = re.compile("https?:\/\/(.+)(\/.*)")
+
+#utils
 
 def load_json(jdata):
     logger = logging.getLogger('app.' +__name__)
@@ -33,56 +35,59 @@ def load_json(jdata):
         else:
             logger.error("Data should be dictionary: " + str(data))
 
-# old protocol
+#packagers
 
-def token_login(token):
-    data = { 'token': token }
-    return json.dumps(data), token_login_path
-
-# at same time it sends status report
-def token_job_request(token, state):
-    #state = app.App().state
-    data = { 'token': token, "fullbuffer": False, "state": state } #TODO get info about fullbuffers
-    return json.dumps(data), token_jobs_path
-
-def token_camera_request(token, jpg_image):
-    # right now images are base64 encoded. don't ask me why.
-    data = { 'user_token': token, 'image': jpg_image } #TODO get info about fullbuffers
-    return json.dumps(data), token_camera_path
-
-# new protocol
-
-def package_users_login(username, password, error=[None,None]):
-    data = {'login': {'user': username, 'password': password}, 'error': error}
+def package_user_login(username, password, platform, error = None):
+    data = { 'login': {'user': username, 'password': password}, 'host_mac': MACADDR, platform: platform}
+    if error:
+        data['error'] = error
     return json.dumps(data), user_login_path
 
-def package_printer_login(user_token, printer_profile, error=[None,None]):
-    data = { 'user_token': user_token, 'printer': printer_profile, 'error': error }
+def package_printer_login(user_token, printer_profile, error = None):
+    data = { 'user_token': user_token, 'printer': printer_profile }
+    if error:
+        data['error'] = error
     return json.dumps(data), printer_login_path
 
-def package_command_request(printer_token, state, error=[None,None]):
-    data = { 'printer_token': printer_token, 'state': state, 'error': error }
+def package_command_request(printer_token, state, acknowledge=None, error = None):
+    data = { 'printer_token': printer_token, 'report': state, 'error': error }
+    if acknowledge:
+        data['command_ack'] = acknowledge
+    if error:
+        data['error'] = error
     return json.dumps(data), command_path
+
+def package_camera_send(user_token, camera_number, camera_name, data, error = None):
+    data = {'user_token': user_token, 'camera_number': camera_number, 'camera_name': camera_name, 'file_data': data, 'host_mac': MACADDR}
+    if error:
+        data['error'] = error
+    return json.dumps(data), camera_path
 
 def package_cloud_sync_upload(token, file_data, file_name):
     data = { 'user_token': token, 'file_data': file_data}
     return json.dumps(data), cloudsync_path
 
-# end of new protocol
+#senders
 
-def connect(URL):
+def connect(URL, https_mode = config.config['HTTPS']):
     logger = logging.getLogger('app.' +__name__)
-    logger.debug("{ Connecting...")
+    #logger.debug("{ Connecting...")
     try:
-        if HTTPS_FLAG:
+        if https_mode:
+            #if ssl_has_context:
+            #    no_verify_context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+            #    no_verify_context.verify_mode = ssl.CERT_NONE
+            #else:
+            #    no_verify_context = None
             connection = httplib.HTTPSConnection(URL, port = 443, timeout = CONNECTION_TIMEOUT)
         else:
             connection = httplib.HTTPConnection(URL, port = 80, timeout = CONNECTION_TIMEOUT)
     except httplib.error as e:
         logger.info("Error during HTTP connection: " + str(e))
-        logger.debug("...failed }")
+        #logger.debug("...failed }")
+        logger.warning("Warning: connection to %s failed." % URL)
     else:
-        logger.debug("...success }")
+        #logger.debug("...success }")
         return connection
 
 def post_request(connection, payload, path, headers=None):
@@ -90,34 +95,36 @@ def post_request(connection, payload, path, headers=None):
         headers = {"Content-Type": "application/json", "Content-Length": str(len(payload))}
     return request(connection, payload, path, 'POST', headers)
 
-def get_request(connection, payload, path, headers=""):
+def get_request(connection, payload, path, headers={}):
     return request(connection, payload, path, 'GET', headers)
 
 def request(connection, payload, path, method, headers):
     logger = logging.getLogger('app.' +__name__)
-    logger.debug("{ Requesting...")
+    #logger.debug("{ Requesting...")
     try:
         connection.request(method, path, payload, headers)
         resp = connection.getresponse()
     except Exception as e:
-        logger.info(("Error during HTTP request:" + str(e)))
-        logger.debug("...failed }")
+        logger.info("Error during HTTP request:" + str(e))
     else:
-        logger.debug("Request status: %s %s" % (resp.status , resp.reason))
-        if resp.status == httplib.OK and resp.reason == "OK":
-            try:
-                received = resp.read()
-            except httplib.error as e:
-                logger.debug("Error reading response: " + str(e))
+        #logger.debug("Request status: %s %s" % (resp.status, resp.reason))
+        try:
+            received = resp.read()
+        except httplib.error as e:
+            logger.debug("Error reading response: " + str(e))
+        else:
+            if resp.status == httplib.OK and resp.reason == "OK":
                 connection.close()
-            else:
-                connection.close()
-                logger.debug("...success }")
+                #logger.debug("...success }")
                 return received
-    logger.debug("...nothing to do }")
+            else:
+                logger.warning("Error: server response is not 200 OK\nMessage:%s" % received)
+        finally:
+            connection.close()
+    logger.warning("Warning: http request failed!")
 
 def send(packager, payloads):
-    if type(payloads) != tuple:
+    if type(payloads) not in (tuple, list):
         payloads = [ payloads ]
     connection = connect(URL)
     if connection:
@@ -126,83 +133,22 @@ def send(packager, payloads):
         if json_answer:
             return load_json(json_answer)
 
+# def download(url):
+#     logger = logging.getLogger('app.' +__name__)
+#     match = domain_path_re.match(url)
+#     logger.info("Downloading payload from" + url)
+#     try:
+#         domain, path = match.groups()
+#     except AttributeError:
+#         logger.warning("Unparsable link: " + url)
+#     else:
+#         https_mode = url.startswith("https")
+#         connection = connect(domain, https_mode)
+#         if connection:
+#             logger.debug("Got connection to download server")
+#             return get_request(connection, None, path)
+#         else:
+#             logger.warning("Error: no connection to download server")
+
 def download(url):
-    logger = logging.getLogger('app.' +__name__)
-    match = domain_path_re.match(url)
-    try:
-        domain, path = match.groups()
-    except AttributeError:
-        logger.warning("Unparsable link: " + url)
-    else:
-        connection = connect(domain)
-        if connection:
-            return post_request(connection, "", path)
-
-def multipart_upload(url, payload, file_obj=None):
-    logger = logging.getLogger('app.' +__name__)
-    kwarg = {"data": payload}
-    if file_obj:
-        kwarg.update({"file": file_obj})
-    try:
-        r = requests.post(url, **kwarg)
-    except Exception as e:
-        logger.debug("Error while uploading to server: %s" % str(e))
-    else:
-        print 'Response: ' + r.text
-        return r.status_code == 200
-
-if __name__ == '__main__':
-    import command_processor
-    import printer_interface
-    from app import App
-    App.get_logger()
-    user = "Nobody"
-    password = "qwert"
-    profile = json.loads('{"extruder_count": 1, "baudrate": [250000, 115200], "vids_pids": [["16C0", "0483"], ["2341", "0042"]], "name": "Marlin Firmware", "VID": "2341", "PID": "0042", "end_gcodes": [], "driver": "printrun_printer", "reconnect_on_cancel": false, "Product": null, "SNR": null, "COM": "/dev/ttyACM0", "Manufacturer": null, "force_port_close": false, "print_from_binary": false}')
-    pr_int = printer_interface.PrinterInterface(profile)
-    user_login = ""
-    printer_login = ""
-    while True:
-        user_choice = raw_input('Welcome to test menu:\n' \
-                                'Type 1 for - User login\n' \
-                                'Type 2 for - Printer login\n' \
-                                'Type 3 for - Command request\n')
-        if  '1' in user_choice:
-            answer = send(package_users_login, (user, password))
-            if answer:
-                processor = command_processor.process_user_login
-                result = processor(answer)
-                user_login = result
-            else:
-                print 'No answer'
-        elif '2' in user_choice:
-            if not user_login:
-                print "!First you need to login as user"
-            else:
-                answer = send(package_printer_login, (user_login, profile))
-                if answer:
-                    processor = command_processor.process_printer_login
-                    result = processor(answer)
-                    printer_login = result
-                else:
-                    print 'No answer'
-        elif '3' in user_choice:
-            if not printer_login:
-                print "!First you need to login printer"
-            else:
-                answer = send(package_command_request, printer_login)
-                if answer:
-                    processor = command_processor.process_command_request
-                    result = processor(user_choice)
-                else:
-                    print 'No answer'
-        else:
-            print 'Invalid choice'
-
-        try:
-            print 'Raw answer: ' + str(answer)
-            print 'Processed answer: ' + str(result)
-        except:
-            pass
-
-
+    pass
