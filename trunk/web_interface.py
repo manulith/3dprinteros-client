@@ -66,14 +66,17 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                     elif state == 'printing':
                         color = 'blue'
                         progress = ' | ' + str(report['percent']) + '%'
+                    elif state == 'paused':
+                        color = 'orange'
+                        progress = ' | ' + str(report['percent']) + '%'
                     else:
                         color = 'red'
-                    printer = printer + ' - ' + '<font color="' + color + '">' + state + progress + '</font>'
+                    printer = printer + ' - ' + '<font color="' + color + '">' + state + progress + '</font><br>'
                     temps = report['temps']
                     target_temps = report['target_temps']
                     if temps and target_temps:
                         if len(temps) == 3 and len(target_temps) == 3:
-                            printer = printer + '<br>R Extruder: ' + str(temps[2]) + '/' + str(target_temps[2]) + ' | '
+                            printer = printer + 'R Extruder: ' + str(temps[2]) + '/' + str(target_temps[2]) + ' | '
                         printer = printer + 'L Extruder: ' + str(temps[1]) + '/' + str(target_temps[1]) + ' | ' \
                                   + 'Heated Bed: ' + str(temps[0]) + '/' + str(target_temps[0])
                 printers_list.append(printer)
