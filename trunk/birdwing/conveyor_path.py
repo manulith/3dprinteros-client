@@ -13,7 +13,6 @@ class ConveyorService:
         self.start()
 
     def start(self):
-        conveyor_from_egg.kill_existing_conveyor()
         self.logger.info('Trying to start conveyor service')
         conveyor_loader.prepare_conveyor_import()
         self.server = conveyor_loader.start_conveyor_service()
