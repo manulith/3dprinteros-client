@@ -61,11 +61,11 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                     report = pi.report
                     state = report['state']
                     if state == 'ready':
-                        color = 'darkgreen'
+                        color = 'green'
                     elif state == 'printing':
-                        color = 'darkblue'
+                        color = 'blue'
                     else:
-                        color = 'maroon'
+                        color = 'red'
                     printer = printer + ' - ' + '<font color="' + color + '">' + state + '</font>'
                 printers_list.append(printer)
             printers = ''.join(map(lambda x: "<p>" + x + "</p>", printers_list))
