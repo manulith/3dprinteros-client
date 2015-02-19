@@ -35,24 +35,24 @@ def get_devices():
         try:
             SNR = str(usb.util.get_string(dev, dev.iSerialNumber)) #originaly it's unicode, but this provoke bugs
             if "x" in SNR:
-                SNR = None
-        except Exception as e:
+                 SNR = None
+        except:
             SNR = None
-            logger.warning(e.message)
-        try:
-            manufacturer = dev.manufacturer  # can provoke PIPE ERROR
-        except (usb.core.USBError, AttributeError, NotImplementedError):
-            manufacturer = None
-        try:
-            product = dev.product  # can provoke PIPE ERROR
-        except (usb.core.USBError, AttributeError, NotImplementedError):
-            product = None
+        # try:
+        #     manufacturer = dev.manufacturer  # can provoke PIPE ERROR
+        #     device_dct['Manufacturer'] = manufacturer
+        # except (usb.core.USBError, AttributeError, NotImplementedError):
+        #     pass
+        # try:
+        #     product = dev.product  # can provoke PIPE ERROR
+        #     device_dct['Product'] = product
+        # except (usb.core.USBError, AttributeError, NotImplementedError):
+        #     pass
+
         device_dct['SNR'] = SNR
-        #device_dct['SNR'] = None
-        device_dct['Manufacturer'] = manufacturer
-        device_dct['Product'] = product
         device_dct['COM'] = get_port_by_vid_pid_snr(device_dct['VID'], device_dct['PID'], SNR)
         device_data_dcts.append(device_dct)
+        #dev.close()
         #logger.debug(device_dct)
     return device_data_dcts
 
@@ -74,47 +74,47 @@ def get_port_by_vid_pid_snr(vid, pid, snr=None):
                 return port_dct[0]
     return None
 
-def sort_and_add_profile(devices):
+def sort_devices(devices):
     printers = []
-    profiles = config.config['profiles']
+    profiles = config.load_profiles()
     for device in devices:
         for profile in profiles:
-            for vid_pid in profiles[profile][u'vids_pids']:
-                if vid_pid[0] == device['VID']:
-                    if not vid_pid[1] or vid_pid[1] == device['PID']:
-                        dct = {}
-                        dct.update(profiles[profile])
-                        dct.update(device)
-                        printers.append(dct)
+            if [ device['VID'], device['PID'] ] in profile[u"vids_pids"]:
+                printers.append(device)
+                break
     return printers
 
 def get_printers():
     logger = logging.getLogger('app.' + __name__)
     devices = get_devices()
-    printers = sort_and_add_profile(devices)
-    if len(printers) == 0:
-        printers = get_unknown_printers(devices)
+    printers = sort_devices(devices)
+    # if len(printers) == 0:
+    #     printers = get_unknown_printers(devices)
     logger.info('Detected USB printers: ')
     for printer in printers:
         logger.info(str(printer))
     logger.info('-'*16)
     return printers
 
-
-def get_unknown_printers(devices):
-    devices = filter(lambda x: x['COM'] is not None, devices)
-    printers = []
-    for device in devices:
-        profiles = config.config['profiles']
-        for profile in profiles:
-            if not profiles[profile]['print_from_binary']:
-                dct = { 'guess' : 'true' }
-                dct.update(profiles[profile])
-                dct.update(device)
-                printers.append(dct)
-    return printers
+# def get_unknown_printers(devices):
+#     devices = filter(lambda x: x['COM'] is not None, devices)
+#     printers = []
+#     for device in devices:
+#         profiles = config.config['profiles']
+#         for profile in profiles:
+#             if not profiles[profile]['print_from_binary']:
+#                 dct = { 'guess' : 'true' }
+#                 dct.update(profiles[profile])
+#                 dct.update(device)
+#                 printers.append(dct)
+#     return printers
 
 if __name__ == '__main__':
     import json
-    printers = get_printers()
-    print json.dumps(printers)
+    for dev in get_devices():
+        print dev
+    # printers = get_printers()
+    # print json.dumps(printers)
+    # for printer in printers:
+    #     print "\n"
+    #     print printer

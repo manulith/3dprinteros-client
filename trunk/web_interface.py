@@ -1,17 +1,17 @@
-import threading
+import os
+import urllib
 import logging
+import threading
 import BaseHTTPServer
+from SocketServer import ThreadingMixIn
 
 import utils
 import version
 
-#temporary imports
-import os
-import time
-
 class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
     def setup(self):
+        self.working_dir = os.path.dirname(os.path.abspath(__file__))
         self.logger = logging.getLogger('app.' + __name__)
         BaseHTTPServer.BaseHTTPRequestHandler.setup(self)
         self.request.settimeout(120)
@@ -22,10 +22,12 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         return host
 
     def write_with_autoreplace(self, page):
+        page = page.replace('!!!VERSION!!!', 'Client v.' + version.version + ', build ' + version.build + ', commit ' + version.commit)
         page = page.replace('3DPrinterOS', '3DPrinterOS Client v.' + version.version)
         self.wfile.write(page)
 
     def do_GET(self):
+        self.logger.info("Server GET")
         if self.server.token_was_reset_flag:
             self.send_response(200)
             self.end_headers()
@@ -37,57 +39,68 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         else:
             self.send_response(200)
             self.end_headers()
-            if self.server.app.token:
-                name = 'web_interface/main_loop_form.html'
+            if self.server.app.user_login.user_token:
+                name = os.path.join(self.working_dir, 'web_interface/main_loop_form.html')
             else:
-                name = 'web_interface/token_form.html'
+                name = os.path.join(self.working_dir, 'web_interface/login.html')
             with open(name) as f:
                 page = f.read()
             printers_list = []
-            for printer in self.server.app.detected_printers:
-                if str(printer['SNR']) == 'None':
-                    printer_snr = 'Unknown serial number'
+            for pi in self.server.app.printer_interfaces:
+                snr = pi.usb_info['SNR']
+                if not snr:
+                    snr = ""
+                if not getattr(pi, 'printer_profile', False):
+                    profile = {'alias': "", 'name': 'Unknown printer %s:%s %s' % (pi.usb_info['PID'], pi.usb_info['VID'], snr)}
                 else:
-                    printer_snr = str(printer['SNR'])
-                printers_list.append('<b>' + printer['name'] + "</b><br>(s/n: " + printer_snr + ')')
+                    profile = pi.printer_profile
+                printers_list.append('<b>%s</b> %s' % (profile['name'], snr))
             printers = ''.join(map(lambda x: "<p>" + x + "</p>", printers_list))
             page = page.replace('!!!PRINTERS!!!', printers)
             self.write_with_autoreplace(page)
 
     def do_POST(self):
-        if self.path.find('write_token') >= 0:
-            self.process_write_token()
-        elif self.path.find('clear_token') >= 0:
-            self.process_clear_token()
+        if self.path.find('login') >= 0:
+            self.process_login()
         elif self.path.find('quit') >= 0:
             self.quit_main_app()
         elif self.path.find('snapshot_log') >= 0:
             self.snapshot_log()
         elif self.path.find('send_log_snapshots') >= 0:
             self.send_log_snapshots()
+        elif self.path.find('logs') >= 0:
+            self.download_logs()
+        elif self.path.find('logout') >= 0:
+            self.process_logout()
         else:
             self.send_response(404)
             self.end_headers()
             self.write_with_autoreplace('Not found')
 
+    def download_logs(self):
+        page = open(os.path.join(self.working_dir, 'web_interface/download_logs.html')).read()
+        self.send_response(200)
+        self.end_headers()
+        self.write_with_autoreplace(page)
+
     def snapshot_log(self):
-        #result = utils.make_log_snapshot()
-        result = utils.make_full_log_snapshot()
+        result = utils.make_log_snapshot()
+        message = open(os.path.join(self.working_dir, 'web_interface/message.html')).read()
         if result:
-            message = open('web_interface/success_message.html').read()
+            message = message.replace('!!!MESSAGE!!!', 'Success!')
         else:
-            message = open('web_interface/error_message.html').read()
+            message = message.replace('!!!MESSAGE!!!', 'Error!')
         self.send_response(200)
         self.end_headers()
         self.write_with_autoreplace(message)
 
-
     def send_log_snapshots(self):
         result = utils.send_all_snapshots()
+        message = open(os.path.join(self.working_dir, 'web_interface/message.html')).read()
         if result:
-            message = open('web_interface/success_message.html').read()
+            message = message.replace('!!!MESSAGE!!!', 'Success!')
         else:
-            message = open('web_interface/error_message.html').read()
+            message = message.replace('!!!MESSAGE!!!', 'Error!')
         self.send_response(200)
         self.end_headers()
         self.write_with_autoreplace(message)
@@ -95,61 +108,64 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     def quit_main_app(self):
         self.send_response(200)
         self.end_headers()
-        page = open('web_interface/goodbye.html', 'r').read()
+        page = open(os.path.join(self.working_dir, 'web_interface/goodbye.html')).read()
         self.write_with_autoreplace(page)
         self.server.app.stop_flag = True
         self.server.app.quit_flag = True
 
-    def process_clear_token(self):
-        result = utils.write_token('')
-        if result:
-            message = open('web_interface/token_reset.html', 'r').read()
-            self.server.token_was_reset_flag = True
-        else:
-            message = "Error writing token"
-        self.send_response(200)
-        self.end_headers()
-        self.write_with_autoreplace(message)
-
-    def process_write_token(self):
+    def process_login(self):
         content_length = self.headers.getheader('Content-Length')
         if content_length:
             length = int(content_length)
             body = self.rfile.read(length)
-            prefix = "token="
-            if prefix in body:
-                token = body.replace(prefix, "")
-                result = utils.write_token(token)                
-                if result:
-                    message = open('web_interface/token_success.html', 'r').read()
-                else:
-                    message = open('web_interface/token_error.html', 'r').read()
-                self.send_response(200)
-                self.end_headers()
-                self.write_with_autoreplace(message)
-            else:
-                self.send_response(400)
-                self.end_headers()
-                self.write_with_autoreplace('Invalid body content for this request')
+            body = body.replace("+", "%20")
+            body = urllib.unquote(body).decode('utf8')
+            raw_login, password = body.split("&password=")
+            login = raw_login.replace("login=", "")
+        error = self.server.app.user_login.login_as_user(login, password)
+        message = open(os.path.join(self.working_dir, 'web_interface/message.html')).read()
+        if error:
+            message = message.replace('!!!MESSAGE!!!', str(error[1]))
         else:
-            self.send_response(411)
-            self.end_headers()
-            self.write_with_autoreplace('Zero Content-Length')
+            message = message.replace('!!!MESSAGE!!!', 'Login successful!<br><br>Processing...')
+        self.send_response(200)
+        self.end_headers()
+        self.write_with_autoreplace(message)
+
+    def process_logout(self):
+        paths = utils.get_paths_to_settings_folder()
+        for path in paths:
+            login_info_path = os.path.join(path, 'login_info.bin')
+            if os.path.isfile(login_info_path) == True:
+                try:
+                    os.remove(login_info_path)
+                except Exception as e:
+                    self.logger.error('Failed to logout: ' + e.message)
+        page = open(os.path.join(self.working_dir, 'web_interface/logout.html')).read()
+        self.send_response(200)
+        self.end_headers()
+        self.write_with_autoreplace(page)
+
+class ThreadedHTTPServer(ThreadingMixIn, BaseHTTPServer.HTTPServer):
+    """ This class allows to handle requests in separated threads.
+        No further content needed, don't touch this. """
 
 
 class WebInterface(threading.Thread):
     def __init__(self, app):
         self.logger = logging.getLogger('app.' + __name__)
         self.app = app
+        self.server = None
         threading.Thread.__init__(self)
 
     def run(self):
-        self.logger.info("Web server started")
+        self.logger.info("Starting web server...")
         try:
-            self.server = BaseHTTPServer.HTTPServer(("127.0.0.1", 8008), WebInterfaceHandler)
+            self.server = ThreadedHTTPServer(("127.0.0.1", 8008), WebInterfaceHandler)
         except Exception as e:
             self.logger.error(e)
         else:
+            self.logger.info("...web server started"    )
             self.server.app = self.app
             self.server.token_was_reset_flag = False
             self.server.serve_forever()

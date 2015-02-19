@@ -1,3 +1,3 @@
-version = "3.0.4"
+version = "4.0.4"
 build = ""
 commit = ""
