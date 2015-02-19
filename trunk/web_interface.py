@@ -76,8 +76,8 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                     target_temps = report['target_temps']
                     if temps and target_temps:
                         if len(temps) == 3 and len(target_temps) == 3:
-                            printer = printer + 'R Extruder: ' + str(temps[2]) + '/' + str(target_temps[2]) + ' | '
-                        printer = printer + 'L Extruder: ' + str(temps[1]) + '/' + str(target_temps[1]) + ' | ' \
+                            printer = printer + 'Second Tool: ' + str(temps[2]) + '/' + str(target_temps[2]) + ' | '
+                        printer = printer + 'First Tool: ' + str(temps[1]) + '/' + str(target_temps[1]) + ' | ' \
                                   + 'Heated Bed: ' + str(temps[0]) + '/' + str(target_temps[0])
                 printers_list.append(printer)
             printers = ''.join(map(lambda x: "<p>" + x + "</p>", printers_list))
