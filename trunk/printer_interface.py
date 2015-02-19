@@ -150,11 +150,18 @@ class PrinterInterface(threading.Thread):
                 while not answer and not self.stop_flag:
                     self.logger.debug("Trying to report error to server...")
                     answer = http_client.send(http_client.package_command_request, message)
+                    error = answer.get('error', None)
+                    if error:
+                        self.logger.error("Server had returned error: " + str(error))
+                        self.close()
+                        return
                     command_number = answer.get("number", False)
                     if command_number:
                         self.acknowledge = {"number": command_number, "result": False}
                     self.logger.debug("Could not execute command: " + str(answer))
                     time.sleep(2)
+                self.sender_error = None
+                self.acknowledge = None
                 self.logger.debug("...done")
                 self.close_printer_sender()
 
@@ -167,7 +174,10 @@ class PrinterInterface(threading.Thread):
             else:
                 state = "ready"
         else:
-            state = "error"
+            if self.sender_error:
+                state = "error"
+            else:
+                state = "connecting"
         return state
 
     def state_report(self, outer_state=None):
