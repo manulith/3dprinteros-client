@@ -67,6 +67,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                     else:
                         color = 'red'
                     printer = printer + ' - ' + '<font color="' + color + '">' + state + '</font>'
+                    printer = printer + 'Temps: ' + str(report['temps']) + 'Target temps: ' + str(report['target_temps'])
                 printers_list.append(printer)
             printers = ''.join(map(lambda x: "<p>" + x + "</p>", printers_list))
             page = page.replace('!!!PRINTERS!!!', printers)
