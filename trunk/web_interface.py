@@ -65,7 +65,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                         color = 'green'
                     elif state == 'printing':
                         color = 'blue'
-                        progress = ' | ' + report['percent'] + '%'
+                        progress = ' | ' + str(report['percent']) + '%'
                     else:
                         color = 'red'
                     printer = printer + ' - ' + '<font color="' + color + '">' + state + progress + '</font>'
@@ -73,9 +73,9 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                     target_temps = report['target_temps']
                     if temps and target_temps:
                         if len(temps) == 3 and len(target_temps) == 3:
-                            printer = printer + '<br>R Extruder: ' + temps[2] + '/' + target_temps[2] + ' | '
-                        printer = printer + 'L Extruder: ' + temps[1] + '/' + target_temps[1] + ' | ' + \
-                                  + 'Heated Bed: ' + temps[0] + '/' + target_temps[0]
+                            printer = printer + '<br>R Extruder: ' + str(temps[2]) + '/' + str(target_temps[2]) + ' | '
+                        printer = printer + 'L Extruder: ' + str(temps[1]) + '/' + str(target_temps[1]) + ' | ' + \
+                                  + 'Heated Bed: ' + str(temps[0]) + '/' + str(target_temps[0])
                     printer = printer + '<br>Temps: ' + str(report['temps']) + 'Target temps: ' + str(report['target_temps'])
                 printers_list.append(printer)
             printers = ''.join(map(lambda x: "<p>" + x + "</p>", printers_list))
