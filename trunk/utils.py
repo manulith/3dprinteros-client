@@ -188,7 +188,7 @@ def make_full_log_snapshot():
     for log in os.listdir(os.path.abspath(os.path.dirname(__file__))):
         if log.startswith(config.config['log_file']):
             log_files.append(log)
-    print str(log_files)
+    #logger.info('Files to log : ' + str(log_files))
     if not log_files:
         logger.info('Log files was not created for some reason. Nothing to send')
         return
@@ -208,7 +208,6 @@ def make_full_log_snapshot():
                 for line in infile:
                     outfile.write(line)
             outfile.write('\n')
-    print 'filename : ' + filename
     return filename
 
 def compress_and_send(log_file_name=None, server_path=http_client.token_send_logs_path):
@@ -231,21 +230,19 @@ def compress_and_send(log_file_name=None, server_path=http_client.token_send_log
         #if http_client.multipart_upload(url, {"token": read_token()}, {'files': file}):
             #os.remove(LOG_SNAPSHOTS_DIR + '/' + log_file_name)
         token = {'token': read_token()}
-        with open(zip_file_name, 'r') as f:
+        with open(zip_file_name_path, 'rb') as f:
             files = {'file_data': f}
             r = requests.post(url, data=token, files=files)
         #f.close()
         result = r.text
-        print "Log sending response: " + result
+        logger.info("Log sending response: " + result)
         if '"success":true' in result:
-            pass
-            os.remove(os.path.join(log_file_name))
-        os.remove(zip_file_name)
+            os.remove(os.path.join(log_file_name_path))
+        os.remove(zip_file_name_path)
 
 def send_all_snapshots():
     try:
         snapshot_dir = os.listdir(LOG_SNAPSHOTS_DIR)
-        print 'Snapshot dir : ' + str(snapshot_dir)
     except OSError:
         logging.info("No logs snapshots to send")
     else:
