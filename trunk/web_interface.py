@@ -82,6 +82,9 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 printers_list.append(printer)
             printers = ''.join(map(lambda x: "<p>" + x + "</p>", printers_list))
             page = page.replace('!!!PRINTERS!!!', printers)
+            login = self.server.app.user_login.login
+            if login:
+                page = page.replace('!!!LOGIN!!!', login)
             self.write_with_autoreplace(page)
 
     def do_POST(self):
