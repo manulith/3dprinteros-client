@@ -429,7 +429,6 @@ def kill_existing_conveyor():
         time.sleep(0.5)
         if get_conveyor_pid():
             logger.info('Could not kill Makerbot Conveyor Service. Please stop it manually and restart program.')
-            return False
         else:
             logger.info('Makerbot Conveyor Service successfully killed.')
             return True
