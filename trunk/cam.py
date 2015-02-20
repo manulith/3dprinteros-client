@@ -123,7 +123,7 @@ class CameraImageSender(threading.Thread):
 
     def run(self):
         while not self.stop_flag:
-            if self.cap.isOpened():
+            if self.cap and self.cap.isOpened():
                 picture = self.take_a_picture()
                 if picture:
                     self.send_picture(picture)
