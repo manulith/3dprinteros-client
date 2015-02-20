@@ -165,6 +165,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             body = urllib.unquote(body).decode('utf8')
             raw_login, password = body.split("&password=")
             login = raw_login.replace("login=", "")
+            password = utils.sha256_hash(password)
         error = self.server.app.user_login.login_as_user(login, password)
         message = open(os.path.join(self.working_dir, 'web_interface/message.html')).read()
         if error:
