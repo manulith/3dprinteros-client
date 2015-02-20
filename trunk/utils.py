@@ -343,22 +343,22 @@ def remove_corrupted_lines(lines):
     return lines
 
 def get_logger(log_file):
-        logger = logging.getLogger("app")
-        logger.propagate = False
-        logger.setLevel(logging.DEBUG)
-        stderr_handler = logging.StreamHandler()
-        stderr_handler.setLevel(logging.DEBUG)
-        logger.addHandler(stderr_handler)
-        if log_file:
-            try:
-                file_handler = logging.handlers.RotatingFileHandler(log_file, maxBytes=1024*1024*10, backupCount=1)
-                file_handler.setFormatter(logging.Formatter('%(levelname)s\t%(asctime)s\t%(threadName)s/%(funcName)s\t%(message)s'))
-                file_handler.setLevel(logging.DEBUG)
-                logger.addHandler(file_handler)
-            except Exception as e:
-                logger.debug('Could not create log file because' + e.message + '\n.No log mode.')
-        logger.info('Operating system: ' + platform.system() + ' ' + platform.release())
-        return logger
+    logger = logging.getLogger("app")
+    logger.propagate = False
+    logger.setLevel(logging.DEBUG)
+    stderr_handler = logging.StreamHandler()
+    stderr_handler.setLevel(logging.DEBUG)
+    logger.addHandler(stderr_handler)
+    if log_file:
+        try:
+            file_handler = logging.handlers.RotatingFileHandler(log_file, maxBytes=1024*1024*10, backupCount=1)
+            file_handler.setFormatter(logging.Formatter('%(levelname)s\t%(asctime)s\t%(threadName)s/%(funcName)s\t%(message)s'))
+            file_handler.setLevel(logging.DEBUG)
+            logger.addHandler(file_handler)
+        except Exception as e:
+            logger.debug('Could not create log file because' + e.message + '\n.No log mode.')
+    logger.info('Operating system: ' + platform.system() + ' ' + platform.release())
+    return logger
 
 def detect_makerware_paths():
     logger = logging.getLogger('app')
