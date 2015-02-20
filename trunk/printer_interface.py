@@ -73,7 +73,7 @@ class PrinterInterface(threading.Thread):
     def connect_to_printer(self):
         printer_driver = __import__(self.printer_profile['driver'])
         self.logger.info("Connecting with profile: " + str(self.printer_profile))
-        if "baudrates" in self.printer_profile and not self.usb_info.get("COM", False): # indication of serial printer, but no serial port
+        if "baudrate" in self.printer_profile and not self.printer_profile.get("COM", False): # indication of serial printer, but no serial port
             self.sender_error = {"code": 901, "message": "No serial port for serial printer. No drivers or printer firmware hanged."}
             return
         try:
@@ -150,11 +150,18 @@ class PrinterInterface(threading.Thread):
                 while not answer and not self.stop_flag:
                     self.logger.debug("Trying to report error to server...")
                     answer = http_client.send(http_client.package_command_request, message)
+                    error = answer.get('error', None)
+                    if error:
+                        self.logger.error("Server had returned error: " + str(error))
+                        self.close()
+                        return
                     command_number = answer.get("number", False)
                     if command_number:
                         self.acknowledge = {"number": command_number, "result": False}
                     self.logger.debug("Could not execute command: " + str(answer))
                     time.sleep(2)
+                self.sender_error = None
+                self.acknowledge = None
                 self.logger.debug("...done")
                 self.close_printer_sender()
 

@@ -10,7 +10,7 @@ import logging
 import logging.handlers
 import threading
 import platform
-from hashlib import md5
+from hashlib import sha256
 import base64
 import signal
 
@@ -36,8 +36,8 @@ def is_admin():
 
     print is_admin
 
-def md5_hash(text):
-    hash = md5(text)
+def sha256_hash(text):
+    hash = sha256(text)
     hex_str_hash = hash.hexdigest()
     return hex_str_hash
 
