@@ -32,10 +32,6 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.send_response(200)
             self.end_headers()
             self.write_with_autoreplace("Token was reset\nPlease restart 3DPrinterOS and re-login")
-        elif self.path.find('cam') >= 0:
-            self.logger.info('Camera')
-            self.send_response(503)
-            self.end_headers()
         else:
             self.send_response(200)
             self.end_headers()
@@ -85,6 +81,8 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             login = self.server.app.user_login.login
             if login:
                 page = page.replace('!!!LOGIN!!!', login)
+            if utils.get_conveyor_pid():
+                page = page.replace('content="5; url=/"', 'content="1; url=/conveyor_warning"')
             self.write_with_autoreplace(page)
 
     def do_POST(self):
@@ -100,10 +98,36 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.download_logs()
         elif self.path.find('logout') >= 0:
             self.process_logout()
+        elif self.path.find('conveyor_warning') >= 0:
+            self.conveyor_warning()
+        elif self.path.find('kill_conveyor') >= 0:
+            self.kill_conveyor()
         else:
             self.send_response(404)
             self.end_headers()
             self.write_with_autoreplace('Not found')
+
+    def conveyor_warning(self):
+        page = open(os.path.join(self.working_dir, 'web_interface/conveyor_warning.html')).read()
+        self.send_response(200)
+        self.end_headers()
+        self.write_with_autoreplace(page)
+
+    def kill_conveyor(self):
+        message = open(os.path.join(self.working_dir, 'web_interface/message.html')).read()
+        fail_message = message.replace('!!!MESSAGE!!!', 'Failed killing conveyor.<br><br>Closing ...')
+        fail_message = fail_message.replace('content="2; url=/"', 'content="2; url=/quit"')
+        if utils.get_conveyor_pid():
+            result = utils.kill_existing_conveyor()
+            if result:
+                message = message.replace('!!!MESSAGE!!!', 'Conveyor killed.<br><br>Returning...')
+            else:
+                message = fail_message
+        else:
+            message = fail_message
+        self.send_response(200)
+        self.end_headers()
+        self.write_with_autoreplace(message)
 
     def download_logs(self):
         page = open(os.path.join(self.working_dir, 'web_interface/download_logs.html')).read()
