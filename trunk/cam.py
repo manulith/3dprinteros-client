@@ -126,13 +126,17 @@ class CameraImageSender(threading.Thread):
     def take_a_picture(self):
         cap_ret, frame = self.cap.read()
         encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), config.config["camera"]["img_qual"]]
-        result, image_encode = cv2.imencode(config.config["camera"]["img_ext"], frame, encode_param)
+        try:
+            result, image_encode = cv2.imencode(config.config["camera"]["img_ext"], frame, encode_param)
+        except Exception as e:
+            self.logger.warning(self.camera_name + ' warning: ' + e.message)
+            result, image_encode = None, None
         if cap_ret and result:
             data = np.array(image_encode)
             string_data = data.tostring()
             return string_data
         else:
-            self.sleep(1)
+            time.sleep(1)
 
     def send_picture(self, picture):
         picture = base64.b64encode(str(picture))

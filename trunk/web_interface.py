@@ -54,9 +54,37 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                     profile = {'alias': "", 'name': 'Unknown printer %s:%s %s' % (pi.usb_info['PID'], pi.usb_info['VID'], snr)}
                 else:
                     profile = pi.printer_profile
-                printers_list.append('<b>%s</b> %s' % (profile['name'], snr))
+                printer = '<b>%s</b> %s' % (profile['name'], snr)
+                if not pi.printer_token:
+                    printer = printer + '<br>' + 'Waiting type selection from server'
+                if pi.report:
+                    report = pi.report
+                    state = report['state']
+                    progress = ''
+                    if state == 'ready':
+                        color = 'green'
+                    elif state == 'printing':
+                        color = 'blue'
+                        progress = ' | ' + str(report['percent']) + '%'
+                    elif state == 'paused':
+                        color = 'orange'
+                        progress = ' | ' + str(report['percent']) + '%'
+                    else:
+                        color = 'red'
+                    printer = printer + ' - ' + '<font color="' + color + '">' + state + progress + '</font><br>'
+                    temps = report['temps']
+                    target_temps = report['target_temps']
+                    if temps and target_temps:
+                        if len(temps) == 3 and len(target_temps) == 3:
+                            printer = printer + 'Second Tool: ' + str(temps[2]) + '/' + str(target_temps[2]) + ' | '
+                        printer = printer + 'First Tool: ' + str(temps[1]) + '/' + str(target_temps[1]) + ' | ' \
+                                  + 'Heated Bed: ' + str(temps[0]) + '/' + str(target_temps[0])
+                printers_list.append(printer)
             printers = ''.join(map(lambda x: "<p>" + x + "</p>", printers_list))
             page = page.replace('!!!PRINTERS!!!', printers)
+            login = self.server.app.user_login.login
+            if login:
+                page = page.replace('!!!LOGIN!!!', login)
             self.write_with_autoreplace(page)
 
     def do_POST(self):
