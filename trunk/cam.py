@@ -89,9 +89,6 @@ class CameraImageSender(threading.Thread):
         self.camera_number = camera_number
         self.camera_name = camera_name
         self.cap = cap
-        if not self.cap:
-            self.logger.warning('Failed start ' + self.camera_name + ' sender.')
-            self.close()
         self.token = user_token
         if not self.token:
             self.stop_flag = True
@@ -125,7 +122,7 @@ class CameraImageSender(threading.Thread):
         self.stop_flag = True
 
     def run(self):
-        while not self.stop_flag:
+        while not self.stop_flag and self.cap:
             if self.cap.isOpened():
                 picture = self.take_a_picture()
                 if picture:
@@ -135,7 +132,8 @@ class CameraImageSender(threading.Thread):
                     self.cap.release()
                 self.cap = None
                 time.sleep(1)
-        self.cap.release()
+        if self.cap:
+            self.cap.release()
         self.logger.info("Closing camera %s" % self.camera_name)
 
 
