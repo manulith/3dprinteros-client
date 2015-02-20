@@ -320,17 +320,6 @@ def read_info_zip(package_name, path):
     else:
         logger.error(package_name + ' not found')
 
-def kill_makerbot_conveyor(self):
-    logger = logging.getLogger("app.kill_makerbot_conveyor")
-    logger.info('[Stopping third party software...')
-    try:
-        from birdwing.conveyor_from_egg import kill_existing_conveyor
-        kill_existing_conveyor()
-    except ImportError as e:
-        logger.debug(e)
-        logger.info('...fail]')
-    else:
-        logger.info('...done]')
 
 def check_for_errors(data_dict):
     logger = logging.getLogger("app." + __name__)
