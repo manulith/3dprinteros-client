@@ -82,7 +82,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             if login:
                 page = page.replace('!!!LOGIN!!!', login)
             if utils.get_conveyor_pid():
-                page = page.replace('content="5; url=/"', 'content="1; url=/conveyor_warning"; method="POST"')
+                page = open(os.path.join(self.working_dir, 'web_interface/conveyor_warning.html')).read()
             self.write_with_autoreplace(page)
 
     def do_POST(self):
@@ -98,8 +98,6 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.download_logs()
         elif self.path.find('logout') >= 0:
             self.process_logout()
-        elif self.path.find('conveyor_warning') >= 0:
-            self.conveyor_warning()
         elif self.path.find('kill_conveyor') >= 0:
             self.kill_conveyor()
         else:
@@ -107,16 +105,9 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.end_headers()
             self.write_with_autoreplace('Not found')
 
-    def conveyor_warning(self):
-        page = open(os.path.join(self.working_dir, 'web_interface/conveyor_warning.html')).read()
-        self.send_response(200)
-        self.end_headers()
-        self.write_with_autoreplace(page)
-
     def kill_conveyor(self):
         message = open(os.path.join(self.working_dir, 'web_interface/message.html')).read()
-        fail_message = message.replace('!!!MESSAGE!!!', 'Failed killing conveyor.<br><br>Closing ...')
-        fail_message = fail_message.replace('content="2; url=/"', 'content="2; url=/quit"')
+        fail_message = message.replace('!!!MESSAGE!!!', 'Failed to kill conveyor.<br>')
         if utils.get_conveyor_pid():
             result = utils.kill_existing_conveyor()
             if result:
