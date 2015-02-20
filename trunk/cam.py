@@ -136,7 +136,7 @@ class CameraImageSender(threading.Thread):
             string_data = data.tostring()
             return string_data
         else:
-            self.sleep(1)
+            time.sleep(1)
 
     def send_picture(self, picture):
         picture = base64.b64encode(str(picture))
