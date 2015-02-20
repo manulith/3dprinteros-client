@@ -129,7 +129,7 @@ class CameraImageSender(threading.Thread):
         try:
             result, image_encode = cv2.imencode(config.config["camera"]["img_ext"], frame, encode_param)
         except Exception as e:
-            self.logger.warning('Camera warning: ' + e.message)
+            self.logger.warning(self.camera_name + ' warning: ' + e.message)
             result, image_encode = None, None
         if cap_ret and result:
             data = np.array(image_encode)
