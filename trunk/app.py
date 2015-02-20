@@ -115,6 +115,7 @@ class App:
         self.stop_flag = True
         if self.cam:
             self.cam.terminate()
+            self.cam.kill()
         for pi in self.printer_interfaces:
             pi.close()
         time.sleep(0.1) #to reduce logging spam in next

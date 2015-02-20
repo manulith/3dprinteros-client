@@ -40,7 +40,7 @@ class CameraMaster():
             self.cameras.append(cam)
 
     def intercept_signal(self, signal_code, frame):
-        self.logger.warning("SIGINT or SIGTERM received. Closing Camera Module...")
+        self.logger.info("SIGINT or SIGTERM received. Closing Camera Module...")
         self.close()
 
     def close(self):
@@ -59,33 +59,6 @@ class CameraMaster():
 
     def get_camera_names(self):
         cameras_names = {}
-        '''
-        if sys.platform.startswith('win'):
-            import win32com.client
-            str_computer = "."
-            objWMIService = win32com.client.Dispatch("WbemScripting.SWbemLocator")
-            objSWbemServices = objWMIService.ConnectServer(str_computer,"root\cimv2")
-            items = objSWbemServices.ExecQuery("SELECT * FROM Win32_PnPEntity")
-            count = 0
-            for item in items:
-                name = item.Name
-                if ("web" in name) or ("Web" in name) or ("WEB" in name) or ("cam" in name) or ("Cam" in name) or ("CAM" in name):
-                    new_camera = ''
-                    if item.Manufacturer != None:
-                        new_camera = item.Manufacturer
-                    if item.Name != None:
-                        new_camera = new_camera + ': ' + item.Name
-                    cameras_names[count] = new_camera
-                    count += 1
-
-            self.logger.info('Found ' + str(len(cameras_names)) + ' camera(s):')
-            if len(cameras_names) > 0:
-                for number in range(0,len(cameras_names)):
-                    self.logger.info(cameras_names[number])
-            return  cameras_names
-
-        elif sys.platform.startswith('linux') or sys.platform.startswith('darwin'):
-        '''
         cameras_count = self.get_number_of_cameras()
         if cameras_count > 0:
             for camera_id in range(0, cameras_count):
@@ -126,13 +99,17 @@ class CameraImageSender(threading.Thread):
     def take_a_picture(self):
         cap_ret, frame = self.cap.read()
         encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), config.config["camera"]["img_qual"]]
-        result, image_encode = cv2.imencode(config.config["camera"]["img_ext"], frame, encode_param)
+        try:
+            result, image_encode = cv2.imencode(config.config["camera"]["img_ext"], frame, encode_param)
+        except Exception as e:
+            self.logger.warning(self.camera_name + ' warning: ' + e.message)
+            result, image_encode = None, None
         if cap_ret and result:
             data = np.array(image_encode)
             string_data = data.tostring()
             return string_data
         else:
-            self.sleep(1)
+            time.sleep(1)
 
     def send_picture(self, picture):
         picture = base64.b64encode(str(picture))
@@ -145,10 +122,10 @@ class CameraImageSender(threading.Thread):
         self.stop_flag = True
 
     def run(self):
-        while self.stop_flag != True:
-            if self.cap.isOpened():
+        while not self.stop_flag:
+            if self.cap and self.cap.isOpened():
                 picture = self.take_a_picture()
-                if picture != '':
+                if picture:
                     self.send_picture(picture)
             else:
                 if self.cap:

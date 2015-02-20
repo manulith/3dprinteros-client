@@ -71,13 +71,13 @@ class PrinterInterface(threading.Thread):
                 return False
 
     def connect_to_printer(self):
-        printer_driver = __import__(self.printer_profile['driver'])
+        printer_sender = __import__(self.printer_profile['sender'])
         self.logger.info("Connecting with profile: " + str(self.printer_profile))
-        if "baudrates" in self.printer_profile and not self.usb_info.get("COM", False): # indication of serial printer, but no serial port
-            self.sender_error = {"code": 901, "message": "No serial port for serial printer. No drivers or printer firmware hanged."}
+        if "baudrate" in self.printer_profile and not self.printer_profile.get("COM", False): # indication of serial printer, but no serial port
+            self.sender_error = {"code": 901, "message": "No serial port for serial printer. No senders or printer firmware hanged."}
             return
         try:
-            printer = printer_driver.Sender(self.printer_profile, self.usb_info)
+            printer = printer_sender.Sender(self.printer_profile, self.usb_info)
         except RuntimeError as e:
             self.logger.warning("Can't connect to printer %s %s\nReason:%s" % (self.printer_profile['name'], str(self.usb_info), e.message))
         except Exception as e:

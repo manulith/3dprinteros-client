@@ -33,7 +33,7 @@ def get_devices():
             'PID': format_vid_or_pid(dev.idProduct),
         }
         try:
-            SNR = str(usb.util.get_string(dev, dev.iSerialNumber)) #originaly it's unicode, but this provoke bugs
+            SNR = str(usb.util.get_string(dev, dev.iSerialNumber))
             if "x" in SNR:
                  SNR = None
         except:
@@ -48,7 +48,6 @@ def get_devices():
         #     device_dct['Product'] = product
         # except (usb.core.USBError, AttributeError, NotImplementedError):
         #     pass
-
         device_dct['SNR'] = SNR
         device_dct['COM'] = get_port_by_vid_pid_snr(device_dct['VID'], device_dct['PID'], SNR)
         device_data_dcts.append(device_dct)
@@ -88,26 +87,11 @@ def get_printers():
     logger = logging.getLogger('app.' + __name__)
     devices = get_devices()
     printers = sort_devices(devices)
-    # if len(printers) == 0:
-    #     printers = get_unknown_printers(devices)
     logger.info('Detected USB printers: ')
     for printer in printers:
         logger.info(str(printer))
     logger.info('-'*16)
     return printers
-
-# def get_unknown_printers(devices):
-#     devices = filter(lambda x: x['COM'] is not None, devices)
-#     printers = []
-#     for device in devices:
-#         profiles = config.config['profiles']
-#         for profile in profiles:
-#             if not profiles[profile]['print_from_binary']:
-#                 dct = { 'guess' : 'true' }
-#                 dct.update(profiles[profile])
-#                 dct.update(device)
-#                 printers.append(dct)
-#     return printers
 
 if __name__ == '__main__':
     import json

@@ -320,18 +320,6 @@ def read_info_zip(package_name, path):
     else:
         logger.error(package_name + ' not found')
 
-def kill_makerbot_conveyor(self):
-    logger = logging.getLogger("app.kill_makerbot_conveyor")
-    logger.info('[Stopping third party software...')
-    try:
-        from birdwing.conveyor_from_egg import kill_existing_conveyor
-        kill_existing_conveyor()
-    except ImportError as e:
-        logger.debug(e)
-        logger.info('...fail]')
-    else:
-        logger.info('...done]')
-
 def check_for_errors(data_dict):
     logger = logging.getLogger("app." + __name__)
     error = data_dict.get('error', None)
@@ -355,22 +343,22 @@ def remove_corrupted_lines(lines):
     return lines
 
 def get_logger(log_file):
-        logger = logging.getLogger("app")
-        logger.propagate = False
-        logger.setLevel(logging.DEBUG)
-        stderr_handler = logging.StreamHandler()
-        stderr_handler.setLevel(logging.DEBUG)
-        logger.addHandler(stderr_handler)
-        if log_file:
-            try:
-                file_handler = logging.handlers.RotatingFileHandler(log_file, maxBytes=1024*1024*10, backupCount=1)
-                file_handler.setFormatter(logging.Formatter('%(levelname)s\t%(asctime)s\t%(threadName)s/%(funcName)s\t%(message)s'))
-                file_handler.setLevel(logging.DEBUG)
-                logger.addHandler(file_handler)
-            except Exception as e:
-                logger.debug('Could not create log file because' + e.message + '\n.No log mode.')
-        logger.info('Operating system: ' + platform.system() + ' ' + platform.release())
-        return logger
+    logger = logging.getLogger("app")
+    logger.propagate = False
+    logger.setLevel(logging.DEBUG)
+    stderr_handler = logging.StreamHandler()
+    stderr_handler.setLevel(logging.DEBUG)
+    logger.addHandler(stderr_handler)
+    if log_file:
+        try:
+            file_handler = logging.handlers.RotatingFileHandler(log_file, maxBytes=1024*1024*10, backupCount=1)
+            file_handler.setFormatter(logging.Formatter('%(levelname)s\t%(asctime)s\t%(threadName)s/%(funcName)s\t%(message)s'))
+            file_handler.setLevel(logging.DEBUG)
+            logger.addHandler(file_handler)
+        except Exception as e:
+            logger.debug('Could not create log file because' + e.message + '\n.No log mode.')
+    logger.info('Operating system: ' + platform.system() + ' ' + platform.release())
+    return logger
 
 def detect_makerware_paths():
     logger = logging.getLogger('app')
@@ -431,7 +419,9 @@ def kill_existing_conveyor():
     if pid:
         logger.info('Makerbot conveyor service is running. Shutting down...')
         if sys.platform.startswith('win'):
-            os.popen('taskkill /f /pid ' + pid)
+            #os.popen('taskkill /f /pid ' + pid)
+            os.popen('sc stop "MakerBot Conveyor Service"')
+            time.sleep(3) # Win service stopping takes some time
         elif sys.platform.startswith('linux'):
             # TODO: it does not work
             os.kill(int(pid), signal.SIGTERM)
@@ -443,6 +433,7 @@ def kill_existing_conveyor():
             logger.info('Could not kill Makerbot Conveyor Service. Please stop it manually and restart program.')
         else:
             logger.info('Makerbot Conveyor Service successfully killed.')
+            return True
 
 
 if __name__ == "__main__":

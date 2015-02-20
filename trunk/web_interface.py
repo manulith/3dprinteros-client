@@ -32,10 +32,6 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.send_response(200)
             self.end_headers()
             self.write_with_autoreplace("Token was reset\nPlease restart 3DPrinterOS and re-login")
-        elif self.path.find('cam') >= 0:
-            self.logger.info('Camera')
-            self.send_response(503)
-            self.end_headers()
         else:
             self.send_response(200)
             self.end_headers()
@@ -54,9 +50,39 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                     profile = {'alias': "", 'name': 'Unknown printer %s:%s %s' % (pi.usb_info['PID'], pi.usb_info['VID'], snr)}
                 else:
                     profile = pi.printer_profile
-                printers_list.append('<b>%s</b> %s' % (profile['name'], snr))
+                printer = '<b>%s</b> %s' % (profile['name'], snr)
+                if not pi.printer_token:
+                    printer = printer + '<br>' + 'Waiting type selection from server'
+                if pi.report:
+                    report = pi.report
+                    state = report['state']
+                    progress = ''
+                    if state == 'ready':
+                        color = 'green'
+                    elif state == 'printing':
+                        color = 'blue'
+                        progress = ' | ' + str(report['percent']) + '%'
+                    elif state == 'paused':
+                        color = 'orange'
+                        progress = ' | ' + str(report['percent']) + '%'
+                    else:
+                        color = 'red'
+                    printer = printer + ' - ' + '<font color="' + color + '">' + state + progress + '</font><br>'
+                    temps = report['temps']
+                    target_temps = report['target_temps']
+                    if temps and target_temps:
+                        if len(temps) == 3 and len(target_temps) == 3:
+                            printer = printer + 'Second Tool: ' + str(temps[2]) + '/' + str(target_temps[2]) + ' | '
+                        printer = printer + 'First Tool: ' + str(temps[1]) + '/' + str(target_temps[1]) + ' | ' \
+                                  + 'Heated Bed: ' + str(temps[0]) + '/' + str(target_temps[0])
+                printers_list.append(printer)
             printers = ''.join(map(lambda x: "<p>" + x + "</p>", printers_list))
             page = page.replace('!!!PRINTERS!!!', printers)
+            login = self.server.app.user_login.login
+            if login:
+                page = page.replace('!!!LOGIN!!!', login)
+            if utils.get_conveyor_pid():
+                page = open(os.path.join(self.working_dir, 'web_interface/conveyor_warning.html')).read()
             self.write_with_autoreplace(page)
 
     def do_POST(self):
@@ -72,10 +98,27 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.download_logs()
         elif self.path.find('logout') >= 0:
             self.process_logout()
+        elif self.path.find('kill_conveyor') >= 0:
+            self.kill_conveyor()
         else:
             self.send_response(404)
             self.end_headers()
             self.write_with_autoreplace('Not found')
+
+    def kill_conveyor(self):
+        message = open(os.path.join(self.working_dir, 'web_interface/message.html')).read()
+        fail_message = message.replace('!!!MESSAGE!!!', 'Failed to kill conveyor.<br>')
+        if utils.get_conveyor_pid():
+            result = utils.kill_existing_conveyor()
+            if result:
+                message = message.replace('!!!MESSAGE!!!', 'Conveyor killed.<br><br>Returning...')
+            else:
+                message = fail_message
+        else:
+            message = fail_message
+        self.send_response(200)
+        self.end_headers()
+        self.write_with_autoreplace(message)
 
     def download_logs(self):
         page = open(os.path.join(self.working_dir, 'web_interface/download_logs.html')).read()
@@ -122,6 +165,9 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             body = urllib.unquote(body).decode('utf8')
             raw_login, password = body.split("&password=")
             login = raw_login.replace("login=", "")
+            password = utils.sha256_hash(password)
+        else:
+            return
         error = self.server.app.user_login.login_as_user(login, password)
         message = open(os.path.join(self.working_dir, 'web_interface/message.html')).read()
         if error:

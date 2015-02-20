@@ -38,7 +38,7 @@ def load_json(jdata):
 #packagers
 
 def package_user_login(username, password, platform, error = None):
-    data = { 'login': {'user': username, 'password': password}, 'host_mac': MACADDR, platform: platform}
+    data = { 'login': {'user': username, 'password': password}, 'host_mac': MACADDR, "platform": platform}
     if error:
         data['error'] = error
     return json.dumps(data), user_login_path

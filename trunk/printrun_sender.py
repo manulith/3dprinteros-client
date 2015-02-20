@@ -12,6 +12,7 @@ class Sender(base_sender.BaseSender):
 
     pause_lift_height = 5
     pause_extrude_length = 7
+    RETRIES_FOR_EACH_BAUDRATE = 2
     TEMP_REQUEST_WAIT = 5
     DEFAULT_TIMEOUT_FOR_PRINTER_ONLINE = 15
 
@@ -34,39 +35,40 @@ class Sender(base_sender.BaseSender):
         baudrates = self.profile['baudrate']
         self.logger.info('Baudrates list for %s : %s' % (self.profile['name'], str(baudrates)))
         for baudrate in baudrates:
-            self.error_code = 0
-            self.error_message = ""
-            self.logger.info("Connecting at baudrate %i" % baudrate)
-            self.printcore = printcore()
-            self.printcore.onlinecb = self.onlinecb
-            self.printcore.errorcb = self.errorcb
-            self.printcore.tempcb = self.tempcb
-            self.printcore.recvcb = self.recvcb
-            self.printcore.sendcb = self.sendcb
-            self.printcore.connect(self.profile['COM'], baudrate)
-            time.sleep(0.1)
-            if not self.printcore.printer:
-                self.logger.warning("Error connecting to printer at %i" % baudrate)
-                self.printcore.disconnect()
-            else:
-                self.online_flag = False
-                wait_start_time = time.time()
-                self.logger.info("Waiting for printer online")
-                while time.time() < (wait_start_time + self.DEFAULT_TIMEOUT_FOR_PRINTER_ONLINE):
-                    if self.stop_flag:
-                        return False
-                    if self.online_flag:
-                        self.logger.info("Successful connection to printer %s:%i" % (self.profile['COM'], baudrate))
-                        time.sleep(0.1)
-                        self.logger.info("Sending homing gcodes...")
-                        for gcode in self.profile["end_gcodes"]:
-                            self.printcore.send_now(gcode)
-                        self.logger.info("...done homing")
-                        return True
-                self.logger.warning("Timeout while waiting for printer online. Reseting and reconnecting...")
-                self.reset()
-                time.sleep(2)
-                self.logger.warning("...done reseting.")
+            #for _ in range(0, self.RETRIES_FOR_EACH_BAUDRATE):
+                self.error_code = 0
+                self.error_message = ""
+                self.logger.info("Connecting at baudrate %i" % baudrate)
+                self.printcore = printcore()
+                self.printcore.onlinecb = self.onlinecb
+                self.printcore.errorcb = self.errorcb
+                self.printcore.tempcb = self.tempcb
+                self.printcore.recvcb = self.recvcb
+                self.printcore.sendcb = self.sendcb
+                self.printcore.connect(self.profile['COM'], baudrate)
+                time.sleep(0.1)
+                if not self.printcore.printer:
+                    self.logger.warning("Error connecting to printer at %i" % baudrate)
+                    self.printcore.disconnect()
+                else:
+                    self.online_flag = False
+                    wait_start_time = time.time()
+                    self.logger.info("Waiting for printer online")
+                    while time.time() < (wait_start_time + self.DEFAULT_TIMEOUT_FOR_PRINTER_ONLINE):
+                        if self.stop_flag:
+                            return False
+                        if self.online_flag:
+                            self.logger.info("Successful connection to printer %s:%i" % (self.profile['COM'], baudrate))
+                            time.sleep(0.1)
+                            self.logger.info("Sending homing gcodes...")
+                            for gcode in self.profile["end_gcodes"]:
+                                self.printcore.send_now(gcode)
+                            self.logger.info("...done homing")
+                            return True
+                    self.logger.warning("Timeout while waiting for printer online. Reseting and reconnecting...")
+                    self.reset()
+                    time.sleep(2)
+                    self.logger.warning("...done reseting.")
         raise RuntimeError("No more baudrates to try")
 
     def onlinecb(self):
