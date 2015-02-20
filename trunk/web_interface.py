@@ -82,7 +82,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             if login:
                 page = page.replace('!!!LOGIN!!!', login)
             if utils.get_conveyor_pid():
-                page = page.replace('content="5; url=/"', 'content="1; url=/conveyor_warning"')
+                page = page.replace('content="5; url=/"', 'content="1; url=/conveyor_warning"; method="POST"')
             self.write_with_autoreplace(page)
 
     def do_POST(self):
