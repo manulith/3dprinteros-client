@@ -40,7 +40,7 @@ class CameraMaster():
             self.cameras.append(cam)
 
     def intercept_signal(self, signal_code, frame):
-        self.logger.warning("SIGINT or SIGTERM received. Closing Camera Module...")
+        self.logger.info("SIGINT or SIGTERM received. Closing Camera Module...")
         self.close()
 
     def close(self):
@@ -59,33 +59,6 @@ class CameraMaster():
 
     def get_camera_names(self):
         cameras_names = {}
-        '''
-        if sys.platform.startswith('win'):
-            import win32com.client
-            str_computer = "."
-            objWMIService = win32com.client.Dispatch("WbemScripting.SWbemLocator")
-            objSWbemServices = objWMIService.ConnectServer(str_computer,"root\cimv2")
-            items = objSWbemServices.ExecQuery("SELECT * FROM Win32_PnPEntity")
-            count = 0
-            for item in items:
-                name = item.Name
-                if ("web" in name) or ("Web" in name) or ("WEB" in name) or ("cam" in name) or ("Cam" in name) or ("CAM" in name):
-                    new_camera = ''
-                    if item.Manufacturer != None:
-                        new_camera = item.Manufacturer
-                    if item.Name != None:
-                        new_camera = new_camera + ': ' + item.Name
-                    cameras_names[count] = new_camera
-                    count += 1
-
-            self.logger.info('Found ' + str(len(cameras_names)) + ' camera(s):')
-            if len(cameras_names) > 0:
-                for number in range(0,len(cameras_names)):
-                    self.logger.info(cameras_names[number])
-            return  cameras_names
-
-        elif sys.platform.startswith('linux') or sys.platform.startswith('darwin'):
-        '''
         cameras_count = self.get_number_of_cameras()
         if cameras_count > 0:
             for camera_id in range(0, cameras_count):
@@ -149,10 +122,10 @@ class CameraImageSender(threading.Thread):
         self.stop_flag = True
 
     def run(self):
-        while self.stop_flag != True:
+        while not self.stop_flag:
             if self.cap.isOpened():
                 picture = self.take_a_picture()
-                if picture != '':
+                if picture:
                     self.send_picture(picture)
             else:
                 if self.cap:
