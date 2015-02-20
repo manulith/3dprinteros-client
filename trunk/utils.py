@@ -320,7 +320,6 @@ def read_info_zip(package_name, path):
     else:
         logger.error(package_name + ' not found')
 
-
 def check_for_errors(data_dict):
     logger = logging.getLogger("app." + __name__)
     error = data_dict.get('error', None)
