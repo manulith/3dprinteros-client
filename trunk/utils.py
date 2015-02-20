@@ -419,8 +419,9 @@ def kill_existing_conveyor():
     if pid:
         logger.info('Makerbot conveyor service is running. Shutting down...')
         if sys.platform.startswith('win'):
-            os.popen('taskkill /f /pid ' + pid)
-            os.popen('sc stop "MakerBot Conveyor Service"') # For win 8
+            #os.popen('taskkill /f /pid ' + pid)
+            os.popen('sc stop "MakerBot Conveyor Service"')
+            time.sleep(3) # Win service stopping takes some time
         elif sys.platform.startswith('linux'):
             # TODO: it does not work
             os.kill(int(pid), signal.SIGTERM)
