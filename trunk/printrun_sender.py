@@ -35,7 +35,7 @@ class Sender(base_sender.BaseSender):
         baudrates = self.profile['baudrate']
         self.logger.info('Baudrates list for %s : %s' % (self.profile['name'], str(baudrates)))
         for baudrate in baudrates:
-            for _ in range(0, self.RETRIES_FOR_EACH_BAUDRATE):
+            #for _ in range(0, self.RETRIES_FOR_EACH_BAUDRATE):
                 self.error_code = 0
                 self.error_message = ""
                 self.logger.info("Connecting at baudrate %i" % baudrate)
