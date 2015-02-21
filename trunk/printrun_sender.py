@@ -14,7 +14,7 @@ class Sender(base_sender.BaseSender):
     pause_extrude_length = 7
     RETRIES_FOR_EACH_BAUDRATE = 2
     TEMP_REQUEST_WAIT = 5
-    DEFAULT_TIMEOUT_FOR_PRINTER_ONLINE = 15
+    DEFAULT_TIMEOUT_FOR_PRINTER_ONLINE = 3
 
     def __init__(self, profile, usb_info):
         self.temp_request_thread = None
@@ -28,8 +28,6 @@ class Sender(base_sender.BaseSender):
             self.temp_request_thread = threading.Thread(target=self.temp_request)
             self.temp_request_thread.start()
             self.stop_flag = False
-            for gcode in self.profile['end_gcodes']:
-                self.printcore.send_now(gcode)
 
     def select_baudrate_and_connect(self):
         baudrates = self.profile['baudrate']
@@ -61,15 +59,15 @@ class Sender(base_sender.BaseSender):
                             self.logger.info("Successful connection to printer %s:%i" % (self.profile['COM'], baudrate))
                             time.sleep(0.1)
                             self.logger.info("Sending homing gcodes...")
-                            for gcode in self.profile["end_gcodes"]:
+                            for gcode in self.profile.get("end_gcodes", []):
                                 self.printcore.send_now(gcode)
-                            self.logger.info("...done homing")
+                            self.logger.info("...done sending homing")
                             return True
                     self.logger.warning("Timeout while waiting for printer online. Reseting and reconnecting...")
                     self.reset()
                     time.sleep(2)
                     self.logger.warning("...done reseting.")
-        raise RuntimeError("No more baudrates to try")
+        raise RuntimeError("Unable to connect to printer")
 
     def onlinecb(self):
         self.online_flag = True
@@ -93,7 +91,7 @@ class Sender(base_sender.BaseSender):
         self.temp_re = re.compile('.*ok T:([\d\.]+) /([\d\.]+) B:(-?[\d\.]+) /(-?[\d\.]+)')
         #self.position_re = re.compile('.*X:([\d\.]+) Y:([\d\.]+) Z:([\d\.]+).*')
         # M190 - T:26.34 E:0 B:33.7
-        # M109 - T:26.3 E:0 W:?
+        # M109 - T:26.3 E:0 W:?f
         self.wait_tool_temp_re = re.compile('T:([\d\.]+) E:(\d+)')
         self.wait_platform_temp_re = re.compile('.+B:(-?[\d\.]+)')
 
