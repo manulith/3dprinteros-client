@@ -20,9 +20,10 @@ class CameraMaster():
         signal.signal(signal.SIGTERM, self.intercept_signal)
         self.stop_flag = False
         self.senders = []
-        self.logger.info('Camera module login...')
+        self.logger.info('Camera master is login to server...')
         ul = user_login.UserLogin(self)
         ul.wait_for_login()
+        self.logger.info('...got successful login as %s' % ul.login)
         self.user_token = ul.user_token
         self.init()
 
@@ -31,7 +32,9 @@ class CameraMaster():
         self.close()
 
     def init(self):
+        self.logger.info("Initialising main detection loop...")
         count = 0
+        first_run = True
         while not self.stop_flag:
             try:
                 sender = self.senders[count]
@@ -50,11 +53,15 @@ class CameraMaster():
                     is_opened = False
                 if is_opened:
                     new_camera_sender = CameraImageSender(cap, count, "Camera" + str(count), self.user_token)
+                    new_camera_sender.start()
                     self.senders.append(new_camera_sender)
                 else:
                     count = 0
             time.sleep(0.1)
             count += 1
+            if first_run:
+                self.logger.info("First loop had connected %i cameras" % len(self.senders))
+                first_run = False
 
     def close(self):
         self.stop_flag = True
@@ -74,6 +81,7 @@ class CameraMaster():
 class CameraImageSender(threading.Thread):
     def __init__(self, camera_number, camera_name, cap, user_token):
         self.logger = logging.getLogger("app." + __name__)
+        self.logger.info("Creating new camera image sender %s %s" % (str(self.camera_number), self.camera_name))
         self.stop_flag = False
         self.camera_number = camera_number
         self.camera_name = camera_name
@@ -84,7 +92,12 @@ class CameraImageSender(threading.Thread):
         super(CameraImageSender, self).__init__()
 
     def take_a_picture(self):
-        cap_ret, frame = self.cap.read()
+        try:
+            cap_ret, frame = self.cap.read()
+        except Exception as e:
+            self.logger.warning("Unable to read capture of camera " + self.camera_name)
+            self.close()
+            return
         encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), config.config["camera"]["img_qual"]]
         try:
             result, image_encode = cv2.imencode(config.config["camera"]["img_ext"], frame, encode_param)
@@ -104,6 +117,7 @@ class CameraImageSender(threading.Thread):
         http_client.send(http_client.package_camera_send, message)
 
     def close(self):
+        self.logger.info("Closing camera " + self.camera_name)
         self.stop_flag = True
 
     def run(self):
@@ -115,8 +129,7 @@ class CameraImageSender(threading.Thread):
             else:
                 self.logger.warning("OpenCV VideoCapture object isn't opened. Stopping camera " + self.camera_name)
                 break
-        if self.cap:
-            self.cap.release()
+        self.cap.release()
         self.logger.info(self.camera_name + " was closed.")
 
 
