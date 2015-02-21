@@ -18,7 +18,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
     def address_string(self):
         host, port = self.client_address[:2]
-        self.logger.debug("Incoming from %s:%i" % (host, port))
+        self.logger.debug("Incoming connection from %s:%i" % (host, port))
         return host
 
     def write_with_autoreplace(self, page):
@@ -107,11 +107,11 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
     def kill_conveyor(self):
         message = open(os.path.join(self.working_dir, 'web_interface/message.html')).read()
-        fail_message = message.replace('!!!MESSAGE!!!', 'Failed to kill conveyor.<br>')
+        fail_message = message.replace('!!!MESSAGE!!!', '3DPrinterOS was unable to stop conveyor.<br>')
         if utils.get_conveyor_pid():
             result = utils.kill_existing_conveyor()
             if result:
-                message = message.replace('!!!MESSAGE!!!', 'Conveyor killed.<br><br>Returning...')
+                message = message.replace('!!!MESSAGE!!!', 'Conveyor was successfully stopped.<br><br>Returning...')
             else:
                 message = fail_message
         else:
@@ -217,7 +217,7 @@ class WebInterface(threading.Thread):
             self.server.serve_forever()
             self.server.app = None
             self.app = None
-            self.logger.info("Web server stopped")
+            self.logger.info("Web server stop.")
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)

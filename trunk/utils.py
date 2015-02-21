@@ -181,14 +181,14 @@ def read_login():
 
 def write_login(login, password):
     logger = logging.getLogger('app.' + __name__)
-    package_name = 'login_info.bin' #probably it shoud be read from config
+    package_name = 'login_info.bin' #probably it should be read from config
     path = get_paths_to_settings_folder()[0]
     try:
         result = pack_info_zip(package_name, path, login, password)
     except Exception as e:
         logger.warning('Login info writing error! ' + e.message)
     else:
-        if result == True:
+        if result:
             logger.info('Login info was written and packed.')
         else:
             logger.warning("Login info wasn't written.")
