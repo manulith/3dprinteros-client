@@ -43,8 +43,8 @@ class Sender(base_sender.BaseSender):
                 self.printcore.tempcb = self.tempcb
                 self.printcore.recvcb = self.recvcb
                 self.printcore.sendcb = self.sendcb
-                self.printcore.connect(self.profile['COM'], baudrate)
                 time.sleep(0.1)
+                self.printcore.connect(self.profile['COM'], baudrate)
                 if not self.printcore.printer:
                     self.logger.warning("Error connecting to printer at %i" % baudrate)
                     self.printcore.disconnect()
@@ -124,10 +124,10 @@ class Sender(base_sender.BaseSender):
 
     def recvcb(self, line):
         self.logger.debug(line)
-        if line[0] == 'T':
+        if line.startswith('T'):
             self.fetch_temps(line)
-        # elif line[0:2] == 'ok':
-        #     self.ready_flag = True
+        elif line.startswith('ok'):
+            self.online_flag = True
 
     def sendcb(self, command, gline):
         self.logger.debug("Executing command: " + command)

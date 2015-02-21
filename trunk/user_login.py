@@ -29,11 +29,11 @@ class UserLogin:
                 profiles_str = answer['all_profiles']
                 all_profiles = json.loads(profiles_str)
                 config.update_profiles(all_profiles)
-                if utils.write_login(login, password):
-                    self.login = login # for web_interface to display
-                    self.user_token = answer["user_token"]
-                    self.logger.info("Successful login from user " + login, extra = { 'login': login })
-                    return
+                self.user_token = answer["user_token"]
+                self.login = login # for web_interface to display
+                utils.write_login(login, password)
+                self.logger.info("Successful login from user " + login, extra = { 'login': login })
+                return
             else:
                 self.logger.warning("Error processing user_login " + str(error))
                 self.logger.error("Login rejected")
