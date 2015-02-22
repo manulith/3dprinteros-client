@@ -24,7 +24,9 @@ class CameraMaster():
         ul = user_login.UserLogin(self)
         ul.wait_for_login()
         self.user_token = ul.user_token
-        if len(self.get_camera_names()) != self.get_number_of_cameras():
+        self.cameras_count = self.get_number_of_cameras()
+        self.camera_names = self.get_camera_names()
+        if len(self.camera_names) != self.cameras_count:
             message = "Malfunction in get_camera_names. Number of cameras doesn't equal to number of camera names"
             self.logger.error(message)
             raise RuntimeError(message)
@@ -32,10 +34,9 @@ class CameraMaster():
             self.init_cameras()
 
     def init_cameras(self):
-        cam_names = self.get_camera_names()
-        for num in cam_names:
+        for num in self.camera_names:
             cap = cv2.VideoCapture(num)
-            cam = CameraImageSender(num+1, cam_names[num], cap, self.user_token)
+            cam = CameraImageSender(num+1, self.camera_names[num], cap, self.user_token)
             cam.start()
             self.cameras.append(cam)
 
@@ -59,9 +60,8 @@ class CameraMaster():
 
     def get_camera_names(self):
         cameras_names = {}
-        cameras_count = self.get_number_of_cameras()
-        if cameras_count > 0:
-            for camera_id in range(0, cameras_count):
+        if self.cameras_count > 0:
+            for camera_id in range(0, self.cameras_count):
                 cameras_names[camera_id] = 'Camera ' + str(camera_id + 1)
 
         self.logger.info('Found ' + str(len(cameras_names)) + ' camera(s):')
