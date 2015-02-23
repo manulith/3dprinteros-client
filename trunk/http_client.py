@@ -149,3 +149,27 @@ def download(url):
             return get_request(connection, None, path)
         else:
             logger.warning("Error: no connection to download server")
+
+def async_download(url):
+    logger = logging.getLogger('app.' +__name__)
+    match = domain_path_re.match(url)
+    logger.info("Downloading payload from" + url)
+    try:
+        domain, path = match.groups()
+    except AttributeError:
+        logger.warning("Unparsable link: " + url)
+    else:
+        import requests
+        filename = 'testfile'
+        with open(filename, 'wb') as f:
+            r = requests.get(url, stream=True)
+            logger.info('File length : %s' % str(r.headers['content-length']))
+            file_length = int(r.headers['content-length'])
+            # Taking +1 byte with each chunk to compensate file length tail less than 100 bytes when dividing by 100
+            percent_length = file_length / 100 + 1
+            progress = 0
+            for chunk in r.iter_content(percent_length):
+                progress += 1
+                logger.info('File downloading : %d%%' % progress)
+                f.write(chunk)
+        return filename

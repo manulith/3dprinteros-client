@@ -104,7 +104,10 @@ class PrinterInterface(threading.Thread):
                     self.logger.info("Excecuting command number %i : %s" % (number, str(command)))
                     payload = data_dict.get('payload', None)
                     if data_dict.get('is_link', False):
-                        payload = http_client.download(payload)
+                        #payload = http_client.download(payload)
+                        payload_file = http_client.async_download(payload)
+                        with open(payload_file, 'rb') as f:
+                            payload = f.read()
                         if not payload:
                             self.sender_error = {"code": 777, "message": "Can't download file from storage"}
                             return { "number": number, "result": False }
