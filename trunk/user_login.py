@@ -27,7 +27,11 @@ class UserLogin:
             error = answer.get('error', None)
             if user_token and not error:
                 profiles_str = answer['all_profiles']
-                all_profiles = json.loads(profiles_str)
+                try:
+                    all_profiles = json.loads(profiles_str)
+                except Exception as e:
+                    self.logger.warning('JSON from server is not correct. Warning: ' + e.message)
+                    return 715, 'JSON from server is not correct. Warning: ' + e.message  # TODO: nice error is needed
                 config.update_profiles(all_profiles)
                 if utils.write_login(login, password):
                     self.login = login # for web_interface to display
