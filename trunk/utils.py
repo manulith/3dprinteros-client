@@ -13,6 +13,7 @@ import platform
 from hashlib import sha256
 import base64
 import signal
+from subprocess import Popen, PIPE
 
 import config
 import http_client
@@ -434,6 +435,28 @@ def kill_existing_conveyor():
         else:
             logger.info('Makerbot Conveyor Service successfully killed.')
             return True
+
+def is_user_groups():
+    logger = logging.getLogger('app')
+    if sys.platform.startswith('linux'):
+        p = Popen('groups', stdout=PIPE, stderr=PIPE)
+        stdout, stderr = p.communicate()
+        groups = stdout
+        if not ('tty' in groups and 'dialout' in groups):
+            logger.info('Current Linux user is not in tty and dialout groups')
+            return False
+        else:
+            return True
+    else:
+        return True
+
+def add_user_groups():
+    logger = logging.getLogger('app')
+    if sys.platform.startswith('linux'):
+        p = Popen('gnome-terminal -e "sudo usermod -a -G dialout,tty $USER"', shell=True, stdout=PIPE, stderr=PIPE)
+        stdout, stderr = p.communicate()
+        if stdout:
+            logger.info('Adding to Linux groups result: ' + stdout)
 
 
 if __name__ == "__main__":
