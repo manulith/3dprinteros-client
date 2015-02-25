@@ -453,7 +453,7 @@ def is_user_groups():
 def add_user_groups():
     logger = logging.getLogger('app')
     if sys.platform.startswith('linux'):
-        p = Popen('gnome-terminal -e "sudo usermod -a -G dialout,tty $USER"', shell=True, stdout=PIPE, stderr=PIPE)
+        p = Popen('xterm -e "sudo usermod -a -G dialout,tty $USER"', shell=True, stdout=PIPE, stderr=PIPE)
         stdout, stderr = p.communicate()
         if stdout:
             logger.info('Adding to Linux groups result: ' + stdout)
