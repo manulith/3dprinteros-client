@@ -19,7 +19,6 @@ class Sender(base_sender.BaseSender):
 
     def __init__(self, profile, usb_info):
         base_sender.BaseSender.__init__(self, profile, usb_info)
-        #self.mb = {'preheat': False, 'heat_shutdown': False}
         self.logger = logging.getLogger('app.' + __name__)
         self.logger.info('Makerbot printer created')
         self.init_target_temp_regexps()
@@ -79,8 +78,6 @@ class Sender(base_sender.BaseSender):
         for code in gcodes:
             with self.buffer_lock:
                 self.buffer.append(code)
-        #with self.buffer_lock:
-            #self.buffer.extend(gcodes)
         self.logger.info('Enqueued block: ' + str(len(gcodes)) + ', total: ' + str(len(self.buffer)))
 
     def cancel(self, go_home=True):
@@ -89,7 +86,9 @@ class Sender(base_sender.BaseSender):
         self.pause_flag = False
         self.cancel_flag = True
         time.sleep(0.1)
-        self.execute(lambda: self.parser.s3g.abort_immediately())
+        self.execute(lambda: self.parser.s3g.abort_immediate())
+        #with self.buffer_lock:
+            #self.buffer.extend(gcodes)
 
     def pause(self):
         if not self.pause_flag:
@@ -167,7 +166,7 @@ class Sender(base_sender.BaseSender):
             except serial.serialutil.SerialException:
                 self.logger.warning("Makerbot is retrying " + text)
             except Exception as e:
-                self.logger.warning("Makerbot can't continue because of: %s %s" % (str(e), e.message))
+                self.logger.warning("Makerbot can't continue because of: %s %s" % (str(e), e.message), exc_info=True)
                 self.error_code = 1
                 self.error_message = e.message
                 self.close()

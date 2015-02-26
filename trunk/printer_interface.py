@@ -74,14 +74,18 @@ class PrinterInterface(threading.Thread):
         printer_sender = __import__(self.printer_profile['sender'])
         self.logger.info("Connecting with profile: " + str(self.printer_profile))
         if "baudrate" in self.printer_profile and not self.printer_profile.get("COM", False): # indication of serial printer, but no serial port
-            self.sender_error = {"code": 901, "message": "No serial port for serial printer. No senders or printer firmware hanged."}
+            self.sender_error = {"code": 11, "message": "No serial port for serial printer. No senders or printer firmware hanged."}
             return
         try:
             printer = printer_sender.Sender(self.printer_profile, self.usb_info)
         except RuntimeError as e:
             self.logger.warning("Can't connect to printer %s %s\nReason:%s" % (self.printer_profile['name'], str(self.usb_info), e.message))
+            self.sender_error = {"code": 19,
+                                 "message": "Error group - Can't connect to printer: " + e.message}
         except Exception as e:
             self.logger.warning("Error connecting to %s" % self.printer_profile['name'], exc_info=True)
+            self.sender_error = {"code": 29,
+                                 "message": "Error group - unknown error while connecting to printer: " + e.message}
         else:
             self.printer = printer
             self.logger.info("Successful connection to %s!" % (self.printer_profile['name']))
@@ -117,7 +121,7 @@ class PrinterInterface(threading.Thread):
                         result = method(*arguments)
                     except Exception as e:
                         self.logger.error("Error while executing command %s, number %i.\t%s" % (command, number, e.message), exc_info=True)
-                        self.sender_error = {"code": 0, "message": e.message}
+                        self.sender_error = {"code": 9, "message": e.message}
                         result = False
                     ack = {"number": number, "result": bool(result or result == None)}
                     # to reduce needless return True, we assume that when method had return None, that is success
@@ -138,8 +142,10 @@ class PrinterInterface(threading.Thread):
                 answer = http_client.send(http_client.package_command_request, message)
                 self.logger.debug("Got answer: " + str(answer))
                 if answer:
-                    self.sender_error = None
                     self.acknowledge = self.process_command_request(answer)
+                    self.printer.error_code = None
+                    self.printer.error_message = None
+                    self.sender_error = None
                 else:
                     time.sleep(self.NO_COMMAND_SLEEP)
             elif (time.time() - self.creation_time < self.printer_profile.get('start_timeout', self.DEFAULT_TIMEOUT)) and not self.stop_flag:
@@ -153,7 +159,6 @@ class PrinterInterface(threading.Thread):
                     error = answer.get('error', None)
                     if error:
                         self.logger.error("Server had returned error: " + str(error))
-                        self.close()
                         return
                     command_number = answer.get("number", False)
                     if command_number:
@@ -174,7 +179,7 @@ class PrinterInterface(threading.Thread):
             else:
                 state = "ready"
         else:
-            if self.sender_error:
+            if self.sender_error or self.printer.error_code:
                 state = "error"
             else:
                 state = "connecting"
@@ -194,11 +199,10 @@ class PrinterInterface(threading.Thread):
 
     def close_printer_sender(self):
         if self.printer:
-            if not self.printer.stop_flag:
-                self.logger.info('Closing ' + str(self.printer_profile))
-                self.printer.close()
-                self.printer = None
-                self.logger.info('...closed.')
+            self.logger.info('Closing ' + str(self.printer_profile))
+            self.printer.close()
+            self.printer = None
+            self.logger.info('...closed.')
         else:
             self.logger.debug('No printer module to close')
 
