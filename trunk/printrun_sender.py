@@ -255,4 +255,4 @@ class Sender(base_sender.BaseSender):
             if self.temp_request_thread.isAlive():
                 self.logger.error("Error stopping temperature request thread.")
             else:
-                self.logger.debug('...done)')
+                self.logger.debug('...done Printrun sender closing)')
