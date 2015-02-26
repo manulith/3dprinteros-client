@@ -6,7 +6,6 @@ import os
 import time
 import signal
 import logging
-import logstash
 from subprocess import Popen
 
 import utils
