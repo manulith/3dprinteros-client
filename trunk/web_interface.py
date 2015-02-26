@@ -32,6 +32,8 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.send_response(200)
             self.end_headers()
             self.write_with_autoreplace("Token was reset\nPlease restart 3DPrinterOS and re-login")
+        elif self.path.find('quit') >= 0:
+            self.quit_main_app()
         else:
             self.send_response(200)
             self.end_headers()

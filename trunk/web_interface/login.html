@@ -40,9 +40,10 @@
 			<p>
 				Please enter your login info
 			</p>
-			<form action="/login" method="post">
+			<form action="/login" method="post" style="display: inline">
 				<input type="text" name="login" placeholder="Login" style='margin-bottom: 15px; width: 64%; height: 40px; text-indent: 10px; font-size: 15px; '><br>
 				<input type="password" name="password" placeholder="Password" style='margin-bottom: 15px; width: 64%; height: 40px; text-indent: 10px; font-size: 15px; '><br>
+                        <input type="button" onclick="location.href='/quit'" formmethod="post" value="Quit" style='background: #FF9900; border: none; width: 150px; height: 50px; text-indent: 5px; font-family: "Trebuchet MS", Helvetica, sans-serif; color: #ffffff; font-weight: bold; font-size: 20px; margin-top: 20px; margin-bottom: 30px; margin-right: 20px;'>
                 <input type="submit" value="Enter" style='background: #FF9900; border: none; width: 150px; height: 50px; text-indent: 5px; font-family: "Trebuchet MS", Helvetica, sans-serif; color: #ffffff; font-weight: bold; font-size: 20px; margin-top: 5px;'>
 			</form>
 		</div>
