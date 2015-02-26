@@ -84,7 +84,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             printers = ''.join(map(lambda x: "<p>" + x + "</p>", printers_list))
             if not printers:
                 printers = '<p><b>No printers detected</b>\
-                <br>Please do a power cycle for pritners\
+                <br>Please do a power cycle for printers\
                 <br>and then ensure your printers are connected\
                 <br>to power outlet and usb cord</p>'
             page = page.replace('!!!PRINTERS!!!', printers)
