@@ -8,8 +8,8 @@ import usb.util
 import usb.backend.libusb1
 import serial.tools.list_ports
 
-import config
 import utils
+import config
 
 def format_vid_or_pid(vid_or_pid):
     return hex(vid_or_pid)[2:].zfill(4).upper()

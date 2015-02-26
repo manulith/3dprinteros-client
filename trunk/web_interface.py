@@ -7,6 +7,7 @@ from SocketServer import ThreadingMixIn
 
 import utils
 import version
+import config
 
 class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
@@ -32,6 +33,10 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.send_response(200)
             self.end_headers()
             self.write_with_autoreplace("Token was reset\nPlease restart 3DPrinterOS and re-login")
+        elif self.path.find('show_logs') >=0:
+            self.show_logs()
+        elif self.path.find('download_logs') >= 0:
+            self.download_logs()
         else:
             self.send_response(200)
             self.end_headers()
@@ -77,12 +82,19 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                                   + 'Heated Bed: ' + str(temps[0]) + '/' + str(target_temps[0])
                 printers_list.append(printer)
             printers = ''.join(map(lambda x: "<p>" + x + "</p>", printers_list))
+            if not printers:
+                printers = '<p><b>No printers detected</b>\
+                <br>Please do a power cycle for printers\
+                <br>and then ensure your printers are connected\
+                <br>to power outlet and usb cord</p>'
             page = page.replace('!!!PRINTERS!!!', printers)
             login = self.server.app.user_login.login
             if login:
                 page = page.replace('!!!LOGIN!!!', login)
             if utils.get_conveyor_pid():
                 page = open(os.path.join(self.working_dir, 'web_interface/conveyor_warning.html')).read()
+            if not utils.is_user_groups():
+                page = open(os.path.join(self.working_dir, 'web_interface/groups_warning.html')).read()
             self.write_with_autoreplace(page)
 
     def do_POST(self):
@@ -94,16 +106,34 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.snapshot_log()
         elif self.path.find('send_log_snapshots') >= 0:
             self.send_log_snapshots()
-        elif self.path.find('logs') >= 0:
-            self.download_logs()
         elif self.path.find('logout') >= 0:
             self.process_logout()
         elif self.path.find('kill_conveyor') >= 0:
             self.kill_conveyor()
+        elif self.path.find('add_user_groups') >= 0:
+            self.add_user_groups()
         else:
             self.send_response(404)
             self.end_headers()
             self.write_with_autoreplace('Not found')
+
+    def show_logs(self):
+        log_file = config.config['log_file']
+        logs = utils.get_file_tail(log_file)
+        content = ''
+        if not content:
+            content = 'No logs'
+        for line in logs:
+            content = content + line + '<br>'
+        page = open(os.path.join(self.working_dir, 'web_interface/show_logs.html')).read()
+        page = page.replace('!!!LOGS!!!', content)
+        self.send_response(200)
+        self.end_headers()
+        self.write_with_autoreplace(page)
+
+    def add_user_groups(self):
+        utils.add_user_groups()
+        self.quit_main_app()
 
     def kill_conveyor(self):
         message = open(os.path.join(self.working_dir, 'web_interface/message.html')).read()
