@@ -15,7 +15,7 @@ import config
 
 class CameraMaster():
     def __init__(self):
-        self.logger = utils.get_logger(config.config["camera"]["log_file"])
+        self.init_logging()
         signal.signal(signal.SIGINT, self.intercept_signal)
         signal.signal(signal.SIGTERM, self.intercept_signal)
         self.stop_flag = False
@@ -30,6 +30,17 @@ class CameraMaster():
             raise RuntimeError(message)
         else:
             self.init_cameras()
+
+    def init_logging(self):
+        self.logger = logging.getLogger("camera")
+        self.logger.propagate = False
+        self.logger.setLevel(logging.DEBUG)
+        log_name = config.config["camera"]["log_file"]
+        file_handler = logging.handlers.RotatingFileHandler(log_name, maxBytes=1024 * 1024, backupCount=1)
+        file_handler.setFormatter(
+            logging.Formatter('%(levelname)s\t%(asctime)s\t%(threadName)s/%(funcName)s\t%(message)s'))
+        file_handler.setLevel(logging.DEBUG)
+        self.logger.addHandler(file_handler)
 
     def init_cameras(self):
         cam_names = self.get_camera_names()

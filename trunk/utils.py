@@ -351,7 +351,7 @@ def get_logger(log_file):
     logger.addHandler(stderr_handler)
     if log_file:
         try:
-            file_handler = logging.handlers.RotatingFileHandler(log_file, maxBytes=1024*1024*10, backupCount=1)
+            file_handler = logging.handlers.RotatingFileHandler(log_file, maxBytes=1024*1024*10, backupCount=10)
             file_handler.setFormatter(logging.Formatter('%(levelname)s\t%(asctime)s\t%(threadName)s/%(funcName)s\t%(message)s'))
             file_handler.setLevel(logging.DEBUG)
             logger.addHandler(file_handler)
