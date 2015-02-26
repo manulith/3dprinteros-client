@@ -4,6 +4,7 @@
 import sys
 import os
 import time
+import datetime
 import signal
 import logging
 import logstash
@@ -77,6 +78,7 @@ class App:
 
     def main_loop(self):
         while not self.stop_flag:
+            self.last_timestamp = datetime.datetime.now()
             self.time_stamp()
             self.detected_printers = usb_detect.get_printers()
             self.check_and_connect()
@@ -86,6 +88,10 @@ class App:
                 elif not pi.is_alive():
                     self.disconnect_printer(pi, 'error')
             time.sleep(2)
+            if datetime.datetime.now() > self.last_timestamp + datetime.timedelta(seconds=5):
+                self.logger.info('Flushing logger handlers')
+                for handler in self.logger.handlers:
+                    handler.flush()
         # this is for quit from web interface(to release server's thread and quit)
         if self.quit_flag:
             self.quit()
