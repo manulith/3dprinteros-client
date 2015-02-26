@@ -16,6 +16,7 @@ class Sender(base_sender.BaseSender):
     TEMP_UPDATE_PERIOD = 5
     GODES_BETWEEN_READ_STATE = 100
     BUFFER_OVERFLOWS_BETWEEN_STATE_UPDATE = 20
+    MAX_RETRY_BEFORE_ERROR = 100
 
     def __init__(self, profile, usb_info):
         base_sender.BaseSender.__init__(self, profile, usb_info)
@@ -140,6 +141,7 @@ class Sender(base_sender.BaseSender):
 
     def execute(self, command):
         buffer_overflow_counter = 0
+        retry_count = 0
         while not self.stop_flag:
             if buffer_overflow_counter > self.BUFFER_OVERFLOWS_BETWEEN_STATE_UPDATE:
                 self.logger.info('Makerbot BufferOverflow on ' + text)
@@ -165,13 +167,19 @@ class Sender(base_sender.BaseSender):
                 buffer_overflow_counter += 1
                 time.sleep(self.BUFFER_OVERFLOW_WAIT)
             except serial.serialutil.SerialException:
-                self.logger.warning("Makerbot is retrying " + text)
+                self.logger.warning("Makerbot is retrying %i %s" % (retry_count, text))
+                retry_count += 1
+                if retry_count > self.MAX_RETRY_BEFORE_ERROR:
+                    message = "Makerbot can't continue because max retry of %s" % text
+                    self.logger.warning(message)
+                    self.error_code = 2
+                    self.error_message = message
+                    self.close()
             except Exception as e:
                 self.logger.warning("Makerbot can't continue because of: %s %s" % (str(e), e.message))
                 self.error_code = 1
                 self.error_message = e.message
                 self.close()
-                break
             else:
                 return result
             finally:
