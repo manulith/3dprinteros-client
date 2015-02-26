@@ -13,6 +13,7 @@ import platform
 from hashlib import sha256
 import base64
 import signal
+from subprocess import Popen, PIPE
 
 import config
 import http_client

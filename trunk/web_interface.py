@@ -7,6 +7,7 @@ from SocketServer import ThreadingMixIn
 
 import utils
 import version
+import config
 
 class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
