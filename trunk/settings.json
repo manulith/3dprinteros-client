@@ -1,6 +1,6 @@
 {
-  "URL": "cloud.3dprinteros.com",
-  "AUX_URL": "cloud.3dprinteros.com",
+  "URL": "acc-acorn.3dprinteros.com",
+  "AUX_URL": "acc-acorn.3dprinteros.com",
   "HTTPS": true,
   "log_file": "3dprinteros_client.log",
   "logstash_addr": "ec2-54-67-60-43.us-west-1.compute.amazonaws.com",
