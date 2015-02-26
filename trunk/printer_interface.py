@@ -153,7 +153,6 @@ class PrinterInterface(threading.Thread):
                     error = answer.get('error', None)
                     if error:
                         self.logger.error("Server had returned error: " + str(error))
-                        self.close()
                         return
                     command_number = answer.get("number", False)
                     if command_number:
@@ -163,7 +162,7 @@ class PrinterInterface(threading.Thread):
                 self.sender_error = None
                 self.acknowledge = None
                 self.logger.debug("...done")
-                self.close_printer_sender()
+                self.close()
 
     def get_printer_state(self):
         if self.printer.is_operational():

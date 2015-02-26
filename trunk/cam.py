@@ -124,10 +124,8 @@ class CameraImageSender(threading.Thread):
 
     def send_picture(self, picture):
         picture = base64.b64encode(str(picture))
-        #payload = http_client.package_camera_send(self.token, self.camera_number, self.camera_name, picture)
-        #answer = http_client.post_request(self.connection, payload, http_client.camera_path)
-        answer =  http_client.send(http_client.package_camera_send, (self.token, self.camera_number, self.camera_name, picture, http_client.MACADDR))
-        #self.logger.debug(self.camera_name + ' streaming response: ' + str(answer))
+        message = (self.token, self.camera_number, self.camera_name, picture, http_client.MACADDR)
+        http_client.send(http_client.package_camera_send, message)
 
     def close(self):
         self.stop_flag = True
