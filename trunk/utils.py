@@ -458,6 +458,19 @@ def add_user_groups():
         if stdout:
             logger.info('Adding to Linux groups result: ' + stdout)
 
+def get_file_tail(file):
+    file = file
+    if os.path.isfile(file):
+        f = open(file).readlines()
+        file_tail = []
+        for line in range(-1,-100, -1):
+            try:
+                file_tail.append(f[line])
+            except IndexError:
+                break
+        if file_tail:
+            return file_tail
+
 
 if __name__ == "__main__":
     pid = get_conveyor_pid()

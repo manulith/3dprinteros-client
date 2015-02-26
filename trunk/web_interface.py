@@ -7,6 +7,7 @@ from SocketServer import ThreadingMixIn
 
 import utils
 import version
+import config
 
 class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
@@ -32,6 +33,10 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.send_response(200)
             self.end_headers()
             self.write_with_autoreplace("Token was reset\nPlease restart 3DPrinterOS and re-login")
+        elif self.path.find('show_logs') >=0:
+            self.show_logs()
+        elif self.path.find('download_logs') >= 0:
+            self.download_logs()
         else:
             self.send_response(200)
             self.end_headers()
@@ -98,8 +103,6 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.snapshot_log()
         elif self.path.find('send_log_snapshots') >= 0:
             self.send_log_snapshots()
-        elif self.path.find('logs') >= 0:
-            self.download_logs()
         elif self.path.find('logout') >= 0:
             self.process_logout()
         elif self.path.find('kill_conveyor') >= 0:
@@ -110,6 +113,20 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.send_response(404)
             self.end_headers()
             self.write_with_autoreplace('Not found')
+
+    def show_logs(self):
+        log_file = config.config['log_file']
+        logs = utils.get_file_tail(log_file)
+        content = ''
+        if not content:
+            content = 'No logs'
+        for line in logs:
+            content = content + line + '<br>'
+        page = open(os.path.join(self.working_dir, 'web_interface/show_logs.html')).read()
+        page = page.replace('!!!LOGS!!!', content)
+        self.send_response(200)
+        self.end_headers()
+        self.write_with_autoreplace(page)
 
     def add_user_groups(self):
         utils.add_user_groups()
