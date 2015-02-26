@@ -6,7 +6,6 @@ import os
 import time
 import signal
 import logging
-# import logstash
 from subprocess import Popen
 import subprocess as subp
 
@@ -24,7 +23,6 @@ class Wrapper:
         self.logger.info("Welcome to 3DPrinterOS Wrapper version %s_%s" % (version.version, version.build))
         signal.signal(signal.SIGINT, self.intercept_signal)
         signal.signal(signal.SIGTERM, self.intercept_signal)
-        # self.init_logstash()
         self.stop_flag = False
         self.start_app()
 
