@@ -4,6 +4,7 @@
   "HTTPS": true,
   "log_file": "3dprinteros_client.log",
   "web_interface": true,
+  "linux_rights_warning": false,
   "camera": {
     "enabled" : true,
     "img_ext" : ".jpg",

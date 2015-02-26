@@ -438,7 +438,7 @@ def kill_existing_conveyor():
 
 def is_user_groups():
     logger = logging.getLogger('app')
-    if sys.platform.startswith('linux'):
+    if sys.platform.startswith('linux') and config.config['linux_rights_warning']:
         p = Popen('groups', stdout=PIPE, stderr=PIPE)
         stdout, stderr = p.communicate()
         groups = stdout
