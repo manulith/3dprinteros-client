@@ -124,7 +124,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         if not content:
             content = 'No logs'
         for line in logs:
-            content = content + line + '<hr>'
+            content = content + line + '<br>'
         page = open(os.path.join(self.working_dir, 'web_interface/show_logs.html')).read()
         page = page.replace('!!!LOGS!!!', content)
         self.send_response(200)
