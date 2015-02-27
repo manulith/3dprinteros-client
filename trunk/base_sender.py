@@ -24,7 +24,7 @@ class BaseSender:
         if self.downloading_flag:
             self.logger.warning('Download command received while downloading processing. Aborting...')
             return
-        thread.start_new_thread(self.download_thread, gcodes)
+        thread.start_new_thread(self.download_thread, (gcodes,))
         self.downloading_flag = True
 
     def download_thread(self, gcodes):
@@ -33,6 +33,7 @@ class BaseSender:
             with open(gcode_file, 'rb') as f:
                 gcodes = f.read()
             self.print_gcodes(gcodes)
+            self.downloading_flag = False
 
     def is_downloading(self):
         return self.downloading_flag
