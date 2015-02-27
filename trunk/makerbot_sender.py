@@ -74,6 +74,9 @@ class Sender(base_sender.BaseSender):
         self.execute(lambda: self.parser.s3g.set_RGB_LED(255, 255, 255, 0))
 
     def gcodes(self, gcodes):
+        base_sender.BaseSender.gcodes(self, gcodes)
+
+    def print_gcodes(self, gcodes):
         gcodes = gcodes.split("\n")
         self.set_total_gcodes()
         for code in gcodes:

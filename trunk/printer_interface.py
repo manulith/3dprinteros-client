@@ -105,9 +105,11 @@ class PrinterInterface(threading.Thread):
                     payload = data_dict.get('payload', None)
                     if data_dict.get('is_link', False):
                         #payload = http_client.download(payload)
-                        payload_file = http_client.async_download(payload)
-                        with open(payload_file, 'rb') as f:
-                            payload = f.read()
+                        #payload_file = http_client.async_download(payload)
+                        #self.printer.start_download(payload)
+                        #self.logger.info('File has been downloaded.')
+                        # with open(payload_file, 'rb') as f:
+                        #     payload = f.read()
                         if not payload:
                             self.sender_error = {"code": 777, "message": "Can't download file from storage"}
                             return { "number": number, "result": False }
@@ -174,6 +176,8 @@ class PrinterInterface(threading.Thread):
                 state = "paused"
             elif self.printer.is_printing():
                 state = "printing"
+            elif self.printer.is_downloading():
+                state = "downloading"
             else:
                 state = "ready"
         else:
