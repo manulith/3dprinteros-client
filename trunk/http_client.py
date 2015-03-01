@@ -4,6 +4,7 @@ import json
 import uuid
 import httplib
 import logging
+import tempfile
 
 import config
 
@@ -160,16 +161,29 @@ def async_download(url):
         logger.warning("Unparsable link: " + url)
     else:
         import requests
-        filename = 'testfile'
-        with open(filename, 'wb') as f:
+        tmp_file = tempfile.NamedTemporaryFile(mode='wb', delete=False, prefix='3dprinteros-', suffix='.gcode')
+        with tmp_file:
             r = requests.get(url, stream=True)
-            logger.info('File length : %s' % str(r.headers['content-length']))
             file_length = int(r.headers['content-length'])
+            logger.info('File length : %s' % str(file_length))
             # Taking +1 byte with each chunk to compensate file length tail less than 100 bytes when dividing by 100
             percent_length = file_length / 100 + 1
             progress = 0
             for chunk in r.iter_content(percent_length):
                 progress += 1
                 logger.info('File downloading : %d%%' % progress)
-                f.write(chunk)
-        return filename
+                tmp_file.write(chunk)
+        return tmp_file.name
+        # filename = 'testfile'
+        # with open(filename, 'wb') as f:
+        #     r = requests.get(url, stream=True)
+        #     logger.info('File length : %s' % str(r.headers['content-length']))
+        #     file_length = int(r.headers['content-length'])
+        #     # Taking +1 byte with each chunk to compensate file length tail less than 100 bytes when dividing by 100
+        #     percent_length = file_length / 100 + 1
+        #     progress = 0
+        #     for chunk in r.iter_content(percent_length):
+        #         progress += 1
+        #         logger.info('File downloading : %d%%' % progress)
+        #         f.write(chunk)
+        # return filename

@@ -1,5 +1,6 @@
 import collections
 import time
+import os
 import thread
 import logging
 import http_client
@@ -33,6 +34,8 @@ class BaseSender:
             with open(gcode_file, 'rb') as f:
                 gcodes = f.read()
             self.print_gcodes(gcodes)
+            self.logger.info('Gcodes loaded to memory, deleting temp file')
+            os.remove(gcodes)
             self.downloading_flag = False
 
     def is_downloading(self):
