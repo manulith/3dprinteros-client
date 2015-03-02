@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import re
+import string
 import logging
 import usb.core
 import usb.util
@@ -34,10 +35,14 @@ def get_devices():
         }
         try:
             SNR = str(usb.util.get_string(dev, dev.iSerialNumber))
-            if "x" in SNR:
-                 SNR = None
         except:
             SNR = None
+        else:
+            if SNR:
+                for symbol in SNR:
+                    if not symbol in string.printable:
+                        SNR = None
+                        break
         # try:
         #     manufacturer = dev.manufacturer  # can provoke PIPE ERROR
         #     device_dct['Manufacturer'] = manufacturer
