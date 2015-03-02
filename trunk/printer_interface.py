@@ -74,17 +74,25 @@ class PrinterInterface(threading.Thread):
         printer_sender = __import__(self.printer_profile['sender'])
         self.logger.info("Connecting with profile: " + str(self.printer_profile))
         if "baudrate" in self.printer_profile and not self.printer_profile.get("COM", False): # indication of serial printer, but no serial port
-            self.sender_error = {"code": 901, "message": "No serial port for serial printer. No senders or printer firmware hanged."}
-            return
-        try:
-            printer = printer_sender.Sender(self.printer_profile, self.usb_info)
-        except RuntimeError as e:
-            self.logger.warning("Can't connect to printer %s %s\nReason:%s" % (self.printer_profile['name'], str(self.usb_info), e.message))
-        except Exception as e:
-            self.logger.warning("Error connecting to %s" % self.printer_profile['name'], exc_info=True)
+            self.logger.warning("No serial port for serial printer. No senders or printer firmware hanged.")
+            self.report_connection_error(901, "No serial port for serial printer. No senders or printer firmware hanged.")
         else:
-            self.printer = printer
-            self.logger.info("Successful connection to %s!" % (self.printer_profile['name']))
+            try:
+                printer = printer_sender.Sender(self.printer_profile, self.usb_info)
+            except RuntimeError as e:
+                self.logger.warning("Can't connect to printer %s %s\nReason:%s" % (self.printer_profile['name'], str(self.usb_info), e.message))
+                self.report_connection_error(919, "Can't connect to printer. Reason:%s" % e.message)
+            except Exception as e:
+                self.logger.warning("Error connecting to %s" % self.printer_profile['name'], exc_info=True)
+                self.report_connection_error(929, "Unexpected error while connecting to printer. %s" % e.message)
+            else:
+                self.printer = printer
+                self.logger.info("Successful connection to %s!" % (self.printer_profile['name']))
+
+    def report_connection_error(self, code, message):
+        error = {"code": code, "message": message}
+        message = [self.printer_token, self.state_report(), None, error]
+        http_client.send(http_client.package_command_request, message)
 
     def process_command_request(self, data_dict):
         error = data_dict.get('error', None)
@@ -119,8 +127,8 @@ class PrinterInterface(threading.Thread):
                         self.logger.error("Error while executing command %s, number %i.\t%s" % (command, number, e.message), exc_info=True)
                         self.sender_error = {"code": 0, "message": e.message}
                         result = False
-                    ack = {"number": number, "result": bool(result or result == None)}
                     # to reduce needless return True, we assume that when method had return None, that is success
+                    ack = {"number": number, "result": bool(result or result == None)}
                     return ack
 
     def run(self):
@@ -165,7 +173,7 @@ class PrinterInterface(threading.Thread):
                 self.close()
 
     def get_printer_state(self):
-        if self.printer.is_operational():
+        if self.printer and self.printer.is_operational():
             if self.printer.is_paused():
                 state = "paused"
             elif self.printer.is_printing():
@@ -180,16 +188,13 @@ class PrinterInterface(threading.Thread):
         return state
 
     def state_report(self, outer_state=None):
+        report = {}
+        report["state"] = outer_state or self.get_printer_state()
         if self.printer:
-            report = {}
             report["temps"] = self.printer.get_temps()
             report["target_temps"] = self.printer.get_target_temps()
             report["percent"] = self.printer.get_percent()
-            if outer_state:
-                report["state"] = outer_state
-            else:
-                report["state"] = self.get_printer_state()
-            return report
+        return report
 
     def close_printer_sender(self):
         if self.printer:
@@ -204,5 +209,3 @@ class PrinterInterface(threading.Thread):
     def close(self):
         self.stop_flag = True
         self.close_printer_sender()
-
-
