@@ -442,7 +442,7 @@ def is_user_groups():
         p = Popen('groups', stdout=PIPE, stderr=PIPE)
         stdout, stderr = p.communicate()
         groups = stdout
-        if not ('tty' in groups and 'dialout' in groups):
+        if not ('tty' in groups and 'dialout' in groups and 'usbusers' in groups):
             logger.info('Current Linux user is not in tty and dialout groups')
             return False
         else:
