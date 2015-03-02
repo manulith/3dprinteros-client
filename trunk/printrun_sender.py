@@ -78,7 +78,10 @@ class Sender(base_sender.BaseSender):
             #self.printcore.send_now("M999")
             #time.sleep(1)
             self.logger.debug("Resetting...")
-            self.printcore.reset()
+            try:
+                self.printcore.reset()
+            except Exception as e:
+                self.logger.warning("Error occured on printrun printer reset: " + str(e))
             time.sleep(0.2)
             self.logger.debug("Disconnecting...")
             self.printcore.disconnect()

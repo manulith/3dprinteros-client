@@ -1,0 +1,46 @@
+[
+  {"number": 1, "text": "Camera subprocess launching error", "level": "medium"}, //app.py: 51
+  {"number": 2, "text": "Received data is not valid json", "level": "medium"},//http_client: 31
+  {"number": 3, "text": "Data should be dictionary", "level": "medium"}, //http_client: 36
+  {"number": 4, "text": "Packing info error", "level": "medium"}, //http_client: 43, 49, 57, 63
+  {"number": 5, "text": "Error during HTTP connection", "level": "medium"}, //http_client: 86
+  {"number": 6, "text": "Error during HTTP request", "level": "medium"}, //http_client: 108
+  {"number": 7, "text": "Error reading response", "level": "medium"}, //http_client: 114
+  {"number": 8, "text": "Error: server response is not 200 OK", "level": "medium"}, //http_client: 121
+  {"number": 9, "text": "Unparsable link", "level": "medium"}, //http_client: 143
+  {"number": 10, "text": "Error: no connection to download server", "level": "medium"}, //http_client: 151
+  {"number": 11, "text": "Error in config file. Section network_detect of profile", "level": "medium"}, //network_detect: 31
+  {"number": 12, "text": "Error sending broadcast", "level": "medium"}, //network_detect: 54
+  {"number": 13, "text": "Error while receiving from port", "level": "medium"}, //network_detect: 62
+  {"number": 14, "text": "Socket init error", "level": "medium"}, //network_detect: 80
+  {"number": 15, "text": "Not valid port number", "level": "medium"}, //network_detect: 82
+  {"number": 16, "text": "Scanner still working(hanged)", "level": "medium"}, //network_detect: 122
+  {"number": 17, "text": "Error in command", "level": "medium"}, //printer_interface: 22
+  {"number": 18, "text": "Error while login", "level": "medium"}, //printer_interface: 52
+  {"number": 19, "text": "Error on printer login. No connection or answer from server.", "level": "medium"}, //printer_interface: 69
+  {"number": 20, "text": "No serial port for serial printer. No senders or printer firmware hanged.", "level": "medium"}, //printer_interface: 77
+  {"number": 21, "text": "Can't connect to printer ", "level": "medium"}, //printer_interface: 82
+  {"number": 22, "text": "Error connecting to printer profile", "level": "medium"}, //printer_interface: 84
+  {"number": 23, "text": "Server command came with errors", "level": "medium"}, //printer_interface: 92
+  {"number": 24, "text": "No number field in servers answer", "level": "medium"}, //printer_interface: 102
+  {"number": 25, "text": "Can't download file from storage", "level": "medium"}, //printer_interface: 109
+  {"number": 26, "text": "Server had returned error", "level": "medium"}, //printer_interface: 155
+  {"number": 27, "text": "Libusb error: no usb devices was detected", "level": "medium"}, //usb_detect: 28
+  {"number": 28, "text": "Error processing user_login", "level": "medium"}, //user_login: 28
+  {"number": 29, "text": "Cannot define operating system", "level": "medium"}, //utils: 77
+  {"number": 30, "text": "Could not detect OS. Only GNU/LINUX, MAC OS X and MS WIN VISTA/7/8 are supported", "level": "medium"}, //utils: 102, 162
+  {"number": 31, "text": "Failed loading login from path", "level": "medium"}, //utils: 178
+  {"number": 32, "text": "Login info writing error", "level": "medium"}, //utils: 190
+  {"number": 33, "text": "Error while creating logs archive", "level": "medium"}, //utils: 257
+  {"number": 34, "text": "Packing error", "level": "medium"}, //utils: 304
+  {"number": 35, "text": "Package not found", "level": "medium"}, //utils: 322
+  {"number": 100, "text": "No connection to makerbot printer", "level": "medium"}, //makerbot_sender: 35
+  {"number": 101, "text": "Failed to join printing thread in makerbot_printer", "level": "medium"}, //makerbot_sender: 131
+  {"number": 102, "text": "Makerbot can't continue because max retry", "level": "medium"}, //makerbot_sender: 173
+  {"number": 103, "text": "Makerbot can't continue because of error", "level": "medium"}, //makerbot_sender: 179
+  {"number": 200, "text": "Error connecting to printer", "level": "medium"}, //printrun_sender: 51
+  {"number": 201, "text": "No more baudrates to try", "level": "medium"}, //printrun_sender: 72
+  {"number": 202, "text": "Error occured on printrun printer reset", "level": "medium"}, //printrun_sender: 86
+  {"number": 203, "text": "Error occurred in printrun", "level": "medium"}, //printrun_sender: 153
+  {"number": 204, "text": "Error stopping temperature request thread", "level": "medium"} //printrun_sender: 261
+]

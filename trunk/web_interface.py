@@ -33,6 +33,8 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.send_response(200)
             self.end_headers()
             self.write_with_autoreplace("Token was reset\nPlease restart 3DPrinterOS and re-login")
+        elif self.path.find('quit') >= 0:
+            self.quit_main_app()
         elif self.path.find('show_logs') >=0:
             self.show_logs()
         elif self.path.find('download_logs') >= 0:
@@ -40,62 +42,58 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         else:
             self.send_response(200)
             self.end_headers()
-            if self.server.app.user_login.user_token:
-                name = os.path.join(self.working_dir, 'web_interface/main_loop_form.html')
-            else:
-                name = os.path.join(self.working_dir, 'web_interface/login.html')
-            with open(name) as f:
-                page = f.read()
-            printers_list = []
-            for pi in self.server.app.printer_interfaces:
-                snr = pi.usb_info['SNR']
-                if not snr:
-                    snr = ""
-                if not getattr(pi, 'printer_profile', False):
-                    profile = {'alias': "", 'name': 'Unknown printer %s:%s %s' % (pi.usb_info['PID'], pi.usb_info['VID'], snr)}
+            if self.server.app:
+                if self.server.app.user_login.user_token:
+                    name = os.path.join(self.working_dir, 'web_interface/main_loop_form.html')
                 else:
-                    profile = pi.printer_profile
-                printer = '<b>%s</b> %s' % (profile['name'], snr)
-                if not pi.printer_token:
-                    printer = printer + '<br>' + 'Waiting type selection from server'
-                if pi.report:
-                    report = pi.report
-                    state = report['state']
-                    progress = ''
-                    if state == 'ready':
-                        color = 'green'
-                    elif state == 'printing':
-                        color = 'blue'
-                        progress = ' | ' + str(report['percent']) + '%'
-                    elif state == 'paused':
-                        color = 'orange'
-                        progress = ' | ' + str(report['percent']) + '%'
+                    name = os.path.join(self.working_dir, 'web_interface/login.html')
+                with open(name) as f:
+                    page = f.read()
+                printers_list = []
+                for pi in self.server.app.printer_interfaces:
+                    snr = pi.usb_info['SNR']
+                    if not snr:
+                        snr = ""
+                    if not getattr(pi, 'printer_profile', False):
+                        profile = {'alias': "", 'name': 'Unknown printer %s:%s %s' % (pi.usb_info['PID'], pi.usb_info['VID'], snr)}
                     else:
-                        color = 'red'
-                    printer = printer + ' - ' + '<font color="' + color + '">' + state + progress + '</font><br>'
-                    temps = report['temps']
-                    target_temps = report['target_temps']
-                    if temps and target_temps:
-                        if len(temps) == 3 and len(target_temps) == 3:
-                            printer = printer + 'Second Tool: ' + str(temps[2]) + '/' + str(target_temps[2]) + ' | '
-                        printer = printer + 'First Tool: ' + str(temps[1]) + '/' + str(target_temps[1]) + ' | ' \
-                                  + 'Heated Bed: ' + str(temps[0]) + '/' + str(target_temps[0])
-                printers_list.append(printer)
-            printers = ''.join(map(lambda x: "<p>" + x + "</p>", printers_list))
-            if not printers:
-                printers = '<p><b>No printers detected</b>\
-                <br>Please do a power cycle for printers\
-                <br>and then ensure your printers are connected\
-                <br>to power outlet and usb cord</p>'
-            page = page.replace('!!!PRINTERS!!!', printers)
-            login = self.server.app.user_login.login
-            if login:
-                page = page.replace('!!!LOGIN!!!', login)
-            if utils.get_conveyor_pid():
-                page = open(os.path.join(self.working_dir, 'web_interface/conveyor_warning.html')).read()
-            if not utils.is_user_groups():
-                page = open(os.path.join(self.working_dir, 'web_interface/groups_warning.html')).read()
-            self.write_with_autoreplace(page)
+                        profile = pi.printer_profile
+                    printer = '<b>%s</b> %s' % (profile['name'], snr)
+                    if not pi.printer_token:
+                        printer = printer + '<br>' + 'Waiting type selection from server'
+                    if pi.report:
+                        report = pi.report
+                        state = report['state']
+                        progress = ''
+                        if state == 'ready':
+                            color = 'green'
+                        elif state == 'printing':
+                            color = 'blue'
+                            progress = ' | ' + str(report['percent']) + '%'
+                        elif state == 'paused':
+                            color = 'orange'
+                            progress = ' | ' + str(report['percent']) + '%'
+                        else:
+                            color = 'red'
+                        printer = printer + ' - ' + '<font color="' + color + '">' + state + progress + '</font><br>'
+                        temps = report['temps']
+                        target_temps = report['target_temps']
+                        if temps and target_temps:
+                            if len(temps) == 3 and len(target_temps) == 3:
+                                printer = printer + 'Second Tool: ' + str(temps[2]) + '/' + str(target_temps[2]) + ' | '
+                            printer = printer + 'First Tool: ' + str(temps[1]) + '/' + str(target_temps[1]) + ' | ' \
+                                      + 'Heated Bed: ' + str(temps[0]) + '/' + str(target_temps[0])
+                    printers_list.append(printer)
+                printers = ''.join(map(lambda x: "<p>" + x + "</p>", printers_list))
+                page = page.replace('!!!PRINTERS!!!', printers)
+                login = self.server.app.user_login.login
+                if login:
+                    page = page.replace('!!!LOGIN!!!', login)
+                if utils.get_conveyor_pid():
+                    page = open(os.path.join(self.working_dir, 'web_interface/conveyor_warning.html')).read()
+                if not utils.is_user_groups():
+                    page = open(os.path.join(self.working_dir, 'web_interface/groups_warning.html')).read()
+                self.write_with_autoreplace(page)
 
     def do_POST(self):
         if self.path.find('login') >= 0:
