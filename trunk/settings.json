@@ -6,6 +6,7 @@
   "logstash_addr": "ec2-54-67-60-43.us-west-1.compute.amazonaws.com",
   "logstash_port": 5000,
   "web_interface": true,
+  "linux_rights_warning":false,
   "camera": {
     "enabled" : true,
     "img_ext" : ".jpg",

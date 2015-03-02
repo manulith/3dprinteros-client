@@ -352,7 +352,7 @@ def get_logger(log_file):
     logger.addHandler(stderr_handler)
     if log_file:
         try:
-            file_handler = logging.handlers.RotatingFileHandler(log_file, maxBytes=1024*1024*10, backupCount=1)
+            file_handler = logging.handlers.RotatingFileHandler(log_file, maxBytes=1024*1024*10, backupCount=10)
             file_handler.setFormatter(logging.Formatter('%(levelname)s\t%(asctime)s\t%(threadName)s/%(funcName)s\t%(message)s'))
             file_handler.setLevel(logging.DEBUG)
             logger.addHandler(file_handler)
@@ -440,12 +440,12 @@ def kill_existing_conveyor():
 
 def is_user_groups():
     logger = logging.getLogger('app')
-    if sys.platform.startswith('linux'):
+    if sys.platform.startswith('linux') and config.config['linux_rights_warning']:
         p = Popen('groups', stdout=PIPE, stderr=PIPE)
         stdout, stderr = p.communicate()
         groups = stdout
-        if not ('tty' in groups and 'dialout' in groups):
-            logger.info('Current Linux user is not in tty and dialout groups')
+        if not ('tty' in groups and 'dialout' in groups and 'usbusers' in groups):
+            logger.info('Current Linux user is not in tty, dialout and usbusers groups')
             return False
         else:
             return True

@@ -168,7 +168,7 @@ class PrinterInterface(threading.Thread):
                 self.sender_error = None
                 self.acknowledge = None
                 self.logger.debug("...done")
-                self.close_printer_sender()
+                self.close()
 
     def get_printer_state(self):
         if self.printer.is_operational():
