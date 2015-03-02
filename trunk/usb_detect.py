@@ -8,8 +8,8 @@ import usb.util
 import usb.backend.libusb1
 import serial.tools.list_ports
 
-import config
 import utils
+import config
 
 def format_vid_or_pid(vid_or_pid):
     return hex(vid_or_pid)[2:].zfill(4).upper()
@@ -78,7 +78,7 @@ def sort_devices(devices):
     profiles = config.load_profiles()
     for device in devices:
         for profile in profiles:
-            if [ device['VID'], device['PID'] ] in profile[u"vids_pids"]:
+            if [ device['VID'], device['PID'] ] in profile[ u"vids_pids" ]:
                 printers.append(device)
                 break
     return printers
