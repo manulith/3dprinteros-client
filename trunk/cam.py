@@ -49,9 +49,16 @@ class CameraMaster():
     def take_pictures(self):
         for cam_num in range(1, self.cam_num):
             self.cap[cam_num] = cv2.VideoCapture(cam_num-1)
-            self.cap[cam_num].set(cv2.cv.CV_CAP_PROP_FRAME_WIDTH, 640)  # 160
-            self.cap[cam_num].set(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT, 480)  # 120
-
+            try:
+                self.cap[cam_num].set(cv2.cv.CV_CAP_PROP_FRAME_WIDTH, 640)  # 160
+                self.cap[cam_num].set(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT, 480)  # 120
+            except Exception as e:
+                self.logger.info('Error while setting cap width and height: %s' % e.message)
+                self.logger.info('Trying to resize image')
+                try:
+                    cv2.resize(self.cap[cam_num], (640, 480))
+                except Exception as e:
+                    self.logger.info('Error while resizing: %s' % e.message)
             cap_ret, self.frame[cam_num] = self.cap[cam_num].read()
             self.cap[cam_num].release()
             encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), config.config["camera"]["img_qual"]]
