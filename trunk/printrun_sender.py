@@ -170,7 +170,10 @@ class Sender(base_sender.BaseSender):
         else:
             self.logger.info("Printrun is starting print")
 
-    def gcodes(self, gcodes_text):
+    def gcodes(self, gcodes):
+        base_sender.BaseSender.gcodes(self, gcodes)
+
+    def print_gcodes(self, gcodes_text):
         gcodes = gcodes_text.split("\n")
         while gcodes[-1] in ("\n", "\r\n", "\t", " ", "", None):
             gcodes.pop()

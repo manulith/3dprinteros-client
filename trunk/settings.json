@@ -1,6 +1,6 @@
 {
-  "URL": "acorn.3dprinteros.com",
-  "AUX_URL": "acorn.3dprinteros.com",
+  "URL": "acc-acorn.3dprinteros.com",
+  "AUX_URL": "acc-acorn.3dprinteros.com",
   "HTTPS": true,
   "log_file": "3dprinteros_client.log",
   "wrapper_file": "3dprinteros_wrapper.log",
