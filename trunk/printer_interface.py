@@ -183,7 +183,7 @@ class PrinterInterface(threading.Thread):
             else:
                 state = "ready"
         else:
-            if self.sender_error or self.printer.error_code:
+            if self.sender_error or (self.printer and self.printer.error_code):
                 state = "error"
             else:
                 state = "connecting"
