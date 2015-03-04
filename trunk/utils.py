@@ -414,8 +414,8 @@ def get_conveyor_pid():
     return conveyor_pid
 
 def kill_existing_conveyor():
-    wait_count = 5
-    sleep_time = 1
+    wait_count = 50
+    sleep_time = 0.1
     logger = logging.getLogger('app')
     pid = get_conveyor_pid()
     if pid:
@@ -445,7 +445,7 @@ def is_user_groups():
         stdout, stderr = p.communicate()
         groups = stdout
         if not ('tty' in groups and 'dialout' in groups and 'usbusers' in groups):
-            logger.info('Current Linux user is not in tty, dialout and usbusers groups')
+            logger.info('Current Linux user is not in tty and dialout groups')
             return False
         else:
             return True
