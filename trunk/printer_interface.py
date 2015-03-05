@@ -104,6 +104,8 @@ class PrinterInterface(threading.Thread):
                     self.logger.info("Excecuting command number %i : %s" % (number, str(command)))
                     payload = data_dict.get('payload', None)
                     arguments = []
+                    if payload:
+                        arguments.append(payload)
                     if data_dict.get('is_link', False):
                         arguments.append(data_dict.get('is_link'))
                         #payload = http_client.download(payload)
@@ -117,8 +119,6 @@ class PrinterInterface(threading.Thread):
                             return { "number": number, "result": False }
                     elif "command" in ("gcodes", "binary_file"):
                         payload = base64.b64decode(payload)
-                    if payload:
-                        arguments.append(payload)
                     try:
                         result = method(*arguments)
                     except Exception as e:

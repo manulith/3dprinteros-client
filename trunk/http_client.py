@@ -155,7 +155,7 @@ def download(url):
 class File_Downloader():
 
     def __init__(self):
-        self.percent = 0
+        self.percent = None
 
     def get_percent(self):
         return self.percent
@@ -163,7 +163,7 @@ class File_Downloader():
     def async_download(self, url):
         logger = logging.getLogger('app.' +__name__)
         match = domain_path_re.match(url)
-        logger.info("Downloading payload from" + url)
+        logger.info("Downloading payload from " + url)
         try:
             domain, path = match.groups()
         except AttributeError:
@@ -180,7 +180,7 @@ class File_Downloader():
                 progress = 0
                 for chunk in r.iter_content(percent_length):
                     progress += 1
-                    #logger.info('File downloading : %d%%' % progress)
+                    logger.info('File downloading : %d%%' % progress)
                     self.percent = progress
                     tmp_file.write(chunk)
             return tmp_file.name
