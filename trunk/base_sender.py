@@ -31,6 +31,7 @@ class BaseSender:
 
     def download_thread(self, gcodes):
         if not self.stop_flag:
+            self.logger.info('Starting download thread')
             self.downloader = http_client.File_Downloader()
             gcode_file = self.downloader.async_download(gcodes)
             with open(gcode_file, 'rb') as f:
@@ -40,6 +41,7 @@ class BaseSender:
             self.downloading_flag = False
             self.downloader = None
             self.gcodes(gcodes)
+            self.logger.info('Download thread has been closed')
 
     def is_downloading(self):
         return self.downloading_flag
