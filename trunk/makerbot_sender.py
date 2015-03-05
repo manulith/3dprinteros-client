@@ -251,6 +251,9 @@ class Sender(base_sender.BaseSender):
         return self.printing_flag
 
     def get_percent(self):
+        if self.downloading_flag:
+            self.logger.info('Downloadig flag is true. Getting percent from downloader')
+            return self.downloader.get_percent()
         return self.parser.state.percentage
 
 
