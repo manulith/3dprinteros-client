@@ -73,18 +73,18 @@ class Sender(base_sender.BaseSender):
         self.logger.info('Begin of GCodes')
         self.execute(lambda: self.parser.s3g.set_RGB_LED(255, 255, 255, 0))
 
-    def gcodes(self, gcodes):
-        base_sender.BaseSender.gcodes(self, gcodes)
-
-    def print_gcodes(self, gcodes):
-        gcodes = gcodes.split("\n")
-        self.set_total_gcodes()
-        for code in gcodes:
-            with self.buffer_lock:
-                self.buffer.append(code)
-        #with self.buffer_lock:
-            #self.buffer.extend(gcodes)
-        self.logger.info('Enqueued block: ' + str(len(gcodes)) + ', total: ' + str(len(self.buffer)))
+    def gcodes(self, gcodes, is_link=False):
+        if is_link:
+            base_sender.BaseSender.gcodes(self, gcodes)
+        else:
+            gcodes = gcodes.split("\n")
+            self.set_total_gcodes()
+            for code in gcodes:
+                with self.buffer_lock:
+                    self.buffer.append(code)
+            #with self.buffer_lock:
+                #self.buffer.extend(gcodes)
+            self.logger.info('Enqueued block: ' + str(len(gcodes)) + ', total: ' + str(len(self.buffer)))
 
     def cancel(self, go_home=True):
         with self.buffer_lock:

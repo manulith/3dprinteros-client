@@ -19,24 +19,27 @@ class BaseSender:
         self.total_gcodes = None
         self.buffer = collections.deque()
         self.downloading_flag = False
+        self.downloader = None
         #self._position = [0.00,0.00,0.00]
 
     def gcodes(self, gcodes):
         if self.downloading_flag:
             self.logger.warning('Download command received while downloading processing. Aborting...')
             return
-        thread.start_new_thread(self.download_thread, (gcodes,))
         self.downloading_flag = True
+        thread.start_new_thread(self.download_thread, (gcodes,))
 
     def download_thread(self, gcodes):
         if not self.stop_flag:
-            gcode_file = http_client.async_download(gcodes)
+            self.downloader = http_client.File_Downloader()
+            gcode_file = self.downloader.async_download(gcodes)
             with open(gcode_file, 'rb') as f:
                 gcodes = f.read()
-            self.print_gcodes(gcodes)
             self.logger.info('Gcodes loaded to memory, deleting temp file')
-            os.remove(gcodes)
+            os.remove(gcode_file)
             self.downloading_flag = False
+            self.downloader = None
+            self.gcodes(gcodes)
 
     def is_downloading(self):
         return self.downloading_flag
