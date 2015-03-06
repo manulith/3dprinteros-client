@@ -13,6 +13,7 @@ import platform
 from hashlib import sha256
 import base64
 import signal
+from subprocess import Popen, PIPE
 
 import config
 import http_client
@@ -351,7 +352,7 @@ def get_logger(log_file):
     logger.addHandler(stderr_handler)
     if log_file:
         try:
-            file_handler = logging.handlers.RotatingFileHandler(log_file, maxBytes=1024*1024*10, backupCount=1)
+            file_handler = logging.handlers.RotatingFileHandler(log_file, maxBytes=1024*1024*10, backupCount=10)
             file_handler.setFormatter(logging.Formatter('%(levelname)s\t%(asctime)s\t%(threadName)s/%(funcName)s\t%(message)s'))
             file_handler.setLevel(logging.DEBUG)
             logger.addHandler(file_handler)
@@ -436,6 +437,41 @@ def kill_existing_conveyor():
                 logger.info('Makerbot Conveyor Service successfully killed.')
                 return True
         logger.info('Could not kill Makerbot Conveyor Service. Please stop it manually and restart program.')
+
+def is_user_groups():
+    logger = logging.getLogger('app')
+    if sys.platform.startswith('linux') and config.config['linux_rights_warning']:
+        p = Popen('groups', stdout=PIPE, stderr=PIPE)
+        stdout, stderr = p.communicate()
+        groups = stdout
+        if not ('tty' in groups and 'dialout' in groups and 'usbusers' in groups):
+            logger.info('Current Linux user is not in tty and dialout groups')
+            return False
+        else:
+            return True
+    else:
+        return True
+
+def add_user_groups():
+    logger = logging.getLogger('app')
+    if sys.platform.startswith('linux'):
+        p = Popen('xterm -e "sudo usermod -a -G dialout,tty,usbusers $USER"', shell=True, stdout=PIPE, stderr=PIPE)
+        stdout, stderr = p.communicate()
+        if stdout:
+            logger.info('Adding to Linux groups result: ' + stdout)
+
+def get_file_tail(file):
+    file = file
+    if os.path.isfile(file):
+        f = open(file).readlines()
+        file_tail = []
+        for line in range(-1,-100, -1):
+            try:
+                file_tail.append(f[line])
+            except IndexError:
+                break
+        if file_tail:
+            return file_tail
 
 
 if __name__ == "__main__":

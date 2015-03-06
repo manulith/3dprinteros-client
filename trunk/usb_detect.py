@@ -2,14 +2,15 @@
 # -*- coding: utf-8 -*-
 
 import re
+import string
 import logging
 import usb.core
 import usb.util
 import usb.backend.libusb1
 import serial.tools.list_ports
 
-import config
 import utils
+import config
 
 def format_vid_or_pid(vid_or_pid):
     return hex(vid_or_pid)[2:].zfill(4).upper()
@@ -34,10 +35,14 @@ def get_devices():
         }
         try:
             SNR = str(usb.util.get_string(dev, dev.iSerialNumber))
-            if "x" in SNR:
-                 SNR = None
         except:
             SNR = None
+        else:
+            if SNR:
+                for symbol in SNR:
+                    if not symbol in string.printable:
+                        SNR = None
+                        break
         # try:
         #     manufacturer = dev.manufacturer  # can provoke PIPE ERROR
         #     device_dct['Manufacturer'] = manufacturer
@@ -56,7 +61,7 @@ def get_devices():
     return device_data_dcts
 
 def get_port_by_vid_pid_snr(vid, pid, snr=None):
-    vid_pid_re = re.compile('(?:.*\=([0-9-A-Z-a-f]+):([0-9-A-Z-a-f]+) SNR)|(?:.*VID_([0-9-A-Z-a-f]+)\+PID_([0-9-A-Z-a-f]+)\+)')
+    vid_pid_re = re.compile('(?:.*\=([0-9-A-Z-a-f]+):([0-9-A-Z-a-f]+))|(?:.*VID_([0-9-A-Z-a-f]+)\+PID_([0-9-A-Z-a-f]+)\+)')
     for port_dct in serial.tools.list_ports.comports():
         match = vid_pid_re.match(port_dct[2])
         if match:
@@ -78,7 +83,7 @@ def sort_devices(devices):
     profiles = config.load_profiles()
     for device in devices:
         for profile in profiles:
-            if [ device['VID'], device['PID'] ] in profile[u"vids_pids"]:
+            if [ device['VID'], device['PID'] ] in profile[ u"vids_pids" ]:
                 printers.append(device)
                 break
     return printers

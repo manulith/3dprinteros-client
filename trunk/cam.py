@@ -15,7 +15,7 @@ import config
 
 class CameraMaster():
     def __init__(self):
-        self.logger = utils.get_logger(config.config["camera"]["log_file"])
+        self.init_logging()
         signal.signal(signal.SIGINT, self.intercept_signal)
         signal.signal(signal.SIGTERM, self.intercept_signal)
         self.stop_flag = False
@@ -24,18 +24,30 @@ class CameraMaster():
         ul = user_login.UserLogin(self)
         ul.wait_for_login()
         self.user_token = ul.user_token
-        if len(self.get_camera_names()) != self.get_number_of_cameras():
+        self.cameras_count = self.get_number_of_cameras()
+        self.camera_names = self.get_camera_names()
+        if len(self.camera_names) != self.cameras_count:
             message = "Malfunction in get_camera_names. Number of cameras doesn't equal to number of camera names"
             self.logger.error(message)
             raise RuntimeError(message)
         else:
             self.init_cameras()
 
+    def init_logging(self):
+        self.logger = logging.getLogger("camera")
+        self.logger.propagate = False
+        self.logger.setLevel(logging.DEBUG)
+        log_name = config.config["camera"]["log_file"]
+        file_handler = logging.handlers.RotatingFileHandler(log_name, maxBytes=1024 * 1024, backupCount=1)
+        file_handler.setFormatter(
+            logging.Formatter('%(levelname)s\t%(asctime)s\t%(threadName)s/%(funcName)s\t%(message)s'))
+        file_handler.setLevel(logging.DEBUG)
+        self.logger.addHandler(file_handler)
+
     def init_cameras(self):
-        cam_names = self.get_camera_names()
-        for num in cam_names:
+        for num in self.camera_names:
             cap = cv2.VideoCapture(num)
-            cam = CameraImageSender(num+1, cam_names[num], cap, self.user_token)
+            cam = CameraImageSender(num+1, self.camera_names[num], cap, self.user_token)
             cam.start()
             self.cameras.append(cam)
 
@@ -59,9 +71,8 @@ class CameraMaster():
 
     def get_camera_names(self):
         cameras_names = {}
-        cameras_count = self.get_number_of_cameras()
-        if cameras_count > 0:
-            for camera_id in range(0, cameras_count):
+        if self.cameras_count > 0:
+            for camera_id in range(0, self.cameras_count):
                 cameras_names[camera_id] = 'Camera ' + str(camera_id + 1)
 
         self.logger.info('Found ' + str(len(cameras_names)) + ' camera(s):')
@@ -113,17 +124,15 @@ class CameraImageSender(threading.Thread):
 
     def send_picture(self, picture):
         picture = base64.b64encode(str(picture))
-        #payload = http_client.package_camera_send(self.token, self.camera_number, self.camera_name, picture)
-        #answer = http_client.post_request(self.connection, payload, http_client.camera_path)
-        answer =  http_client.send(http_client.package_camera_send, (self.token, self.camera_number, self.camera_name, picture, http_client.MACADDR))
-        #self.logger.debug(self.camera_name + ' streaming response: ' + str(answer))
+        message = (self.token, self.camera_number, self.camera_name, picture, http_client.MACADDR)
+        http_client.send(http_client.package_camera_send, message)
 
     def close(self):
         self.stop_flag = True
 
     def run(self):
-        while not self.stop_flag:
-            if self.cap and self.cap.isOpened():
+        while not self.stop_flag and self.cap:
+            if self.cap.isOpened():
                 picture = self.take_a_picture()
                 if picture:
                     self.send_picture(picture)
@@ -132,7 +141,8 @@ class CameraImageSender(threading.Thread):
                     self.cap.release()
                 self.cap = None
                 time.sleep(1)
-        self.cap.release()
+        if self.cap:
+            self.cap.release()
         self.logger.info("Closing camera %s" % self.camera_name)
 
 

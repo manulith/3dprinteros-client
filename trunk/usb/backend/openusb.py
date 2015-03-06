@@ -1,4 +1,4 @@
-# Copyright (C) 2009-2013 Wander Lairson Costa
+# Copyright (C) 2009-2014 Wander Lairson Costa
 #
 # The following terms apply to all files associated
 # with the software unless explicitly disclaimed in individual files.
@@ -34,7 +34,10 @@ import logging
 import errno
 import sys
 import usb._interop as _interop
+import usb._objfinalizer as _objfinalizer
+import usb.util as util
 import usb.libloader
+from usb.core import USBError
 
 __author__ = 'Wander Lairson Costa'
 
@@ -496,24 +499,22 @@ def _setup_prototypes(lib):
 
     lib.openusb_isoc_xfer.restype = c_int32
 
-def _check(retval):
-    if isinstance(retval, c_int):
-        ret = retval.value
-    else:
-        ret = retval
-    if ret != 0:
-        from usb.core import USBError
-        raise USBError(_lib.openusb_strerror(ret), ret, _openusb_errno[ret])
-    return retval
+def _check(ret):
+    if hasattr(ret, 'value'):
+        ret = ret.value
 
-class _Context(object):
+    if ret != 0:
+        raise USBError(_lib.openusb_strerror(ret), ret, _openusb_errno[ret])
+    return ret
+
+class _Context(_objfinalizer.AutoFinalizedObject):
     def __init__(self):
         self.handle = _openusb_handle()
         _check(_lib.openusb_init(0, byref(self.handle)))
-    def __del__(self):
+    def _finalize_object(self):
         _lib.openusb_fini(self.handle)
 
-class _BusIterator(object):
+class _BusIterator(_objfinalizer.AutoFinalizedObject):
     def __init__(self):
         self.buslist = POINTER(_openusb_busid)()
         num_busids = c_uint32()
@@ -524,10 +525,10 @@ class _BusIterator(object):
     def __iter__(self):
         for i in range(self.num_busids):
             yield self.buslist[i]
-    def __del__(self):
+    def _finalize_object(self):
         _lib.openusb_free_busid_list(self.buslist)
 
-class _DevIterator(object):
+class _DevIterator(_objfinalizer.AutoFinalizedObject):
     def __init__(self, busid):
         self.devlist = POINTER(_openusb_devid)()
         num_devids = c_uint32()
@@ -539,7 +540,7 @@ class _DevIterator(object):
     def __iter__(self):
         for i in range(self.num_devids):
             yield self.devlist[i]
-    def __del__(self):
+    def _finalize_object(self):
         _lib.openusb_free_devid_list(self.devlist)
 
 class _OpenUSB(usb.backend.IBackend):
@@ -560,6 +561,7 @@ class _OpenUSB(usb.backend.IBackend):
         desc.bus = None
         desc.address = None
         desc.port_number = None
+        desc.port_numbers = None
         return desc
 
     @methodtrace(_logger)
@@ -571,6 +573,7 @@ class _OpenUSB(usb.backend.IBackend):
                                               0,
                                               config,
                                               byref(desc)))
+        desc.extra_descriptors = None
         return desc
 
     @methodtrace(_logger)
@@ -584,6 +587,7 @@ class _OpenUSB(usb.backend.IBackend):
                                                  intf,
                                                  alt,
                                                  byref(desc)))
+        desc.extra_descriptors = None
         return desc
 
     @methodtrace(_logger)
@@ -598,6 +602,7 @@ class _OpenUSB(usb.backend.IBackend):
                                                 alt,
                                                 ep,
                                                 byref(desc)))
+        desc.extra_descriptors = None
         return desc
 
     @methodtrace(_logger)
@@ -643,15 +648,14 @@ class _OpenUSB(usb.backend.IBackend):
         return request.result.transferred_bytes
 
     @methodtrace(_logger)
-    def bulk_read(self, dev_handle, ep, intf, size, timeout):
+    def bulk_read(self, dev_handle, ep, intf, buff, timeout):
         request = _openusb_bulk_request()
-        buffer = _interop.as_array('\x00' * size)
         memset(byref(request), 0, sizeof(request))
-        payload, request.length = buffer.buffer_info()
+        payload, request.length = buff.buffer_info()
         request.payload = cast(payload, POINTER(c_uint8))
         request.timeout = timeout
         _check(_lib.openusb_bulk_xfer(dev_handle, intf, ep, byref(request)))
-        return buffer[:request.result.transferred_bytes]
+        return request.result.transferred_bytes
 
     @methodtrace(_logger)
     def intr_write(self, dev_handle, ep, intf, data, timeout):
@@ -664,15 +668,14 @@ class _OpenUSB(usb.backend.IBackend):
         return request.result.transferred_bytes
 
     @methodtrace(_logger)
-    def intr_read(self, dev_handle, ep, intf, size, timeout):
+    def intr_read(self, dev_handle, ep, intf, buff, timeout):
         request = _openusb_intr_request()
-        buffer = _interop.as_array('\x00' * size)
         memset(byref(request), 0, sizeof(request))
-        payload, request.length = buffer.buffer_info()
+        payload, request.length = buff.buffer_info()
         request.payload = cast(payload, POINTER(c_uint8))
         request.timeout = timeout
         _check(_lib.openusb_intr_xfer(dev_handle, intf, ep, byref(request)))
-        return buffer[:request.result.transferred_bytes]
+        return request.result.transferred_bytes
 
 # TODO: implement isochronous
 #    @methodtrace(_logger)
@@ -690,7 +693,7 @@ class _OpenUSB(usb.backend.IBackend):
                       bRequest,
                       wValue,
                       wIndex,
-                      data_or_wLength,
+                      data,
                       timeout):
         request = _openusb_ctrl_request()
         request.setup.bmRequestType = bmRequestType
@@ -701,24 +704,32 @@ class _OpenUSB(usb.backend.IBackend):
 
         direction = usb.util.ctrl_direction(bmRequestType)
 
-        if direction == usb.util.CTRL_OUT:
-            buffer = data_or_wLength
-        else:
-            buffer = _interop.as_array('\x00' * data_or_wLength)
-
-        payload, request.length = buffer.buffer_info()
+        payload, request.length = data.buffer_info()
+        request.length *= data.itemsize
         request.payload = cast(payload, POINTER(c_uint8))
 
         _check(_lib.openusb_ctrl_xfer(dev_handle, 0, 0, byref(request)))
 
-        if direction == usb.util.CTRL_OUT:
-            return request.result.transferred_bytes
-        else:
-            return buffer[:request.result.transferred_bytes]
+        return request.result.transferred_bytes
 
     @methodtrace(_logger)
     def reset_device(self, dev_handle):
         _check(_lib.openusb_reset(dev_handle))
+
+    @methodtrace(_logger)
+    def clear_halt(self, dev_handle, ep):
+        bmRequestType = util.build_request_type(
+                            util.CTRL_OUT,
+                            util.CTRL_TYPE_STANDARD,
+                            util.CTRL_RECIPIENT_ENDPOINT)
+        self.ctrl_transfer(
+            dev_handle,
+            bmRequestType,
+            0x03,
+            0,
+            ep,
+            _interop.as_array(),
+            1000)
 
 def get_backend(find_library=None):
     try:
