@@ -32,19 +32,29 @@ class BaseSender:
     def download_thread(self, gcodes):
         if not self.stop_flag:
             self.logger.info('Starting download thread')
-            self.downloader = http_client.File_Downloader()
+            self.downloader = http_client.File_Downloader(self)
+            gcodes = None
             gcode_file = self.downloader.async_download(gcodes)
-            with open(gcode_file, 'rb') as f:
-                gcodes = f.read()
-            self.logger.info('Gcodes loaded to memory, deleting temp file')
-            os.remove(gcode_file)
-            self.downloading_flag = False
+            if gcode_file:
+                with open(gcode_file, 'rb') as f:
+                    gcodes = f.read()
+                self.logger.info('Gcodes loaded to memory, deleting temp file')
+                self.downloading_flag = False
+            try:
+                os.remove(gcode_file)
+            except:
+                pass
             self.downloader = None
-            self.gcodes(gcodes)
+            if gcodes:
+                self.gcodes(gcodes)  # Derived class method call, for example makerbot_sender.gcodes(gcodes)
             self.logger.info('Download thread has been closed')
 
     def is_downloading(self):
         return self.downloading_flag
+
+    def cancel_download(self):
+        self.downloading_flag = False
+        self.logger.info("File downloading has been cancelled")
 
     def get_temps(self):
         return self.temps

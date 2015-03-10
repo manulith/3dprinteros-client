@@ -154,7 +154,8 @@ def download(url):
 
 class File_Downloader():
 
-    def __init__(self):
+    def __init__(self, base_sender):
+        self.base_sender = base_sender
         self.percent = None
 
     def get_percent(self):
@@ -179,10 +180,19 @@ class File_Downloader():
                 percent_length = file_length / 100 + 1
                 progress = 0
                 for chunk in r.iter_content(percent_length):
+                    if not self.base_sender.downloading_flag:
+                        logger.info('Stopping downloading process')
+                        return None
                     progress += 1
                     logger.info('File downloading : %d%%' % progress)
                     self.percent = progress
-                    tmp_file.write(chunk)
+                    try:
+                        tmp_file.write(chunk)
+                    except Exception as e:
+                        logger.error('Error while downloading file:\n%s' % e.message)
+                        self.base_sender.error_code = 666
+                        self.base_sender.error_message = 'Cannot download file'
+                        return None
             return tmp_file.name
             # filename = 'testfile'
             # with open(filename, 'wb') as f:

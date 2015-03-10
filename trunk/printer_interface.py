@@ -48,6 +48,10 @@ class PrinterInterface(threading.Thread):
             answer = http_client.send(http_client.package_printer_login, (self.user_token, self.usb_info))
             if answer:
                 error = answer.get('error', None)
+                # TODO: remove it when server will be okay
+                if error and str(error['code']) == '0' and str(error['message']) == 'Unknow Hardware State downloading':
+                    self.logger.error('Received wrong state downloading message from server. Stub logic.')
+                    error = None
                 if error:
                     self.logger.warning("Error while login %s:" % str((self.user_token, self.usb_info)))
                     self.logger.warning(str(error['code']) + " " + error["message"])

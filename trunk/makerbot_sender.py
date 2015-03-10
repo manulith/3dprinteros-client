@@ -126,6 +126,9 @@ class Sender(base_sender.BaseSender):
         self.execute(self.parser.s3g.pause())
 
     def close(self):
+        if self.downloading_flag:
+            self.cancel_download()
+            return
         self.logger.info("Makerbot sender is closing...")
         self.stop_flag = True
         if threading.current_thread() != self.sending_thread:

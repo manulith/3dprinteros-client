@@ -215,6 +215,9 @@ class Sender(base_sender.BaseSender):
             return False
 
     def cancel(self):
+        if self.downloading_flag:
+            self.cancel_download()
+            return
         self.printcore.cancelprint()
         self.printcore.reset()
         self.printcore.disconnect()
