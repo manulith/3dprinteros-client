@@ -26,27 +26,25 @@ class BaseSender:
         if self.downloading_flag:
             self.logger.warning('Download command received while downloading processing. Aborting...')
             return
+        self.downloader = http_client.File_Downloader(self)
         self.downloading_flag = True
         thread.start_new_thread(self.download_thread, (gcodes,))
 
     def download_thread(self, gcodes):
         if not self.stop_flag:
             self.logger.info('Starting download thread')
-            self.downloader = http_client.File_Downloader(self)
-            gcodes = None
             gcode_file = self.downloader.async_download(gcodes)
             if gcode_file:
                 with open(gcode_file, 'rb') as f:
                     gcodes = f.read()
-                self.logger.info('Gcodes loaded to memory, deleting temp file')
                 self.downloading_flag = False
+                self.gcodes(gcodes)  # Derived class method call, for example makerbot_sender.gcodes(gcodes)
+                self.logger.info('Gcodes loaded to memory, deleting temp file')
             try:
                 os.remove(gcode_file)
             except:
                 pass
             self.downloader = None
-            if gcodes:
-                self.gcodes(gcodes)  # Derived class method call, for example makerbot_sender.gcodes(gcodes)
             self.logger.info('Download thread has been closed')
 
     def is_downloading(self):
