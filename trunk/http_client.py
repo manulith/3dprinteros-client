@@ -180,7 +180,7 @@ class File_Downloader():
                 percent_length = file_length / 100 + 1
                 progress = 0
                 for chunk in r.iter_content(percent_length):
-                    if not self.base_sender.downloading_flag:
+                    if not self.base_sender.downloading_flag or self.base_sender.stop_flag:
                         logger.info('Stopping downloading process')
                         return None
                     progress += 1
