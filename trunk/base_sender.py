@@ -37,8 +37,8 @@ class BaseSender:
             if gcode_file:
                 with open(gcode_file, 'rb') as f:
                     gcodes = f.read()
-                self.downloading_flag = False
                 self.gcodes(gcodes)  # Derived class method call, for example makerbot_sender.gcodes(gcodes)
+                self.downloading_flag = False  # TODO: For now it should be after gcodes() due to status error on site
                 self.logger.info('Gcodes loaded to memory, deleting temp file')
             try:
                 os.remove(gcode_file)
