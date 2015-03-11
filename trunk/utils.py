@@ -282,9 +282,6 @@ def pack_info_zip(package_name, path, *args):
     logger = logging.getLogger('app.' + __name__)
     path = path
     package_path = os.path.join(path, package_name)
-    if os.path.exists(package_path):
-        logger.warning(package_name + ' found in the working dir.')
-        return
     temp_file_path = os.path.join(path, 'info')
     temp_file = open(temp_file_path, 'w')
     for arg in args:
