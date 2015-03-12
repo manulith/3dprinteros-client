@@ -192,5 +192,5 @@ class PrinterInterface(threading.Thread):
             self.logger.info('...closed.')
 
     def close(self):
-        self.logger.info('Closing printer interface of: ' + str(self.printer_profile))
+        self.logger.info('Closing printer interface of: ' + str(self.usb_info))
         self.stop_flag = True
