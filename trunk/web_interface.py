@@ -98,6 +98,8 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                     page = open(os.path.join(self.working_dir, 'web_interface/conveyor_warning.html')).read()
                 if not utils.is_user_groups():
                     page = open(os.path.join(self.working_dir, 'web_interface/groups_warning.html')).read()
+                if not self.server.app.updater.auto and self.server.app.updater.update_flag:
+                    page = page.replace('get_updates" style="display:none"', 'get_updates" style="display:inline"')
                 self.write_with_autoreplace(page)
 
     def do_POST(self):
@@ -115,10 +117,30 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.kill_conveyor()
         elif self.path.find('add_user_groups') >= 0:
             self.add_user_groups()
+        elif self.path.find('get_updates') >= 0:
+            self.get_updates()
+        elif self.path.find('update_software') >= 0:
+            self.update_software()
         else:
             self.send_response(404)
             self.end_headers()
             self.write_with_autoreplace('Not found')
+
+    def get_updates(self):
+        page = open(os.path.join(self.working_dir, 'web_interface/update_software.html')).read()
+        self.send_response(200)
+        self.end_headers()
+        self.write_with_autoreplace(page)
+
+    def update_software(self):
+        result = self.server.app.updater.update()
+        page = open(os.path.join(self.working_dir, 'web_interface/message.html')).read()
+        if result:
+            page = page.replace('!!!MESSAGE!!!', result)
+        page = page.replace('!!!MESSAGE!!!', '<p>Update successful!</p><p>Please restart Client to use all features of new version.</p>')
+        self.send_response(200)
+        self.end_headers()
+        self.write_with_autoreplace(page)
 
     def show_logs(self):
         log_file = config.config['log_file']

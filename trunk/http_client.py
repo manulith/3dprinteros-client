@@ -18,6 +18,7 @@ command_path = streamer_prefix + "/command"
 camera_path = streamer_prefix + "/camera" #json['image': base64_image ]
 cloudsync_path = "/autoupload"
 token_send_logs_path = "/oldliveview/sendLogs" #rename me!
+get_last_version_path = '/a/lastclientver/get'
 
 domain_path_re = re.compile("https?:\/\/(.+)(\/.*)")
 
@@ -136,7 +137,7 @@ def send(packager, payloads):
 def download(url):
     logger = logging.getLogger('app.' +__name__)
     match = domain_path_re.match(url)
-    logger.info("Downloading payload from" + url)
+    logger.info("Downloading payload from " + url)
     try:
         domain, path = match.groups()
     except AttributeError:

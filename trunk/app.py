@@ -16,6 +16,7 @@ import usb_detect
 import http_client
 import printer_interface
 import user_login
+import updater
 
 
 class App:
@@ -34,6 +35,8 @@ class App:
         self.stop_flag = False
         self.quit_flag = False
         self.cam = None
+        self.updater = updater.Updater()
+        self.updater.check_for_updates()
         self.user_login = user_login.UserLogin(self)
         self.init_interface()
         self.user_login.wait_for_login()
@@ -65,6 +68,7 @@ class App:
 
     def main_loop(self):
         while not self.stop_flag:
+            self.updater.auto_update()
             self.time_stamp()
             self.detected_printers = usb_detect.get_printers()
             self.check_and_connect()

@@ -5,6 +5,12 @@
   "log_file": "3dprinteros_client.log",
   "web_interface": true,
   "linux_rights_warning": true,
+  "update": {
+    "enabled": true,
+    "auto_update_enabled": false,
+    "update_file_url": "http://s3.amazonaws.com/3dprinteros-files/",
+    "update_file_name": "3dprinteros_client_update.zip"
+  },
   "camera": {
     "enabled" : true,
     "img_ext" : ".jpg",
