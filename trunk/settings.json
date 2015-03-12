@@ -1,6 +1,6 @@
 {
-  "URL": "cli-cloud.3dprinteros.com",
-  "AUX_URL": "cli-cloud.3dprinteros.com",
+  "URL": "acorn.3dprinteros.com",
+  "AUX_URL": "acorn.3dprinteros.com",
   "HTTPS": true,
   "log_file": "3dprinteros_client.log",
   "web_interface": true,
