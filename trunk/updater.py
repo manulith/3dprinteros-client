@@ -22,7 +22,8 @@ class Updater:
         if config.config['update']['enabled']:
             connection = http_client.connect(http_client.URL, https_mode=False)
             last_version = http_client.get_request(connection, None, http_client.get_last_version_path)
-            return version.version != last_version
+            if last_version:
+                return version.version != last_version
 
     def auto_update(self):
         if self.auto:
