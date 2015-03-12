@@ -254,7 +254,8 @@ def compress_and_send(log_file_name=None, server_path=http_client.token_send_log
         zf.write(LOG_SNAPSHOTS_DIR + '/' + log_file_name, os.path.basename(log_file_name), compress_type=zipfile.ZIP_DEFLATED)
         zf.close()
     except Exception as e:
-        logger.warning("Error while creating logs archive " + zip_file_name)
+        logger.warning("Error while creating logs archive " + zip_file_name + ': ' + e.message)
+        return e.message
     else:
         url = 'https://' + http_client.AUX_URL + http_client.token_send_logs_path
         token = {'token': read_login()}
@@ -262,11 +263,13 @@ def compress_and_send(log_file_name=None, server_path=http_client.token_send_log
         files = {'file_data': f}
         r = requests.post(url, data = token, files = files)
         f.close()
+        os.remove(zip_file_name)
         result = r.text
         logger.info("Log sending response: " + result)
         if '"success":true' in result:
             os.remove(LOG_SNAPSHOTS_DIR + '/' + log_file_name)
-        os.remove(zip_file_name)
+        else:
+            return result
 
 def send_all_snapshots():
     try:
@@ -275,7 +278,9 @@ def send_all_snapshots():
         logging.info("No logs snapshots to send")
     else:
         for file_name in dir:
-            compress_and_send(file_name)
+            error = compress_and_send(file_name)
+            if error:
+                return False
         return  True
 
 def pack_info_zip(package_name, path, *args):
