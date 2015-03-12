@@ -258,10 +258,10 @@ def compress_and_send(log_file_name=None, server_path=http_client.token_send_log
         return e.message
     else:
         url = 'https://' + http_client.AUX_URL + http_client.token_send_logs_path
-        token = {'token': read_login()}
+        login = {'login': read_login()[0]}
         f = open(zip_file_name)
         files = {'file_data': f}
-        r = requests.post(url, data = token, files = files)
+        r = requests.post(url, data = login, files = files)
         f.close()
         os.remove(zip_file_name)
         result = r.text
