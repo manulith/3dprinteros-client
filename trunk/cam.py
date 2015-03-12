@@ -7,7 +7,7 @@ import base64
 import threading
 import logging
 import signal
-import sys
+import os
 
 import http_client
 import user_login
@@ -67,7 +67,7 @@ class CameraMaster():
                 self.logger.warning("Failed to close camera %s" % sender.name)
         self.stop_flag = True
         logging.shutdown()
-        sys.exit(0)
+        os._exit(0)
 
     def get_camera_names(self):
         cameras_names = {}
