@@ -107,10 +107,8 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.process_login()
         elif self.path.find('quit') >= 0:
             self.quit_main_app()
-        elif self.path.find('snapshot_log') >= 0:
-            self.snapshot_log()
-        elif self.path.find('send_log_snapshots') >= 0:
-            self.send_log_snapshots()
+        elif self.path.find('send_logs') >= 0:
+            self.send_logs()
         elif self.path.find('logout') >= 0:
             self.process_logout()
         elif self.path.find('kill_conveyor') >= 0:
@@ -181,24 +179,16 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.end_headers()
         self.write_with_autoreplace(page)
 
-    def snapshot_log(self):
-        result = utils.make_log_snapshot()
+    def send_logs(self):
+        for handler in self.server.app.logger.handlers:
+            handler.flush()
         message = open(os.path.join(self.working_dir, 'web_interface/message.html')).read()
-        if result:
-            message = message.replace('!!!MESSAGE!!!', 'Success!')
+        making_result = utils.make_full_log_snapshot()
+        sending_result = utils.send_all_snapshots()
+        if making_result and sending_result:
+            message = message.replace('!!!MESSAGE!!!', 'Logs successfully sent')
         else:
-            message = message.replace('!!!MESSAGE!!!', 'Error!')
-        self.send_response(200)
-        self.end_headers()
-        self.write_with_autoreplace(message)
-
-    def send_log_snapshots(self):
-        result = utils.send_all_snapshots()
-        message = open(os.path.join(self.working_dir, 'web_interface/message.html')).read()
-        if result:
-            message = message.replace('!!!MESSAGE!!!', 'Success!')
-        else:
-            message = message.replace('!!!MESSAGE!!!', 'Error!')
+            message = message.replace('!!!MESSAGE!!!', 'Error while sending logs')
         self.send_response(200)
         self.end_headers()
         self.write_with_autoreplace(message)
