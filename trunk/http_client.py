@@ -1,3 +1,4 @@
+import os
 import re
 #import ssl
 import json
@@ -5,6 +6,7 @@ import uuid
 import httplib
 import logging
 import tempfile
+import requests
 
 import config
 
@@ -152,58 +154,68 @@ def download(url):
             logger.warning("Error: no connection to download server")
 
 
-class File_Downloader():
-
+class File_Downloader:
     def __init__(self, base_sender):
+        self.max_download_retry = config.config["max_download_retry"]
         self.base_sender = base_sender
         self.percent = None
+        self.logger = logging.getLogger('app.' + "file_downloader")
 
     def get_percent(self):
         return self.percent
 
     def async_download(self, url):
-        logger = logging.getLogger('app.' +__name__)
-        match = domain_path_re.match(url)
-        logger.info("Downloading payload from " + url)
-        try:
-            domain, path = match.groups()
-        except AttributeError:
-            logger.warning("Unparsable link: " + url)
-        else:
-            import requests
-            tmp_file = tempfile.NamedTemporaryFile(mode='wb', delete=False, prefix='3dprinteros-', suffix='.gcode')
-            with tmp_file:
-                r = requests.get(url, stream=True)
-                file_length = int(r.headers['content-length'])
-                logger.info('File length : %s' % str(file_length))
-                # Taking +1 byte with each chunk to compensate file length tail less than 100 bytes when dividing by 100
-                percent_length = file_length / 100 + 1
-                progress = 0
-                for chunk in r.iter_content(percent_length):
-                    if not self.base_sender.downloading_flag or self.base_sender.stop_flag:
-                        logger.info('Stopping downloading process')
-                        return None
-                    progress += 1
-                    logger.info('File downloading : %d%%' % progress)
-                    self.percent = progress
-                    try:
-                        tmp_file.write(chunk)
-                    except Exception as e:
-                        logger.error('Error while downloading file:\n%s' % e.message)
-                        self.base_sender.error_code = 666
-                        self.base_sender.error_message = 'Cannot download file'
-                        return None
-            return tmp_file.name
-            # filename = 'testfile'
-            # with open(filename, 'wb') as f:
-            #     r = requests.get(url, stream=True)
-            #     logger.info('File length : %s' % str(r.headers['content-length']))
-            #     file_length = int(r.headers['content-length'])
-            #     # Taking +1 byte with each chunk to compensate file length tail less than 100 bytes when dividing by 100
-            #     percent_length = file_length / 100 + 1
-            #     progress = 0
-            #     for chunk in r.iter_content(percent_length):
-            #         progress += 1
-            #         logger.info('File downloading : %d%%' % progress)
-            #         f.write(chunk)
-            # return filename
+        self.logger.info("Downloading payload from " + url)
+        tmp_file = tempfile.NamedTemporaryFile(mode='wb', delete=False, prefix='3dprinteros-', suffix='.gcode')
+        resume_byte_pos = 0
+        retry = 0
+        while retry < self.max_download_retry:
+            resume_header = {'Range': 'bytes=%d-' % resume_byte_pos}
+            self.logger.info("Connecting to " + url)
+            try:
+                r = requests.get(url, headers = resume_header, stream=True, timeout = CONNECTION_TIMEOUT)
+            except Exception as e:
+                self.logger.warning("Error while connecting to: %s\nError: %s" % (url, str(e)))
+                self.base_sender.error_code = 66
+                self.base_sender.error_message = "Unable to open download link: " + str(e)
+            else:
+                self.logger.info("Successful connection to " + url)
+                download_length = int(r.headers.get('content-length', None))
+                self.logger.info('Downloading: %d bytes' % download_length)
+                if download_length:
+                    if not self.percent:
+                        self.percent = 0 # percent will be still None if request return an error
+                    downloaded_size = self.chunk_by_chunk(r, tmp_file, download_length)
+                    r.close()
+                    if downloaded_size:
+                        resume_byte_pos += downloaded_size
+                        if downloaded_size != download_length:
+                            tmp_file.close()
+                            return tmp_file.name
+            retry += 1
+            self.logger.warning(str(retry) + " retry/resume attempt to download " + url)
+        self.base_sender.error_code = 67
+        self.base_sender.error_message = "Max connection retries reached while downloading. Last error: " + str(e)
+        tmp_file.close()
+        os.remove(tmp_file.name)
+
+    def chunk_by_chunk(self, request, tmp_file, download_length):
+        # Taking +1 byte with each chunk to compensate file length tail less than 100 bytes when dividing by 100
+        percent_length = download_length / 100 + 1
+        total_size = 0
+        for chunk in request.iter_content(percent_length):
+            if not self.base_sender.downloading_flag or self.base_sender.stop_flag:
+                self.logger.info('Stopping downloading process')
+                return
+            self.percent += 1
+            total_size += len(chunk)
+            self.logger.info('File downloading : %d%%' % self.percent)
+            try:
+                tmp_file.write(chunk)
+            except Exception as e:
+                self.logger.error('Error while downloading file:\n%s' % e.message)
+                self.base_sender.error_code = 66
+                self.base_sender.error_message = 'Cannot download file' + str(e)
+            else:
+                return total_size
+
