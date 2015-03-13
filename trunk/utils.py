@@ -411,7 +411,8 @@ def get_conveyor_pid():
     return conveyor_pid
 
 def kill_existing_conveyor():
-    # TODO: change logger name
+    wait_count = 5
+    sleep_time = 1
     logger = logging.getLogger('app')
     pid = get_conveyor_pid()
     if pid:
@@ -419,19 +420,20 @@ def kill_existing_conveyor():
         if sys.platform.startswith('win'):
             #os.popen('taskkill /f /pid ' + pid)
             os.popen('sc stop "MakerBot Conveyor Service"')
-            time.sleep(3) # Win service stopping takes some time
         elif sys.platform.startswith('linux'):
             # TODO: it does not work
             os.kill(int(pid), signal.SIGTERM)
         elif sys.platform.startswith('darwin'):
             makerware_path = detect_makerware_paths()
             os.popen(os.path.join(makerware_path, 'stop_conveyor_service'))
-        time.sleep(0.5)
-        if get_conveyor_pid():
-            logger.info('Could not kill Makerbot Conveyor Service. Please stop it manually and restart program.')
-        else:
-            logger.info('Makerbot Conveyor Service successfully killed.')
-            return True
+        for i in range(wait_count):
+            if get_conveyor_pid():
+                logger.info('Conveyor still alive, awaiting %s time' % str(i + 1))
+                time.sleep(sleep_time)
+            else:
+                logger.info('Makerbot Conveyor Service successfully killed.')
+                return True
+        logger.info('Could not kill Makerbot Conveyor Service. Please stop it manually and restart program.')
 
 def is_user_groups():
     logger = logging.getLogger('app')

@@ -31,6 +31,10 @@ class PrinterInterface(threading.Thread):
             answer = http_client.send(http_client.package_printer_login, (self.user_token, self.usb_info))
             if answer:
                 error = answer.get('error', None)
+                # TODO: remove it when server will be okay
+                if error and str(error['code']) == '0' and str(error['message']) == 'Unknow Hardware State downloading':
+                    self.logger.error('Received wrong state downloading message from server. Stub logic.')
+                    error = None
                 if error:
                     self.logger.warning("Error while login %s:" % str((self.user_token, self.usb_info)))
                     self.logger.warning(str(error['code']) + " " + error["message"])
@@ -90,16 +94,22 @@ class PrinterInterface(threading.Thread):
                         raise RuntimeError("No number field in servers answer")
                     self.logger.info("Excecuting command number %i : %s" % (number, str(command)))
                     payload = data_dict.get('payload', None)
+                    arguments = []
+                    if payload:
+                        arguments.append(payload)
                     if data_dict.get('is_link', False):
-                        payload = http_client.download(payload)
+                        arguments.append(data_dict.get('is_link'))
+                        #payload = http_client.download(payload)
+                        #payload_file = http_client.async_download(payload)
+                        #self.printer.start_download(payload)
+                        #self.logger.info('File has been downloaded.')
+                        # with open(payload_file, 'rb') as f:
+                        #     payload = f.read()
                         if not payload:
                             self.sender_error = {"code": 777, "message": "Can't download file from storage"}
                             return { "number": number, "result": False }
                     elif "command" in ("gcodes", "binary_file"):
                         payload = base64.b64decode(payload)
-                    arguments = []
-                    if payload:
-                        arguments.append(payload)
                     try:
                         result = method(*arguments)
                     except Exception as e:
@@ -162,6 +172,8 @@ class PrinterInterface(threading.Thread):
                 state = "paused"
             elif self.printer.is_printing():
                 state = "printing"
+            elif self.printer.is_downloading():
+                state = "downloading"
             else:
                 state = "ready"
         else:
