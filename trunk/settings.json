@@ -5,6 +5,8 @@
   "log_file": "3dprinteros_client.log",
   "wrapper_file": "3dprinteros_wrapper.log",
   "web_interface": true,
+  "max_download_retry": 5,
+  "linux_rights_warning": false,
   "camera": {
     "enabled" : true,
     "img_ext" : ".jpg",
