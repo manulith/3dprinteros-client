@@ -1,5 +1,5 @@
 import re
-import ssl
+#import ssl
 import json
 import uuid
 import httplib
@@ -38,7 +38,7 @@ def load_json(jdata):
 #packagers
 
 def package_user_login(username, password, platform, error = None):
-    data = { 'login': {'user': username, 'password': password}, 'host_mac': MACADDR, platform: platform}
+    data = { 'login': {'user': username, 'password': password}, 'host_mac': MACADDR, "platform": platform}
     if error:
         data['error'] = error
     return json.dumps(data), user_login_path
@@ -133,22 +133,19 @@ def send(packager, payloads):
         if json_answer:
             return load_json(json_answer)
 
-# def download(url):
-#     logger = logging.getLogger('app.' +__name__)
-#     match = domain_path_re.match(url)
-#     logger.info("Downloading payload from" + url)
-#     try:
-#         domain, path = match.groups()
-#     except AttributeError:
-#         logger.warning("Unparsable link: " + url)
-#     else:
-#         https_mode = url.startswith("https")
-#         connection = connect(domain, https_mode)
-#         if connection:
-#             logger.debug("Got connection to download server")
-#             return get_request(connection, None, path)
-#         else:
-#             logger.warning("Error: no connection to download server")
-
 def download(url):
-    pass
+    logger = logging.getLogger('app.' +__name__)
+    match = domain_path_re.match(url)
+    logger.info("Downloading payload from" + url)
+    try:
+        domain, path = match.groups()
+    except AttributeError:
+        logger.warning("Unparsable link: " + url)
+    else:
+        https_mode = url.startswith("https")
+        connection = connect(domain, https_mode)
+        if connection:
+            logger.debug("Got connection to download server")
+            return get_request(connection, None, path)
+        else:
+            logger.warning("Error: no connection to download server")

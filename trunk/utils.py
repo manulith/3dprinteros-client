@@ -4,25 +4,41 @@
 import os
 import sys
 import time
-import uuid
+import string
 import zipfile
 import logging
+import logging.handlers
 import threading
 import platform
-from hashlib import md5
+from hashlib import sha256
+import base64
+import signal
+from subprocess import Popen, PIPE
 
 import config
 import http_client
 import requests
+import version
 
 LIBS_FOLDER = 'libraries'
 ALL_LIBS = ['opencv', 'numpy']
 LOG_SNAPSHOTS_DIR = "log_snapshots"
 
-LOG_SNAPSHOT_LINES = 200 # TODO: implement
+LOG_SNAPSHOT_LINES = 200
 
-def md5_hash(text):
-    hash = md5(text)
+
+
+def is_admin():
+    import ctypes, os
+    try:
+        is_admin = os.getuid() == 0
+    except:
+        is_admin = ctypes.windll.shell32.IsUserAnAdmin()
+
+    print is_admin
+
+def sha256_hash(text):
+    hash = sha256(text)
     hex_str_hash = hash.hexdigest()
     return hex_str_hash
 
@@ -66,7 +82,6 @@ def init_path_to_libs():
         logger.info('Using library: ' + lib_path)
         sys.path.append(lib_path)
 
-
 def get_libusb_path(lib):
     logger = logging.getLogger('app.' + __name__)
     logger.info('Using: ' + lib)
@@ -90,49 +105,96 @@ def get_libusb_path(lib):
     logger.info('Libusb from: ' + backend_path)
     return backend_path
 
-def get_paths_to_token():
-    token_file_name = "3DPrinterOS-Key"
+# def get_paths_to_token():
+#     token_file_name = "3DPrinterOS-Key"
+#     abs_path_to_users_home = os.path.abspath(os.path.expanduser("~"))
+#     if sys.platform.startswith('win'):
+#         abs_path_to_appdata = os.path.abspath(os.getenv('APPDATA'))
+#         path = os.path.join(abs_path_to_appdata, '3DPrinterOS', token_file_name)
+#     elif sys.platform.startswith('linux'):
+#         path = os.path.join(abs_path_to_users_home, "." + token_file_name)
+#     elif sys.platform.startswith('darwin'):
+#         path = os.path.join(abs_path_to_users_home, "Library", "Application Support", token_file_name)
+#     else:
+#         raise EnvironmentError('Could not detect OS. Only GNU/LINUX, MAC OS X and MS WIN VISTA/7/8 are supported.')
+#     local_path = os.path.dirname(os.path.abspath(__file__))
+#     local_path = os.path.join(local_path, token_file_name)
+#     return (local_path, path)
+#
+# def read_token():
+#     logger = logging.getLogger('app.' + __name__)
+#     paths = get_paths_to_token()
+#     for path in paths:
+#         logger.debug("Searching for token-file in %s" % path)
+#         try:
+#             with open(path) as token_file:
+#                 token = token_file.read()
+#                 logger.debug('Token loaded from ' + path)
+#         except IOError:
+#             continue
+#         else:
+#             return token.strip()
+#     logger.debug('Error while loading token in paths: %s' % str(paths) )
+#
+# def write_token(token_data):
+#     logger = logging.getLogger('app.' + __name__)
+#     paths = get_paths_to_token()
+#     path = paths[0] # we are only writing locally
+#     try:
+#         with open(path, "w") as token_file:
+#             token_file.write(token_data)
+#     except IOError as e:
+#         logger.warning("Error while writing token" + str(e))
+#     else:
+#         logger.debug('Token was writen to ' + path)
+#         return True
+
+def get_paths_to_settings_folder():
     abs_path_to_users_home = os.path.abspath(os.path.expanduser("~"))
     if sys.platform.startswith('win'):
         abs_path_to_appdata = os.path.abspath(os.getenv('APPDATA'))
-        path = os.path.join(abs_path_to_appdata, '3DPrinterOS', token_file_name)
+        path = os.path.join(abs_path_to_appdata, '3dprinteros')
     elif sys.platform.startswith('linux'):
-        path = os.path.join(abs_path_to_users_home, "." + token_file_name)
+        path = os.path.join(abs_path_to_users_home, ".3dprinteros")
     elif sys.platform.startswith('darwin'):
-        path = os.path.join(abs_path_to_users_home, "Library", "Application Support", token_file_name)
+        path = os.path.join(abs_path_to_users_home, "Library", "Application Support")
     else:
         raise EnvironmentError('Could not detect OS. Only GNU/LINUX, MAC OS X and MS WIN VISTA/7/8 are supported.')
     local_path = os.path.dirname(os.path.abspath(__file__))
-    local_path = os.path.join(local_path, token_file_name)
-    return (local_path, path)
+    return (path, local_path)
 
-def read_token():
+def read_login():
     logger = logging.getLogger('app.' + __name__)
-    paths = get_paths_to_token()
+    pack_name = 'login_info.bin'
+    paths = get_paths_to_settings_folder()
     for path in paths:
-        logger.debug("Searching for token-file in %s" % path)
+        logger.info("Searching for login info in %s" % path)
         try:
-            with open(path) as token_file:
-                token = token_file.read()
-                logger.debug('Token loaded from ' + path)
-        except IOError:
-            continue
-        else:
-            return token.strip()
-    logger.debug('Error while loading token in paths: %s' % str(paths) )
+            login_info = read_info_zip(pack_name, path)
+            if login_info:
+                logger.info('Login info loaded from ' + path)
+                return login_info
+        except Exception as e:
+            logger.warning('Failed loading login from ' + path + '. Error: ' + e.message)
+        logger.info("Can't read login info in %s" % str(path))
+    logger.info('No login info found')
+    return (None, None)
 
-def write_token(token_data):
+def write_login(login, password):
     logger = logging.getLogger('app.' + __name__)
-    paths = get_paths_to_token()
-    path = paths[0] # we are only writing locally
+    package_name = 'login_info.bin' #probably it shoud be read from config
+    path = get_paths_to_settings_folder()[0]
     try:
-        with open(path, "w") as token_file:
-            token_file.write(token_data)
-    except IOError as e:
-        logger.warning("Error then writing token" + str(e))
+        result = pack_info_zip(package_name, path, login, password)
+    except Exception as e:
+        logger.warning('Login info writing error! ' + e.message)
     else:
-        logger.debug('Token was writen to ' + path)
+        if result == True:
+            logger.info('Login info was written and packed.')
+        else:
+            logger.warning("Login info wasn't written.")
         return True
+    return False
 
 def tail(f, lines=200):
     total_lines_wanted = lines
@@ -163,7 +225,8 @@ def tail(f, lines=200):
 def make_log_snapshot():
     logger = logging.getLogger("app." + __name__)
     with open(config.config['log_file']) as log_file:
-        lines = tail(log_file, LOG_SNAPSHOT_LINES)
+        log_text = "3DPrinterOS %s_%s_%s\n" % (version.version, version.build, version.commit)
+        log_text += tail(log_file, LOG_SNAPSHOT_LINES)
     if not os.path.exists(LOG_SNAPSHOTS_DIR):
         try:
             os.mkdir(LOG_SNAPSHOTS_DIR)
@@ -172,86 +235,243 @@ def make_log_snapshot():
             return
     while True:
         filename = time.strftime("%Y_%m_%d___%H_%M_%S", time.localtime()) + ".log"
-        path = os.path.abspath(os.path.join(LOG_SNAPSHOTS_DIR, filename))
+        path = os.path.join(LOG_SNAPSHOTS_DIR, filename)
         if os.path.exists(path):
             time.sleep(1)
         else:
             break
     with open(path, "w") as log_snap_file:
-        log_snap_file.write(lines)
+        log_snap_file.write(log_text)
     return path
-
-def make_full_log_snapshot():
-    logger = logging.getLogger("app." + __name__)
-    file_path = None
-    log_files = []
-    for log in os.listdir(os.path.abspath(os.path.dirname(__file__))):
-        if log.startswith(config.config['log_file']):
-            log_files.append(log)
-    #logger.info('Files to log : ' + str(log_files))
-    if not log_files:
-        logger.info('Log files was not created for some reason. Nothing to send')
-        return
-    if not os.path.exists(LOG_SNAPSHOTS_DIR):
-        try:
-            os.mkdir(LOG_SNAPSHOTS_DIR)
-        except Exception as e:
-            logger.warning("Can't create directory %s" % LOG_SNAPSHOTS_DIR)
-            return
-    filename = time.strftime("%Y_%m_%d___%H_%M_%S", time.localtime()) + ".log"
-    file_path = os.path.abspath(os.path.join(LOG_SNAPSHOTS_DIR, filename))
-    logger.info('Creating snapshot file : ' + file_path)
-    with open(file_path, 'w') as outfile:
-        for fname in log_files:
-            with open(fname, 'r') as infile:
-                outfile.write('/////\nLog file:\n' + fname + '\n/////\n')  # See if logs are concatenated in right order
-                for line in infile:
-                    outfile.write(line)
-            outfile.write('\n')
-    return filename
 
 def compress_and_send(log_file_name=None, server_path=http_client.token_send_logs_path):
     logger = logging.getLogger('app.' + __name__)
     if not log_file_name:
         log_file_name = config.config['log_file']
     zip_file_name = log_file_name + ".zip"
-    log_file_name_path = os.path.abspath(os.path.join(os.path.dirname(__file__), LOG_SNAPSHOTS_DIR, log_file_name))
-    zip_file_name_path = os.path.abspath(os.path.join(os.path.dirname(__file__), LOG_SNAPSHOTS_DIR, zip_file_name))
-    logger.info('Creating zip file : ' + zip_file_name)
     try:
-        zf = zipfile.ZipFile(zip_file_name_path, mode='w')
-        zf.write(log_file_name_path, os.path.basename(log_file_name), compress_type=zipfile.ZIP_DEFLATED)
+        zf = zipfile.ZipFile(zip_file_name, mode='w')
+        zf.write(LOG_SNAPSHOTS_DIR + '/' + log_file_name, os.path.basename(log_file_name), compress_type=zipfile.ZIP_DEFLATED)
         zf.close()
     except Exception as e:
         logger.warning("Error while creating logs archive " + zip_file_name)
-        logger.warning('Error: ' + e.message)
     else:
         url = 'https://' + http_client.AUX_URL + http_client.token_send_logs_path
-        #if http_client.multipart_upload(url, {"token": read_token()}, {'files': file}):
-            #os.remove(LOG_SNAPSHOTS_DIR + '/' + log_file_name)
-        token = {'token': read_token()}
-        with open(zip_file_name_path, 'rb') as f:
-            files = {'file_data': f}
-            r = requests.post(url, data=token, files=files)
-        #f.close()
+        token = {'token': read_login()}
+        f = open(zip_file_name)
+        files = {'file_data': f}
+        r = requests.post(url, data = token, files = files)
+        f.close()
         result = r.text
         logger.info("Log sending response: " + result)
         if '"success":true' in result:
-            os.remove(os.path.join(log_file_name_path))
-        os.remove(zip_file_name_path)
+            os.remove(LOG_SNAPSHOTS_DIR + '/' + log_file_name)
+        os.remove(zip_file_name)
 
 def send_all_snapshots():
     try:
-        snapshot_dir = os.listdir(LOG_SNAPSHOTS_DIR)
+        dir = os.listdir(LOG_SNAPSHOTS_DIR)
     except OSError:
         logging.info("No logs snapshots to send")
     else:
-        for file_name in snapshot_dir:
-            if not file_name.endswith('zip'):
-                compress_and_send(file_name)
+        for file_name in dir:
+            compress_and_send(file_name)
+        return  True
+
+def pack_info_zip(package_name, path, *args):
+    logger = logging.getLogger('app.' + __name__)
+    path = path
+    package_path = os.path.join(path, package_name)
+    temp_file_path = os.path.join(path, 'info')
+    temp_file = open(temp_file_path, 'w')
+    for arg in args:
+        arg = base64.b64encode(arg)
+        temp_file.write(arg + '\n')
+    temp_file.close()
+    try:
+        zf = zipfile.ZipFile(package_path, mode='w')
+        if sys.platform.startswith('win'):
+            s = "\\"
+        else:
+            s = "/"
+        zf.write(temp_file_path, temp_file_path.split(s)[-1])
+        zf.setpassword('d0nTfe_artH_er1PPe_r')
+        zf.close()
+    except Exception as e:
+        logger.error('Packing error: ' + e.message)
+        return
+    os.remove(temp_file_path)
+    return True
+
+def read_info_zip(package_name, path):
+    logger = logging.getLogger('app.' + __name__)
+    path = path
+    package_path = os.path.join(path, package_name)
+    if os.path.exists(package_path):
+        zf = zipfile.ZipFile(package_path, 'r')
+        packed_info = zf.read('info', pwd='d0nTfe_artH_er1PPe_r')
+        packed_info = packed_info.split('\n')
+        packed_info.remove('')
+        for number in range(0, len(packed_info)):
+            packed_info[number] = base64.b64decode(packed_info[number])
+        return packed_info
+    else:
+        logger.error(package_name + ' not found')
+
+def check_for_errors(data_dict):
+    logger = logging.getLogger("app." + __name__)
+    error = data_dict.get('error', None)
+    if error:
+        logger.warning("Server returned error %i:%s" % (error['code'], error['message']))
+        return error['code']
+
+def remove_illegal_symbols(data):
+    count = 0
+    length = len(data)
+    while count < len(data):
+        if not data[count] in string.printable:
+            data.replace(data[count], "")
+        count += 1
+    return data
+
+def remove_corrupted_lines(lines):
+    for line in lines:
+        if not line or line in string.whitespace:
+            lines.remove(line)
+    return lines
+
+def get_logger(log_file):
+    logger = logging.getLogger("app")
+    logger.propagate = False
+    logger.setLevel(logging.DEBUG)
+    stderr_handler = logging.StreamHandler()
+    stderr_handler.setLevel(logging.DEBUG)
+    logger.addHandler(stderr_handler)
+    if log_file:
+        try:
+            file_handler = logging.handlers.RotatingFileHandler(log_file, maxBytes=1024*1024*10, backupCount=10)
+            file_handler.setFormatter(logging.Formatter('%(levelname)s\t%(asctime)s\t%(threadName)s/%(funcName)s\t%(message)s'))
+            file_handler.setLevel(logging.DEBUG)
+            logger.addHandler(file_handler)
+        except Exception as e:
+            logger.debug('Could not create log file because' + e.message + '\n.No log mode.')
+    logger.info('Operating system: ' + platform.system() + ' ' + platform.release())
+    return logger
+
+def detect_makerware_paths():
+    logger = logging.getLogger('app')
+    makerware_path = None
+    if sys.platform.startswith('linux'):
+        paths = ['/usr/share/makerbot/', '/usr/local/share/makerbot/']
+        for path in paths:
+            if os.path.isdir(path):
+                makerware_path = path
+    elif sys.platform.startswith('darwin'):
+        darwin_default_path = '/Library/MakerBot/'
+        if os.path.isdir(darwin_default_path):
+            makerware_path = darwin_default_path
+    elif sys.platform.startswith('win'):
+        import _winreg
+        try:
+            key = _winreg.OpenKey('HKEY_LOCAL_MACHINE', 'SOFTWARE\\MakerBot\\MakerWare')
+            makerware_path = str(_winreg.QueryValueEx(key, 'InstallPath')[0])
+        except Exception as e:
+            print "No conveyor installed or some other winreg error" + e.message
+    else:
+        raise EnvironmentError('Error. Undetectable or unsupported OS. \
+                               Only GNU/LINUX, MAC OS X and MS Windows are supported.')
+    if not makerware_path:
+        logger.info('Could not define makerware path')
+    return makerware_path
+
+def get_conveyor_pid():
+    conveyor_pid = None
+    if sys.platform.startswith('win'):
+        tasks = os.popen('tasklist /svc').readlines()
+        for task in tasks:
+            # TODO: Second condition need tests on win with our soft(if script argument in split[0] and check backslash magic)
+            try:
+                if task.startswith('conveyor-svc.exe') or task.split()[0].endswith('/conveyor/server/__main__.py'):
+                    conveyor_pid = task.split()[1]
+                    # print conveyor_pid
+                    # print task
+            except IndexError:
+                pass
+    elif sys.platform.startswith('linux') or sys.platform.startswith('darwin'):
+        tasks = os.popen('ps ax').readlines()
+        for task in tasks:
+            # TODO: make conveyor service die on linux with makerware
+            try:
+                if task.split()[4].endswith('conveyor-svc') or task.split()[5].endswith('/conveyor/server/__main__.py'):
+                    conveyor_pid = task.split()[0]
+                    # print conveyor_pid
+                    # print task
+            except IndexError:
+                pass
+    return conveyor_pid
+
+def kill_existing_conveyor():
+    # TODO: change logger name
+    logger = logging.getLogger('app')
+    pid = get_conveyor_pid()
+    if pid:
+        logger.info('Makerbot conveyor service is running. Shutting down...')
+        if sys.platform.startswith('win'):
+            #os.popen('taskkill /f /pid ' + pid)
+            os.popen('sc stop "MakerBot Conveyor Service"')
+            time.sleep(3) # Win service stopping takes some time
+        elif sys.platform.startswith('linux'):
+            # TODO: it does not work
+            os.kill(int(pid), signal.SIGTERM)
+        elif sys.platform.startswith('darwin'):
+            makerware_path = detect_makerware_paths()
+            os.popen(os.path.join(makerware_path, 'stop_conveyor_service'))
+        time.sleep(0.5)
+        if get_conveyor_pid():
+            logger.info('Could not kill Makerbot Conveyor Service. Please stop it manually and restart program.')
+        else:
+            logger.info('Makerbot Conveyor Service successfully killed.')
+            return True
+
+def is_user_groups():
+    logger = logging.getLogger('app')
+    if sys.platform.startswith('linux') and config.config['linux_rights_warning']:
+        p = Popen('groups', stdout=PIPE, stderr=PIPE)
+        stdout, stderr = p.communicate()
+        groups = stdout
+        if not ('tty' in groups and 'dialout' in groups and 'usbusers' in groups):
+            logger.info('Current Linux user is not in tty and dialout groups')
+            return False
+        else:
+            return True
+    else:
         return True
 
+def add_user_groups():
+    logger = logging.getLogger('app')
+    if sys.platform.startswith('linux'):
+        p = Popen('xterm -e "sudo usermod -a -G dialout,tty,usbusers $USER"', shell=True, stdout=PIPE, stderr=PIPE)
+        stdout, stderr = p.communicate()
+        if stdout:
+            logger.info('Adding to Linux groups result: ' + stdout)
+
+def get_file_tail(file):
+    file = file
+    if os.path.isfile(file):
+        f = open(file).readlines()
+        file_tail = []
+        for line in range(-1,-100, -1):
+            try:
+                file_tail.append(f[line])
+            except IndexError:
+                break
+        if file_tail:
+            return file_tail
+
+
 if __name__ == "__main__":
-    #make_log_snapshot()
-    #send_all_snapshots()
-    compress_and_send(make_full_log_snapshot())
+    pid = get_conveyor_pid()
+    if pid:
+        kill_existing_conveyor()
+    else:
+        print 'Conveyor service not running'

@@ -1,4 +1,3 @@
-<!DOCTYPE html>
 <html>
 	<head>
     	<title>3DPrinterOS</title>
@@ -36,15 +35,19 @@
 		</style>
 	</head>
 	<body bgcolor=#003333>
-	<div align='right' style="align: right; color: #006666">!!!VERSION!!!</div>
+    <div align='right' style="align: right; color: #006666">!!!VERSION!!!</div>
 		<div class="block1">
 			<div class="block2">
 				3DPrinterOS
 			</div>
 
-			<p>Goodbye!</p><br>
+			<p>Logout successful!</p>
+			<p>Please click Quit button below and restart<br>Cloud Client application to login</p>
 
 
+			<form action="/quit" method="post" style='display: inline'>
+				<input type="submit" value="Quit" style='background: #FF9900; border: none; width: 150px; height: 50px; text-indent: 5px; font-family: "Trebuchet MS", Helvetica, sans-serif; color: #ffffff; font-weight: bold; font-size: 20px; margin-top: 20px; margin-bottom: 20px'>
+			</form>
 		</div>
 	</body>
 </html>
