@@ -96,7 +96,12 @@ class App:
     def disconnect_printer(self, pi, reason):
         self.logger.info('Disconnecting because of %s %s' % (reason , str(pi.usb_info)))
         if http_client.send(http_client.package_command_request, (pi.printer_token, pi.state_report(reason), pi.acknowledge)):
+            pi.close()
             self.printer_interfaces.remove(pi)
+            self.logger.info("Successful disconnection of " + str(pi.usb_info))
+        else:
+            self.logger.warning("Cant report printer interface closing to server. Not closed.")
+
 
     def intercept_signal(self, signal_code, frame):
         self.logger.warning("SIGINT or SIGTERM received. Closing 3DPrinterOS Client version %s_%s" % \

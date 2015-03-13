@@ -26,7 +26,6 @@ class PrinterInterface(threading.Thread):
         super(PrinterInterface, self).__init__()
 
     def connect_to_server(self):
-        self.stop_flag = False
         self.logger.info("Connecting to server with printer: %s" % str(self.usb_info))
         while not self.stop_flag:
             answer = http_client.send(http_client.package_printer_login, (self.user_token, self.usb_info))
