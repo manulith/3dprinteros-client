@@ -180,7 +180,7 @@ class File_Downloader:
                 self.base_sender.error_message = "Unable to open download link: " + str(e)
             else:
                 self.logger.info("Successful connection to " + url)
-                download_length = int(r.headers.get('content-length', None))
+                download_length = int(r.headers.get('content-length', 0))
                 self.logger.info('Downloading: %d bytes' % download_length)
                 if download_length:
                     if not self.percent:
@@ -189,7 +189,9 @@ class File_Downloader:
                     r.close()
                     if downloaded_size:
                         resume_byte_pos += downloaded_size
-                        if downloaded_size != download_length:
+                        print "Download length %d bytes" % download_length
+                        print "Downloaded %d bytes" % downloaded_size
+                        if downloaded_size == download_length:
                             tmp_file.close()
                             return tmp_file.name
             retry += 1
@@ -216,6 +218,6 @@ class File_Downloader:
                 self.logger.error('Error while downloading file:\n%s' % e.message)
                 self.base_sender.error_code = 66
                 self.base_sender.error_message = 'Cannot download file' + str(e)
-            else:
-                return total_size
+                return
+        return total_size
 
