@@ -190,15 +190,17 @@ class File_Downloader:
                     r.close()
                     if downloaded_size:
                         resume_byte_pos += downloaded_size
-                        print "Download length %d bytes" % download_length
-                        print "Downloaded %d bytes" % downloaded_size
+                        self.logger.info("Download length %d bytes" % download_length)
+                        self.logger.info("Downloaded %d bytes" % downloaded_size)
                         if downloaded_size == download_length:
                             tmp_file.close()
                             return tmp_file.name
+                    else:
+                        return None
             retry += 1
             self.logger.warning(str(retry) + " retry/resume attempt to download " + url)
         self.base_sender.error_code = 67
-        self.base_sender.error_message = "Max connection retries reached while downloading. Last error: " + str(e)
+        self.base_sender.error_message = "Max connection retries reached while downloading"
         tmp_file.close()
         os.remove(tmp_file.name)
 
@@ -209,7 +211,7 @@ class File_Downloader:
         for chunk in request.iter_content(percent_length):
             if not self.base_sender.downloading_flag or self.base_sender.stop_flag:
                 self.logger.info('Stopping downloading process')
-                return
+                return None
             self.percent += 1
             total_size += len(chunk)
             self.logger.info('File downloading : %d%%' % self.percent)
