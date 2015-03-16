@@ -17,12 +17,15 @@ class Updater:
         if self.new_version_available():
             self.logger.info('Updates available!')
             self.update_flag = True
+        else:
+            self.update_flag = False
 
     def new_version_available(self):
         if config.config['update']['enabled']:
             connection = http_client.connect(http_client.URL, https_mode=False)
             last_version = http_client.get_request(connection, None, http_client.get_last_version_path)
             if last_version:
+                reload(version)
                 return version.version != last_version
 
     def auto_update(self):
