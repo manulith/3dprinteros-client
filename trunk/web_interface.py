@@ -137,7 +137,6 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             page = page.replace('!!!MESSAGE!!!', result)
         else:
             page = page.replace('!!!MESSAGE!!!', '<p>Update successful!</p><p>Please restart Client to use all features of new version.</p>')
-        self.server.app.updater.check_for_updates()
         self.send_response(200)
         self.end_headers()
         self.write_with_autoreplace(page)

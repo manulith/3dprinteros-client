@@ -17,12 +17,10 @@ class Updater:
         if self.new_version_available():
             self.logger.info('Updates available!')
             self.update_flag = True
-        else:
-            self.update_flag = False
 
     def new_version_available(self):
         if config.config['update']['enabled']:
-            connection = http_client.connect(http_client.URL, https_mode=False)
+            connection = http_client.connect(http_client.URL)
             last_version = http_client.get_request(connection, None, http_client.get_last_version_path)
             if last_version:
                 reload(version)
@@ -48,6 +46,7 @@ class Updater:
                 return error
             else:
                 self.logger.info('...client successfully updated!')
+                self.update_flag = False
 
 
 if __name__ == '__main__':
