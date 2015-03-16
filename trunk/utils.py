@@ -300,7 +300,7 @@ def make_full_log_snapshot():
 #         else:
 #             return result
 
-def compress_and_send(log_file_name=None, server_path=http_client.token_send_logs_path):
+def compress_and_send(user_token, log_file_name=None, server_path=http_client.token_send_logs_path):
     logger = logging.getLogger('app.' + __name__)
     if not log_file_name:
         log_file_name = config.config['log_file']
@@ -319,15 +319,17 @@ def compress_and_send(log_file_name=None, server_path=http_client.token_send_log
         url = 'https://' + http_client.AUX_URL + http_client.token_send_logs_path
         #if http_client.multipart_upload(url, {"token": read_token()}, {'files': file}):
             #os.remove(LOG_SNAPSHOTS_DIR + '/' + log_file_name)
-        login = {'login': read_login()[0]}
+        user_token = {'login': user_token}
         with open(zip_file_name_path, 'rb') as f:
             files = {'file_data': f}
-            r = requests.post(url, data=login, files=files)
+            r = requests.post(url, data=user_token, files=files)
         result = r.text
         logger.info("Log sending response: " + result)
+        os.remove(zip_file_name_path)
         if '"success":true' in result:
             os.remove(os.path.join(log_file_name_path))
-        os.remove(zip_file_name_path)
+        else:
+            return result
 
 # def send_all_snapshots():
 #     try:
@@ -341,7 +343,7 @@ def compress_and_send(log_file_name=None, server_path=http_client.token_send_log
 #                 return False
 #         return  True
 
-def send_all_snapshots():
+def send_all_snapshots(user_token):
     try:
         snapshot_dir = os.listdir(LOG_SNAPSHOTS_DIR)
     except OSError:
@@ -349,7 +351,9 @@ def send_all_snapshots():
     else:
         for file_name in snapshot_dir:
             if not file_name.endswith('zip'):
-                compress_and_send(file_name)
+                error = compress_and_send(user_token, file_name)
+                if error:
+                    return False
         return True
 
 def pack_info_zip(package_name, path, *args):

@@ -185,7 +185,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             handler.flush()
         message = open(os.path.join(self.working_dir, 'web_interface/message.html')).read()
         making_result = utils.make_full_log_snapshot()
-        sending_result = utils.send_all_snapshots()
+        sending_result = utils.send_all_snapshots(self.server.app.user_login.user_token)
         if making_result and sending_result:
             message = message.replace('!!!MESSAGE!!!', 'Logs successfully sent')
         else:
