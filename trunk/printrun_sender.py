@@ -173,20 +173,23 @@ class Sender(base_sender.BaseSender):
         else:
             self.logger.info("Printrun is starting print")
 
-    def gcodes(self, gcodes_text):
-        gcodes = gcodes_text.split("\n")
-        while gcodes[-1] in ("\n", "\r\n", "\t", " ", "", None):
-            gcodes.pop()
-        length = len(gcodes)
-        self.set_total_gcodes(length)
-        self.logger.info('Loading %i gcodes in printcore...' % length)
-        if length:
-            self.buffer = LightGCode(gcodes)
-            if self.printcore.startprint(self.buffer):
-                self.logger.info('...done loading gcodes.')
-                return True
-        self.logger.warning('...failed to load gcodes.')
-        return False
+    def gcodes(self, gcodes, is_link=False):
+        if is_link:
+            base_sender.BaseSender.gcodes(self, gcodes)
+        else:
+            gcodes = gcodes.split("\n")
+            while gcodes[-1] in ("\n", "\r\n", "\t", " ", "", None):
+                gcodes.pop()
+            length = len(gcodes)
+            self.set_total_gcodes(length)
+            self.logger.info('Loading %i gcodes in printcore...' % length)
+            if length:
+                self.buffer = LightGCode(gcodes)
+                if self.printcore.startprint(self.buffer):
+                    self.logger.info('...done loading gcodes.')
+                    return True
+            self.logger.warning('...failed to load gcodes.')
+            return False
 
     def pause(self):
         self.logger.info("Printrun pause")
@@ -212,6 +215,9 @@ class Sender(base_sender.BaseSender):
             return False
 
     def cancel(self):
+        if self.downloading_flag:
+            self.cancel_download()
+            return
         self.printcore.cancelprint()
         self.printcore.reset()
         self.printcore.disconnect()
@@ -244,6 +250,9 @@ class Sender(base_sender.BaseSender):
         return False
 
     def get_percent(self):
+        if self.downloading_flag:
+            self.logger.info('Downloadig flag is true. Getting percent from downloader')
+            return self.downloader.get_percent()
         percent = 0
         if self.total_gcodes:
             percent = int( self.printcore.queueindex / float(self.total_gcodes) * 100 )

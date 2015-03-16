@@ -244,39 +244,113 @@ def make_log_snapshot():
         log_snap_file.write(log_text)
     return path
 
+def make_full_log_snapshot():
+    logger = logging.getLogger("app." + __name__)
+    file_path = None
+    log_files = []
+    for log in os.listdir(os.path.abspath(os.path.dirname(__file__))):
+        if log.startswith(config.config['log_file']):
+            log_files.append(log)
+    #logger.info('Files to log : ' + str(log_files))
+    if not log_files:
+        logger.info('Log files was not created for some reason. Nothing to send')
+        return
+    if not os.path.exists(LOG_SNAPSHOTS_DIR):
+        try:
+            os.mkdir(LOG_SNAPSHOTS_DIR)
+        except Exception as e:
+            logger.warning("Can't create directory %s" % LOG_SNAPSHOTS_DIR)
+            return
+    filename = time.strftime("%Y_%m_%d___%H_%M_%S", time.localtime()) + ".log"
+    file_path = os.path.abspath(os.path.join(LOG_SNAPSHOTS_DIR, filename))
+    logger.info('Creating snapshot file : ' + file_path)
+    with open(file_path, 'w') as outfile:
+        for fname in log_files:
+            with open(fname, 'r') as infile:
+                outfile.write('/////\nLog file:\n' + fname + '\n/////\n')  # See if logs are concatenated in right order
+                for line in infile:
+                    outfile.write(line)
+            outfile.write('\n')
+    return filename
+
+# def compress_and_send(log_file_name=None, server_path=http_client.token_send_logs_path):
+#     logger = logging.getLogger('app.' + __name__)
+#     if not log_file_name:
+#         log_file_name = config.config['log_file']
+#     zip_file_name = log_file_name + ".zip"
+#     try:
+#         zf = zipfile.ZipFile(zip_file_name, mode='w')
+#         zf.write(LOG_SNAPSHOTS_DIR + '/' + log_file_name, os.path.basename(log_file_name), compress_type=zipfile.ZIP_DEFLATED)
+#         zf.close()
+#     except Exception as e:
+#         logger.warning("Error while creating logs archive " + zip_file_name + ': ' + e.message)
+#         return e.message
+#     else:
+#         url = 'https://' + http_client.AUX_URL + http_client.token_send_logs_path
+#         login = {'login': read_login()[0]}
+#         f = open(zip_file_name)
+#         files = {'file_data': f}
+#         r = requests.post(url, data = login, files = files)
+#         f.close()
+#         os.remove(zip_file_name)
+#         result = r.text
+#         logger.info("Log sending response: " + result)
+#         if '"success":true' in result:
+#             os.remove(LOG_SNAPSHOTS_DIR + '/' + log_file_name)
+#         else:
+#             return result
+
 def compress_and_send(log_file_name=None, server_path=http_client.token_send_logs_path):
     logger = logging.getLogger('app.' + __name__)
     if not log_file_name:
         log_file_name = config.config['log_file']
     zip_file_name = log_file_name + ".zip"
+    log_file_name_path = os.path.abspath(os.path.join(os.path.dirname(__file__), LOG_SNAPSHOTS_DIR, log_file_name))
+    zip_file_name_path = os.path.abspath(os.path.join(os.path.dirname(__file__), LOG_SNAPSHOTS_DIR, zip_file_name))
+    logger.info('Creating zip file : ' + zip_file_name)
     try:
-        zf = zipfile.ZipFile(zip_file_name, mode='w')
-        zf.write(LOG_SNAPSHOTS_DIR + '/' + log_file_name, os.path.basename(log_file_name), compress_type=zipfile.ZIP_DEFLATED)
+        zf = zipfile.ZipFile(zip_file_name_path, mode='w')
+        zf.write(log_file_name_path, os.path.basename(log_file_name), compress_type=zipfile.ZIP_DEFLATED)
         zf.close()
     except Exception as e:
         logger.warning("Error while creating logs archive " + zip_file_name)
+        logger.warning('Error: ' + e.message)
     else:
         url = 'https://' + http_client.AUX_URL + http_client.token_send_logs_path
-        token = {'token': read_login()}
-        f = open(zip_file_name)
-        files = {'file_data': f}
-        r = requests.post(url, data = token, files = files)
-        f.close()
+        #if http_client.multipart_upload(url, {"token": read_token()}, {'files': file}):
+            #os.remove(LOG_SNAPSHOTS_DIR + '/' + log_file_name)
+        login = {'login': read_login()[0]}
+        with open(zip_file_name_path, 'rb') as f:
+            files = {'file_data': f}
+            r = requests.post(url, data=login, files=files)
         result = r.text
         logger.info("Log sending response: " + result)
         if '"success":true' in result:
-            os.remove(LOG_SNAPSHOTS_DIR + '/' + log_file_name)
-        os.remove(zip_file_name)
+            os.remove(os.path.join(log_file_name_path))
+        os.remove(zip_file_name_path)
+
+# def send_all_snapshots():
+#     try:
+#         dir = os.listdir(LOG_SNAPSHOTS_DIR)
+#     except OSError:
+#         logging.info("No logs snapshots to send")
+#     else:
+#         for file_name in dir:
+#             error = compress_and_send(file_name)
+#             if error:
+#                 return False
+#         return  True
 
 def send_all_snapshots():
     try:
-        dir = os.listdir(LOG_SNAPSHOTS_DIR)
+        snapshot_dir = os.listdir(LOG_SNAPSHOTS_DIR)
     except OSError:
         logging.info("No logs snapshots to send")
     else:
-        for file_name in dir:
-            compress_and_send(file_name)
-        return  True
+        for file_name in snapshot_dir:
+            if not file_name.endswith('zip'):
+                compress_and_send(file_name)
+        return True
 
 def pack_info_zip(package_name, path, *args):
     logger = logging.getLogger('app.' + __name__)
@@ -411,7 +485,8 @@ def get_conveyor_pid():
     return conveyor_pid
 
 def kill_existing_conveyor():
-    # TODO: change logger name
+    wait_count = 5
+    sleep_time = 1
     logger = logging.getLogger('app')
     pid = get_conveyor_pid()
     if pid:
@@ -419,19 +494,20 @@ def kill_existing_conveyor():
         if sys.platform.startswith('win'):
             #os.popen('taskkill /f /pid ' + pid)
             os.popen('sc stop "MakerBot Conveyor Service"')
-            time.sleep(3) # Win service stopping takes some time
         elif sys.platform.startswith('linux'):
             # TODO: it does not work
             os.kill(int(pid), signal.SIGTERM)
         elif sys.platform.startswith('darwin'):
             makerware_path = detect_makerware_paths()
             os.popen(os.path.join(makerware_path, 'stop_conveyor_service'))
-        time.sleep(0.5)
-        if get_conveyor_pid():
-            logger.info('Could not kill Makerbot Conveyor Service. Please stop it manually and restart program.')
-        else:
-            logger.info('Makerbot Conveyor Service successfully killed.')
-            return True
+        for i in range(wait_count):
+            if get_conveyor_pid():
+                logger.info('Conveyor still alive, awaiting %s time' % str(i + 1))
+                time.sleep(sleep_time)
+            else:
+                logger.info('Makerbot Conveyor Service successfully killed.')
+                return True
+        logger.info('Could not kill Makerbot Conveyor Service. Please stop it manually and restart program.')
 
 def is_user_groups():
     logger = logging.getLogger('app')

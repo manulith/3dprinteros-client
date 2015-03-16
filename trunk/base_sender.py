@@ -1,8 +1,14 @@
 import collections
+import time
+import os
+import thread
+import logging
+import http_client
 
 class BaseSender:
 
     def __init__(self, profile, usb_info):
+        self.logger = logging.getLogger('app.' + __name__)
         self.stop_flag = False
         self.profile = profile
         self.usb_info = usb_info
@@ -12,7 +18,41 @@ class BaseSender:
         self.target_temps = [0,0]
         self.total_gcodes = None
         self.buffer = collections.deque()
+        self.downloading_flag = False
+        self.downloader = None
         #self._position = [0.00,0.00,0.00]
+
+    def gcodes(self, gcodes):
+        if self.downloading_flag:
+            self.logger.warning('Download command received while downloading processing. Aborting...')
+            return
+        self.downloader = http_client.File_Downloader(self)
+        self.downloading_flag = True
+        thread.start_new_thread(self.download_thread, (gcodes,))
+
+    def download_thread(self, gcodes):
+        if not self.stop_flag:
+            self.logger.info('Starting download thread')
+            gcode_file = self.downloader.async_download(gcodes)
+            if gcode_file:
+                with open(gcode_file, 'rb') as f:
+                    gcodes = f.read()
+                self.gcodes(gcodes)  # Derived class method call, for example makerbot_sender.gcodes(gcodes)
+                self.downloading_flag = False  # TODO: For now it should be after gcodes() due to status error on site
+                self.logger.info('Gcodes loaded to memory, deleting temp file')
+            try:
+                os.remove(gcode_file)
+            except:
+                pass
+            self.downloader = None
+            self.logger.info('Download thread has been closed')
+
+    def is_downloading(self):
+        return self.downloading_flag
+
+    def cancel_download(self):
+        self.downloading_flag = False
+        self.logger.info("File downloading has been cancelled")
 
     def get_temps(self):
         return self.temps

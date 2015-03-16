@@ -98,6 +98,8 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                     page = open(os.path.join(self.working_dir, 'web_interface/conveyor_warning.html')).read()
                 if not utils.is_user_groups():
                     page = open(os.path.join(self.working_dir, 'web_interface/groups_warning.html')).read()
+                if not self.server.app.updater.auto and self.server.app.updater.update_flag:
+                    page = page.replace('get_updates" style="display:none"', 'get_updates" style="display:inline"')
                 self.write_with_autoreplace(page)
 
     def do_POST(self):
@@ -105,20 +107,39 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.process_login()
         elif self.path.find('quit') >= 0:
             self.quit_main_app()
-        elif self.path.find('snapshot_log') >= 0:
-            self.snapshot_log()
-        elif self.path.find('send_log_snapshots') >= 0:
-            self.send_log_snapshots()
+        elif self.path.find('send_logs') >= 0:
+            self.send_logs()
         elif self.path.find('logout') >= 0:
             self.process_logout()
         elif self.path.find('kill_conveyor') >= 0:
             self.kill_conveyor()
         elif self.path.find('add_user_groups') >= 0:
             self.add_user_groups()
+        elif self.path.find('get_updates') >= 0:
+            self.get_updates()
+        elif self.path.find('update_software') >= 0:
+            self.update_software()
         else:
             self.send_response(404)
             self.end_headers()
             self.write_with_autoreplace('Not found')
+
+    def get_updates(self):
+        page = open(os.path.join(self.working_dir, 'web_interface/update_software.html')).read()
+        self.send_response(200)
+        self.end_headers()
+        self.write_with_autoreplace(page)
+
+    def update_software(self):
+        result = self.server.app.updater.update()
+        page = open(os.path.join(self.working_dir, 'web_interface/message.html')).read()
+        if result:
+            page = page.replace('!!!MESSAGE!!!', result)
+        else:
+            page = page.replace('!!!MESSAGE!!!', '<p>Update successful!</p><p>Please restart Client to use all features of new version.</p>')
+        self.send_response(200)
+        self.end_headers()
+        self.write_with_autoreplace(page)
 
     def show_logs(self):
         log_file = config.config['log_file']
@@ -159,24 +180,16 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.end_headers()
         self.write_with_autoreplace(page)
 
-    def snapshot_log(self):
-        result = utils.make_log_snapshot()
+    def send_logs(self):
+        for handler in self.server.app.logger.handlers:
+            handler.flush()
         message = open(os.path.join(self.working_dir, 'web_interface/message.html')).read()
-        if result:
-            message = message.replace('!!!MESSAGE!!!', 'Success!')
+        making_result = utils.make_full_log_snapshot()
+        sending_result = utils.send_all_snapshots()
+        if making_result and sending_result:
+            message = message.replace('!!!MESSAGE!!!', 'Logs successfully sent')
         else:
-            message = message.replace('!!!MESSAGE!!!', 'Error!')
-        self.send_response(200)
-        self.end_headers()
-        self.write_with_autoreplace(message)
-
-    def send_log_snapshots(self):
-        result = utils.send_all_snapshots()
-        message = open(os.path.join(self.working_dir, 'web_interface/message.html')).read()
-        if result:
-            message = message.replace('!!!MESSAGE!!!', 'Success!')
-        else:
-            message = message.replace('!!!MESSAGE!!!', 'Error!')
+            message = message.replace('!!!MESSAGE!!!', 'Error while sending logs')
         self.send_response(200)
         self.end_headers()
         self.write_with_autoreplace(message)
