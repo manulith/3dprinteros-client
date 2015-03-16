@@ -135,7 +135,8 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         page = open(os.path.join(self.working_dir, 'web_interface/message.html')).read()
         if result:
             page = page.replace('!!!MESSAGE!!!', result)
-        page = page.replace('!!!MESSAGE!!!', '<p>Update successful!</p><p>Please restart Client to use all features of new version.</p>')
+        else:
+            page = page.replace('!!!MESSAGE!!!', '<p>Update successful!</p><p>Please restart Client to use all features of new version.</p>')
         self.send_response(200)
         self.end_headers()
         self.write_with_autoreplace(page)
