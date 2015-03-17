@@ -246,14 +246,18 @@ def make_log_snapshot():
 
 def make_full_log_snapshot():
     logger = logging.getLogger("app." + __name__)
-    file_path = None
+    paths = [os.path.abspath(os.path.dirname(__file__))]
+    if sys.platform.startswith('linux'):
+        paths.append(os.path.abspath(os.path.expanduser("~")))
     log_files = []
-    for log in os.listdir(os.path.abspath(os.path.dirname(__file__))):
-        if log.startswith(config.config['log_file']):
-            log_files.append(log)
+    for path in paths:
+        for log in os.listdir(path):
+            if log.startswith(config.config['log_file']):
+                log_files.append(log)
     #logger.info('Files to log : ' + str(log_files))
     if not log_files:
-        log_files.append(config.config['log_file'])
+        logger.info('Log files was not created for some reason. Nothing to send')
+        return
     if not os.path.exists(LOG_SNAPSHOTS_DIR):
         try:
             os.mkdir(LOG_SNAPSHOTS_DIR)
