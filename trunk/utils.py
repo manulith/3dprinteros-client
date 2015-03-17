@@ -334,7 +334,7 @@ def compress_and_send(user_token, log_file_name=None, server_path=http_client.to
             r = requests.post(url, data=user_token, files=files)
         result = r.text
         logger.info("Log sending response: " + result)
-        #os.remove(zip_file_name_path)
+        os.remove(zip_file_name_path)
         if '"success":true' in result:
             os.remove(os.path.join(log_file_name_path))
         else:
