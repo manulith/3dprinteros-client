@@ -252,8 +252,11 @@ def make_full_log_snapshot():
     log_files = []
     for path in paths:
         for log in os.listdir(path):
-            if log.startswith(config.config['log_file']):
-                log_files.append(log)
+            try:
+                if log.startswith(config.config['log_file']):
+                    log_files.append(log)
+            except Exception:
+                continue
     #logger.info('Files to log : ' + str(log_files))
     if not log_files:
         logger.info('Log files was not created for some reason. Nothing to send')
