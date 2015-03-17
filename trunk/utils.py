@@ -320,6 +320,7 @@ def compress_and_send(user_token, log_file_name=None, server_path=http_client.to
         #if http_client.multipart_upload(url, {"token": read_token()}, {'files': file}):
             #os.remove(LOG_SNAPSHOTS_DIR + '/' + log_file_name)
         user_token = {'user_token': user_token}
+        logger.info('Sending logs to %s' % url)
         with open(zip_file_name_path, 'rb') as f:
             files = {'file_data': f}
             r = requests.post(url, data=user_token, files=files)
