@@ -253,8 +253,7 @@ def make_full_log_snapshot():
             log_files.append(log)
     #logger.info('Files to log : ' + str(log_files))
     if not log_files:
-        logger.info('Log files was not created for some reason. Nothing to send')
-        return
+        log_files.append(config.config['log_file'])
     if not os.path.exists(LOG_SNAPSHOTS_DIR):
         try:
             os.mkdir(LOG_SNAPSHOTS_DIR)
