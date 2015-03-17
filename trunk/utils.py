@@ -22,7 +22,7 @@ import version
 
 LIBS_FOLDER = 'libraries'
 ALL_LIBS = ['opencv', 'numpy']
-LOG_SNAPSHOTS_DIR = "log_snapshots"
+LOG_SNAPSHOTS_DIR = 'log_snapshots'
 
 LOG_SNAPSHOT_LINES = 200
 
@@ -261,14 +261,15 @@ def make_full_log_snapshot():
     if not log_files:
         logger.info('Log files was not created for some reason. Nothing to send')
         return
-    if not os.path.exists(LOG_SNAPSHOTS_DIR):
+    log_snapshots_dir = os.path.join(get_paths_to_settings_folder()[0], LOG_SNAPSHOTS_DIR)
+    if not os.path.exists(log_snapshots_dir):
         try:
-            os.mkdir(LOG_SNAPSHOTS_DIR)
+            os.mkdir(log_snapshots_dir)
         except Exception as e:
-            logger.warning("Can't create directory %s" % LOG_SNAPSHOTS_DIR)
+            logger.warning("Can't create directory %s" % log_snapshots_dir)
             return
     filename = time.strftime("%Y_%m_%d___%H_%M_%S", time.localtime()) + ".log"
-    file_path = os.path.abspath(os.path.join(LOG_SNAPSHOTS_DIR, filename))
+    file_path = os.path.abspath(os.path.join(log_snapshots_dir, filename))
     logger.info('Creating snapshot file : ' + file_path)
     with open(file_path, 'w') as outfile:
         for fname in log_files:
@@ -308,11 +309,12 @@ def make_full_log_snapshot():
 
 def compress_and_send(user_token, log_file_name=None, server_path=http_client.token_send_logs_path):
     logger = logging.getLogger('app.' + __name__)
+    log_snapshots_dir = os.path.join(get_paths_to_settings_folder()[0], LOG_SNAPSHOTS_DIR)
     if not log_file_name:
         log_file_name = config.config['log_file']
     zip_file_name = log_file_name + ".zip"
-    log_file_name_path = os.path.abspath(os.path.join(os.path.dirname(__file__), LOG_SNAPSHOTS_DIR, log_file_name))
-    zip_file_name_path = os.path.abspath(os.path.join(os.path.dirname(__file__), LOG_SNAPSHOTS_DIR, zip_file_name))
+    log_file_name_path = os.path.abspath(os.path.join(log_snapshots_dir, log_file_name))
+    zip_file_name_path = os.path.abspath(os.path.join(log_snapshots_dir, zip_file_name))
     logger.info('Creating zip file : ' + zip_file_name)
     try:
         zf = zipfile.ZipFile(zip_file_name_path, mode='w')
@@ -332,7 +334,7 @@ def compress_and_send(user_token, log_file_name=None, server_path=http_client.to
             r = requests.post(url, data=user_token, files=files)
         result = r.text
         logger.info("Log sending response: " + result)
-        os.remove(zip_file_name_path)
+        #os.remove(zip_file_name_path)
         if '"success":true' in result:
             os.remove(os.path.join(log_file_name_path))
         else:
@@ -351,8 +353,9 @@ def compress_and_send(user_token, log_file_name=None, server_path=http_client.to
 #         return  True
 
 def send_all_snapshots(user_token):
+    log_snapshots_dir = os.path.join(get_paths_to_settings_folder()[0], LOG_SNAPSHOTS_DIR)
     try:
-        snapshot_dir = os.listdir(LOG_SNAPSHOTS_DIR)
+        snapshot_dir = os.listdir(log_snapshots_dir)
     except OSError:
         logging.info("No logs snapshots to send")
     else:
