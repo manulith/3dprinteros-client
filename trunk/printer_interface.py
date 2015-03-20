@@ -1,6 +1,5 @@
 import time
 import json
-import base64
 import logging
 import threading
 
@@ -99,17 +98,9 @@ class PrinterInterface(threading.Thread):
                         arguments.append(payload)
                     if data_dict.get('is_link', False):
                         arguments.append(data_dict.get('is_link'))
-                        #payload = http_client.download(payload)
-                        #payload_file = http_client.async_download(payload)
-                        #self.printer.start_download(payload)
-                        #self.logger.info('File has been downloaded.')
-                        # with open(payload_file, 'rb') as f:
-                        #     payload = f.read()
-                        if not payload:
-                            self.sender_error = {"code": 777, "message": "Can't download file from storage"}
-                            return { "number": number, "result": False }
-                    elif "command" in ("gcodes", "binary_file"):
-                        payload = base64.b64decode(payload)
+                        job_id = data_dict.get('job_id', None)
+                        if job_id:
+                            arguments.append(job_id)
                     try:
                         result = method(*arguments)
                     except Exception as e:
