@@ -72,6 +72,7 @@ class Sender(base_sender.BaseSender):
         raise RuntimeError("No more baudrates to try")
 
     def onlinecb(self):
+        self.logger.info("Printer %s is ready" % str(self.usb_info))
         self.online_flag = True
 
     def reset(self):

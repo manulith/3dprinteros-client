@@ -277,17 +277,22 @@ class printcore():
             empty_lines = 0
             while self._listen_can_continue():
                 line = self._readline()
-                if line is None: break  # connection problem
+                if line is None:
+                    print "Line is none"
+                    print "Line is none"
+                    print "Line is none"
+                    break  # connection problem
                 # workaround cases where M105 was sent before printer Serial
                 # was online an empty line means read timeout was reached,
                 # meaning no data was received thus we count those empty lines,
                 # and once we have seen 15 in a row, we just break and send a
-                # new M105
+                # new M105about:tor10
                 # 15 was chosen based on the fact that it gives enough time for
                 # Gen7 bootloader to time out, and that the non received M105
                 # issues should be quite rare so we can wait for a long time
                 # before resending
                 if not line:
+                    print "Not line. Empty line count %i" % empty_lines
                     empty_lines += 1
                     if empty_lines == 15: break
                 else: empty_lines = 0
