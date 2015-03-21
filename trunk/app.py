@@ -6,6 +6,7 @@ import os
 import time
 import signal
 import logging
+import traceback
 from subprocess import Popen
 
 import utils
@@ -143,4 +144,12 @@ class App:
         sys.exit(0)
 
 if __name__ == '__main__':
-    app = App()
+    try:
+        app = App()
+    except SystemExit:
+        pass
+    except:
+        trace = traceback.format_exc()
+        print trace
+        with open("critical_error.log", "a") as f:
+            f.write(time.ctime() + "\n" + trace + "\n")
