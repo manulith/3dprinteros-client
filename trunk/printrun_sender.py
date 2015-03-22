@@ -134,8 +134,8 @@ class Sender(base_sender.BaseSender):
         self.logger.debug(line)
         if line[0] == 'T':
             self.fetch_temps(line)
-        # elif line[0:2] == 'ok':
-        #     self.ready_flag = True
+        elif line[0:2] == 'ok':
+             self.online_flag = True
 
     def sendcb(self, command, gline):
         self.logger.debug("Executing command: " + command)
