@@ -14,7 +14,7 @@ class Sender(base_sender.BaseSender):
     pause_extrude_length = 7
     RETRIES_FOR_EACH_BAUDRATE = 2
     TEMP_REQUEST_WAIT = 5
-    DEFAULT_TIMEOUT_FOR_PRINTER_ONLINE = 15
+    DEFAULT_TIMEOUT_FOR_PRINTER_ONLINE = 3
 
     def __init__(self, profile, usb_info):
         self.temp_request_thread = None
@@ -115,6 +115,7 @@ class Sender(base_sender.BaseSender):
 
     def tempcb(self, line):
         self.logger.debug(line)
+        print "TEMP CB"
         match = self.temp_re.match(line)
         if match:
             tool_temp = float(match.group(1))
@@ -129,6 +130,7 @@ class Sender(base_sender.BaseSender):
         #self.logger.debug(self.debug_position())
 
     def recvcb(self, line):
+        print "RECV CB"
         self.logger.debug(line)
         if line[0] == 'T':
             self.fetch_temps(line)
