@@ -38,6 +38,7 @@ class Sender(base_sender.BaseSender):
             #for _ in range(0, self.RETRIES_FOR_EACH_BAUDRATE):
                 self.error_code = 0
                 self.error_message = ""
+                self.online_flag = False
                 self.logger.info("Connecting at baudrate %i" % baudrate)
                 self.printcore = printcore()
                 self.printcore.onlinecb = self.onlinecb
@@ -51,7 +52,6 @@ class Sender(base_sender.BaseSender):
                     self.logger.warning("Error connecting to printer at %i" % baudrate)
                     self.printcore.disconnect()
                 else:
-                    self.online_flag = False
                     wait_start_time = time.time()
                     self.logger.info("Waiting for printer online")
                     while time.time() < (wait_start_time + self.DEFAULT_TIMEOUT_FOR_PRINTER_ONLINE):
