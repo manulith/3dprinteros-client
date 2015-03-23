@@ -34,23 +34,32 @@ class App:
         self.stop_flag = False
         self.quit_flag = False
         self.cam = None
+        self.cam_modules = config.config['camera']['modules']
+        self.cam_current_module = self.cam_modules['Dual-cam']
         self.updater = updater.Updater()
         self.updater.check_for_updates()
         self.user_login = user_login.UserLogin(self)
         self.init_interface()
         self.user_login.wait_for_login()
-        self.start_camera()
+        self.start_camera(self.cam_current_module)
         self.main_loop()
 
-    def start_camera(self):
+    def start_camera(self, module):
         if config.config["camera"]["enabled"] == True:
             self.logger.info('Launching camera subprocess')
             client_dir = os.path.dirname(os.path.abspath(__file__))
-            cam_path = os.path.join(client_dir, 'cam.py')
+            cam_path = os.path.join(client_dir, module)
             try:
                 self.cam = Popen([sys.executable, cam_path])
             except Exception as e:
                 self.logger.warning('Could not launch camera due to error:\n' + e.message)
+            else:
+                self.cam_current_module = module
+
+    def switch_camera(self, module):
+        if self.cam:
+            self.cam.terminate()
+        self.start_camera(module)
 
     def init_interface(self):
         if config.config['web_interface']:

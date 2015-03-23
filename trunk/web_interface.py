@@ -119,10 +119,46 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.get_updates()
         elif self.path.find('update_software') >= 0:
             self.update_software()
+        elif self.path.find('choose_cam') >= 0:
+            self.choose_cam()
+        elif self.path.find('switch_cam') >= 0:
+            self.switch_cam()
         else:
             self.send_response(404)
             self.end_headers()
             self.write_with_autoreplace('Not found')
+
+    def choose_cam(self):
+        if not self.server.app.cam:
+            page = open(os.path.join(self.working_dir, 'web_interface/choose_cam.html')).read()
+            page = page.replace('!!!MESSAGE!!!', 'Live view feature disabled')
+        else:
+            modules = self.server.app.cam_modules
+            modules_select = ''
+            for module in modules.keys():
+                if modules[module] == self.server.app.cam_current_module:
+                    modules_select = modules_select + '<p><input type="radio" disabled> ' + module + '</p>'
+                else:
+                    modules_select = modules_select + '<p><input type="radio" name="module" value="' + module + '"> ' + module + '</p>'
+            page = open(os.path.join(self.working_dir, 'web_interface/choose_cam.html')).read()
+            page = page.replace('!!!MODULES_SELECT!!!', modules_select)
+        self.send_response(200)
+        self.end_headers()
+        self.write_with_autoreplace(page)
+
+    def switch_cam(self):
+        message = open(os.path.join(self.working_dir, 'web_interface/message.html')).read()
+        content_length = int(self.headers.getheader('Content-Length'))
+        if content_length:
+            body = self.rfile.read(content_length)
+            body = body.split('module=')[-1]
+            self.server.app.switch_camera(self.server.app.cam_modules[body])
+            message = message.replace('!!!MESSAGE!!!', 'Live view type switched to ' + body)
+        else:
+            message = message.replace('!!!MESSAGE!!!', 'Live view type not chosen')
+        self.send_response(200)
+        self.end_headers()
+        self.write_with_autoreplace(message)
 
     def get_updates(self):
         page = open(os.path.join(self.working_dir, 'web_interface/update_software.html')).read()

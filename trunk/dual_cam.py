@@ -16,6 +16,7 @@ import config
 class CameraMaster():
     def __init__(self):
         self.init_logging()
+        self.logger.info('Launched camera module: %s' % os.path.basename(__file__))
         signal.signal(signal.SIGINT, self.intercept_signal)
         signal.signal(signal.SIGTERM, self.intercept_signal)
         self.stop_flag = False
@@ -125,7 +126,8 @@ class CameraImageSender(threading.Thread):
     def send_picture(self, picture):
         picture = base64.b64encode(str(picture))
         message = (self.token, self.camera_number, self.camera_name, picture, http_client.MACADDR)
-        http_client.send(http_client.package_camera_send, message)
+        answer = http_client.send(http_client.package_camera_send, message)
+        self.logger.info(self.camera_name + ' streaming response: %s' % answer)
 
     def close(self):
         self.stop_flag = True
