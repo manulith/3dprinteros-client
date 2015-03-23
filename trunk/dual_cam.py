@@ -150,9 +150,3 @@ class CameraImageSender(threading.Thread):
 
 if __name__ == '__main__':
     CM = CameraMaster()
-    while True:
-        try:
-            time.sleep(0.1)
-        except KeyboardInterrupt:
-            CM.close()
-            break
