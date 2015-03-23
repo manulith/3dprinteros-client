@@ -21,8 +21,7 @@ import updater
 
 class App:
 
-    MIN_LOOP_TIME = 2
-    READY_TIMEOUT = 10
+    LOG_FLUSH_TIME = 30
 
     def __init__(self):
         self.logger = utils.get_logger(config.config["log_file"])
@@ -76,6 +75,7 @@ class App:
             self.logger.debug("...done")
 
     def main_loop(self):
+        self.last_flush_time = 0
         while not self.stop_flag:
             self.updater.auto_update()
             self.time_stamp()
@@ -87,6 +87,12 @@ class App:
                 elif not pi.is_alive():
                     self.disconnect_printer(pi, 'error')
             time.sleep(2)
+            now = time.time()
+            if now - self.last_flush_time > self.LOG_FLUSH_TIME:
+                self.last_flush_time = now
+                self.logger.info('Flushing logger handlers')
+                for handler in self.logger.handlers:
+                    handler.flush()
         # this is for quit from web interface(to release server's thread and quit)
         if self.quit_flag:
             self.quit()
