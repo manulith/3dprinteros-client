@@ -128,6 +128,15 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.end_headers()
             self.write_with_autoreplace('Not found')
 
+    def write_message(self, message, show_time=2):
+        page = open(os.path.join(self.working_dir, 'web_interface/message.html')).read()
+        page = page.replace('!!!MESSAGE!!!', message)
+        if show_time:
+            page = page.replace('!!!SHOW_TIME!!!', str(show_time))
+        self.send_response(200)
+        self.end_headers()
+        self.write_with_autoreplace(page)
+
     def choose_cam(self):
         if not self.server.app.cam:
             page = open(os.path.join(self.working_dir, 'web_interface/choose_cam.html')).read()
@@ -147,18 +156,15 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.write_with_autoreplace(page)
 
     def switch_cam(self):
-        message = open(os.path.join(self.working_dir, 'web_interface/message.html')).read()
         content_length = int(self.headers.getheader('Content-Length'))
         if content_length:
             body = self.rfile.read(content_length)
             body = body.split('module=')[-1]
             self.server.app.switch_camera(self.server.app.cam_modules[body])
-            message = message.replace('!!!MESSAGE!!!', 'Live view type switched to ' + body)
+            message = 'Live view type switched to ' + body
         else:
-            message = message.replace('!!!MESSAGE!!!', 'Live view type not chosen')
-        self.send_response(200)
-        self.end_headers()
-        self.write_with_autoreplace(message)
+            message = 'Live view type not chosen'
+        self.write_message(message)
 
     def get_updates(self):
         page = open(os.path.join(self.working_dir, 'web_interface/update_software.html')).read()
@@ -168,14 +174,11 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
     def update_software(self):
         result = self.server.app.updater.update()
-        page = open(os.path.join(self.working_dir, 'web_interface/message.html')).read()
         if result:
-            page = page.replace('!!!MESSAGE!!!', result)
+            message = result
         else:
-            page = page.replace('!!!MESSAGE!!!', '<p>Update successful!</p><p>Please restart Client to use all features of new version.</p>')
-        self.send_response(200)
-        self.end_headers()
-        self.write_with_autoreplace(page)
+            message = '<p>Update successful!</p><p>Please restart Client to use all features of new version.</p>'
+        self.write_message(message)
 
     def show_logs(self):
         log_file = config.config['log_file']
@@ -196,19 +199,16 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.quit_main_app()
 
     def kill_conveyor(self):
-        message = open(os.path.join(self.working_dir, 'web_interface/message.html')).read()
-        fail_message = message.replace('!!!MESSAGE!!!', '3DPrinterOS was unable to stop conveyor.<br>')
+        fail_message = '3DPrinterOS was unable to stop conveyor.'
         if utils.get_conveyor_pid():
             result = utils.kill_existing_conveyor()
             if result:
-                message = message.replace('!!!MESSAGE!!!', 'Conveyor was successfully stopped.<br><br>Returning...')
+                message = 'Conveyor was successfully stopped.<br><br>Returning...'
             else:
                 message = fail_message
         else:
             message = fail_message
-        self.send_response(200)
-        self.end_headers()
-        self.write_with_autoreplace(message)
+        self.write_message(message)
 
     def download_logs(self):
         page = open(os.path.join(self.working_dir, 'web_interface/download_logs.html')).read()
@@ -219,22 +219,16 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     def send_logs(self):
         for handler in self.server.app.logger.handlers:
             handler.flush()
-        message = open(os.path.join(self.working_dir, 'web_interface/message.html')).read()
         making_result = utils.make_full_log_snapshot()
         sending_result = utils.send_all_snapshots(self.server.app.user_login.user_token)
         if making_result and sending_result:
-            message = message.replace('!!!MESSAGE!!!', 'Logs successfully sent')
+            message = 'Logs successfully sent'
         else:
-            message = message.replace('!!!MESSAGE!!!', 'Error while sending logs')
-        self.send_response(200)
-        self.end_headers()
-        self.write_with_autoreplace(message)
+            message = 'Error while sending logs'
+        self.write_message(message)
 
     def quit_main_app(self):
-        self.send_response(200)
-        self.end_headers()
-        page = open(os.path.join(self.working_dir, 'web_interface/goodbye.html')).read()
-        self.write_with_autoreplace(page)
+        self.write_message('Goodbye :-)', 0)
         self.server.app.stop_flag = True
         self.server.app.quit_flag = True
 
@@ -251,14 +245,11 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         else:
             return
         error = self.server.app.user_login.login_as_user(login, password)
-        message = open(os.path.join(self.working_dir, 'web_interface/message.html')).read()
         if error:
-            message = message.replace('!!!MESSAGE!!!', str(error[1]))
+            message = str(error[1])
         else:
-            message = message.replace('!!!MESSAGE!!!', 'Login successful!<br><br>Processing...')
-        self.send_response(200)
-        self.end_headers()
-        self.write_with_autoreplace(message)
+            message = 'Login successful!<br><br>Processing...'
+        self.write_message(message)
 
     def process_logout(self):
         paths = utils.get_paths_to_settings_folder()
