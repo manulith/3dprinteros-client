@@ -132,10 +132,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.write_with_autoreplace(page, response)
 
     def choose_cam(self):
-        if not self.server.app.cam:
-            page = open(os.path.join(self.working_dir, 'web_interface/choose_cam.html')).read()
-            page = page.replace('!!!MESSAGE!!!', 'Live view feature disabled')
-        else:
+        if self.server.app.cam:
             modules = self.server.app.cam_modules
             modules_select = ''
             for module in modules.keys():
@@ -145,7 +142,9 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                     modules_select = modules_select + '<p><input type="radio" name="module" value="' + module + '"> ' + module + '</p>'
             page = open(os.path.join(self.working_dir, 'web_interface/choose_cam.html')).read()
             page = page.replace('!!!MODULES_SELECT!!!', modules_select)
-        self.write_with_autoreplace(page)
+            self.write_with_autoreplace(page)
+        else:
+            self.write_message('Live view feature disabled')
 
     def switch_cam(self):
         content_length = int(self.headers.getheader('Content-Length'))
