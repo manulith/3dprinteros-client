@@ -22,16 +22,16 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.logger.debug("Incoming connection from %s:%i" % (host, port))
         return host
 
-    def write_with_autoreplace(self, page):
+    def write_with_autoreplace(self, page, response=200):
         page = page.replace('!!!VERSION!!!', 'Client v.' + version.version + ', build ' + version.build + ', commit ' + version.commit)
         page = page.replace('3DPrinterOS', '3DPrinterOS Client v.' + version.version)
+        self.send_response(response)
+        self.end_headers()
         self.wfile.write(page)
 
     def do_GET(self):
         self.logger.info("Server GET")
         if self.server.token_was_reset_flag:
-            self.send_response(200)
-            self.end_headers()
             self.write_with_autoreplace("Token was reset\nPlease restart 3DPrinterOS and re-login")
         elif self.path.find('quit') >= 0:
             self.quit_main_app()
@@ -40,8 +40,6 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         elif self.path.find('download_logs') >= 0:
             self.download_logs()
         else:
-            self.send_response(200)
-            self.end_headers()
             if self.server.app:
                 if self.server.app.user_login.user_token:
                     name = os.path.join(self.working_dir, 'web_interface/main_loop_form.html')
@@ -124,18 +122,14 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         elif self.path.find('switch_cam') >= 0:
             self.switch_cam()
         else:
-            self.send_response(404)
-            self.end_headers()
-            self.write_with_autoreplace('Not found')
+            self.write_message('Not found', 0, 404)
 
-    def write_message(self, message, show_time=2):
+    def write_message(self, message, show_time=2, response=200):
         page = open(os.path.join(self.working_dir, 'web_interface/message.html')).read()
         page = page.replace('!!!MESSAGE!!!', message)
         if show_time:
             page = page.replace('!!!SHOW_TIME!!!', str(show_time))
-        self.send_response(200)
-        self.end_headers()
-        self.write_with_autoreplace(page)
+        self.write_with_autoreplace(page, response)
 
     def choose_cam(self):
         if not self.server.app.cam:
@@ -151,8 +145,6 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                     modules_select = modules_select + '<p><input type="radio" name="module" value="' + module + '"> ' + module + '</p>'
             page = open(os.path.join(self.working_dir, 'web_interface/choose_cam.html')).read()
             page = page.replace('!!!MODULES_SELECT!!!', modules_select)
-        self.send_response(200)
-        self.end_headers()
         self.write_with_autoreplace(page)
 
     def switch_cam(self):
@@ -168,8 +160,6 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
     def get_updates(self):
         page = open(os.path.join(self.working_dir, 'web_interface/update_software.html')).read()
-        self.send_response(200)
-        self.end_headers()
         self.write_with_autoreplace(page)
 
     def update_software(self):
@@ -190,8 +180,6 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             content = content + line + '<br>'
         page = open(os.path.join(self.working_dir, 'web_interface/show_logs.html')).read()
         page = page.replace('!!!LOGS!!!', content)
-        self.send_response(200)
-        self.end_headers()
         self.write_with_autoreplace(page)
 
     def add_user_groups(self):
@@ -212,8 +200,6 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
     def download_logs(self):
         page = open(os.path.join(self.working_dir, 'web_interface/download_logs.html')).read()
-        self.send_response(200)
-        self.end_headers()
         self.write_with_autoreplace(page)
 
     def send_logs(self):
@@ -261,8 +247,6 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 except Exception as e:
                     self.logger.error('Failed to logout: ' + e.message)
         page = open(os.path.join(self.working_dir, 'web_interface/logout.html')).read()
-        self.send_response(200)
-        self.end_headers()
         self.write_with_autoreplace(page)
 
 class ThreadedHTTPServer(ThreadingMixIn, BaseHTTPServer.HTTPServer):
