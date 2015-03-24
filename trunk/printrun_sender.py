@@ -17,8 +17,9 @@ class Sender(base_sender.BaseSender):
     DEFAULT_TIMEOUT_FOR_PRINTER_ONLINE = 15
 
     def __init__(self, profile, usb_info):
-        self.temp_request_thread = None
+        self.stop_flag = False
         self.printcore = None
+        self.temp_request_thread = None
         self.logger = logging.getLogger('app.' + __name__)
         base_sender.BaseSender.__init__(self, profile, usb_info)
         self.define_regexps()
@@ -27,9 +28,7 @@ class Sender(base_sender.BaseSender):
             self.total_gcodes = 0
             self.temp_request_thread = threading.Thread(target=self.temp_request)
             self.temp_request_thread.start()
-            self.stop_flag = False
-            for gcode in self.profile['end_gcodes']:
-                self.printcore.send_now(gcode)
+
 
     def select_baudrate_and_connect(self):
         baudrates = self.profile['baudrate']
