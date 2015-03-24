@@ -151,6 +151,8 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         content_length = int(self.headers.getheader('Content-Length'))
         if content_length:
             body = self.rfile.read(content_length)
+            body = body.replace("+", "%20")
+            body = urllib.unquote(body).decode('utf8')
             body = body.split('module=')[-1]
             self.server.app.switch_camera(self.server.app.cam_modules[body])
             message = 'Live view type switched to ' + body
