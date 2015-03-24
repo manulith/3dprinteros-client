@@ -8,6 +8,7 @@ import threading
 import logging
 import signal
 import os
+import traceback
 
 import http_client
 import user_login
@@ -149,10 +150,18 @@ class CameraImageSender(threading.Thread):
 
 
 if __name__ == '__main__':
-    CM = CameraMaster()
-    while True:
-        try:
-            time.sleep(0.1)
-        except KeyboardInterrupt:
-            CM.close()
-            break
+    try:
+        CM = CameraMaster()
+        while True:
+            try:
+                time.sleep(0.1)
+            except KeyboardInterrupt:
+                CM.close()
+                break
+    except SystemExit:
+        pass
+    except:
+        trace = traceback.format_exc()
+        print trace
+        with open("critical_error.log", "a") as f:
+            f.write(time.ctime() + "\n" + trace + "\n")
