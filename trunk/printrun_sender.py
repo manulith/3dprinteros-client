@@ -14,7 +14,7 @@ class Sender(base_sender.BaseSender):
     pause_extrude_length = 7
     RETRIES_FOR_EACH_BAUDRATE = 2
     TEMP_REQUEST_WAIT = 5
-    DEFAULT_TIMEOUT_FOR_PRINTER_ONLINE = 15
+    DEFAULT_TIMEOUT_FOR_PRINTER_ONLINE = 3
 
     def __init__(self, profile, usb_info):
         self.stop_flag = False
@@ -70,6 +70,7 @@ class Sender(base_sender.BaseSender):
         raise RuntimeError("No more baudrates to try")
 
     def onlinecb(self):
+        self.logger.info("Printer %s is ready" % str(self.usb_info))
         self.online_flag = True
 
     def reset(self):
@@ -130,6 +131,8 @@ class Sender(base_sender.BaseSender):
         #self.logger.debug(line)
         if line.startswith == 'T':
             self.fetch_temps(line)
+        elif line[0:2] == 'ok':
+             self.online_flag = True
 
     def sendcb(self, command, gline):
         #self.logger.debug("Executing command: " + command)

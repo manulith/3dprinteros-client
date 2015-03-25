@@ -63,6 +63,8 @@ except Exception, e:
     logging.warning("Memory-efficient GCoder implementation unavailable: %s" % e)
     Line = PyLine
     LightLine = PyLightLine
+else:
+    logging.info("Memory-efficient GCoder is enabled!")
 
 def find_specific_code(line, code):
     exp = specific_exp % code
