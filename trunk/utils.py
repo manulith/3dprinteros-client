@@ -255,7 +255,7 @@ def make_full_log_snapshot():
     for path in paths:
         for log in os.listdir(path):
             try:
-                if log.startswith(config.config['log_file']):
+                if log.startswith(config.config['log_file']) or log.startswith(config.config['error_file']):
                     log_files.append(log)
             except Exception:
                 continue

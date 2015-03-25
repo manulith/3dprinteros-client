@@ -163,5 +163,5 @@ if __name__ == '__main__':
     except:
         trace = traceback.format_exc()
         print trace
-        with open("critical_error.log", "a") as f:
+        with open(config.config['error_file'], "a") as f:
             f.write(time.ctime() + "\n" + trace + "\n")

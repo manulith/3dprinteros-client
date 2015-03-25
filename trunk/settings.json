@@ -3,6 +3,7 @@
   "AUX_URL": "cli-cloud.3dprinteros.com",
   "HTTPS": true,
   "log_file": "3dprinteros_client.log",
+  "error_file": "critical_error.log",
   "web_interface": true,
   "linux_rights_warning": true,
   "max_download_retry" : 3,
