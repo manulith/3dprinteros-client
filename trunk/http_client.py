@@ -8,12 +8,6 @@ import logging
 import tempfile
 import requests
 
-import config
-
-MACADDR = hex(uuid.getnode())
-CONNECTION_TIMEOUT = 6
-URL = config.config['URL']
-AUX_URL = config.config['AUX_URL']
 streamer_prefix = "/streamerapi"
 user_login_path = streamer_prefix + "/user_login"
 printer_login_path = streamer_prefix + "/printer_login"
@@ -23,9 +17,13 @@ cloudsync_path = "/autoupload"
 token_send_logs_path = "/oldliveview/sendLogs" #rename me!
 get_last_version_path = '/a/lastclientver/get'
 
-domain_path_re = re.compile("https?:\/\/(.+)(\/.*)")
+import config
 
-#utils
+MACADDR = hex(uuid.getnode())
+CONNECTION_TIMEOUT = 6
+URL = config.config['URL']
+AUX_URL = config.config['AUX_URL']
+domain_path_re = re.compile("https?:\/\/(.+)(\/.*)")
 
 def load_json(jdata):
     logger = logging.getLogger('app.' +__name__)
