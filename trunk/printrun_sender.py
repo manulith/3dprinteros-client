@@ -130,7 +130,6 @@ class Sender(base_sender.BaseSender):
         #self.logger.debug(self.debug_position())
 
     def recvcb(self, line):
-        print "RECV CB"
         self.logger.debug(line)
         if line[0] == 'T':
             self.fetch_temps(line)
