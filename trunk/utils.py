@@ -246,6 +246,8 @@ def make_log_snapshot():
 
 def make_full_log_snapshot():
     logger = logging.getLogger("app." + __name__)
+    for handler in logger.handlers:
+        handler.flush()
     paths = [os.path.abspath(os.path.dirname(__file__))]
     if sys.platform.startswith('linux'):
         paths.append(os.path.abspath(os.path.expanduser("~")))
@@ -334,7 +336,7 @@ def compress_and_send(user_token, log_file_name=None, server_path=http_client.to
             r = requests.post(url, data=user_token, files=files)
         result = r.text
         logger.info("Log sending response: " + result)
-        os.remove(zip_file_name_path)
+        #os.remove(zip_file_name_path)
         if '"success":true' in result:
             os.remove(os.path.join(log_file_name_path))
         else:
@@ -546,7 +548,6 @@ def add_user_groups():
             logger.info('Adding to Linux groups result: ' + stdout)
 
 def get_file_tail(file):
-    file = file
     if os.path.isfile(file):
         f = open(file).readlines()
         file_tail = []

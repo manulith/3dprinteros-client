@@ -204,8 +204,6 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.write_with_autoreplace(page)
 
     def send_logs(self):
-        for handler in self.server.app.logger.handlers:
-            handler.flush()
         making_result = utils.make_full_log_snapshot()
         sending_result = utils.send_all_snapshots(self.server.app.user_login.user_token)
         if making_result and sending_result:
