@@ -24,7 +24,25 @@ class Updater:
             last_version = http_client.get_request(connection, None, http_client.get_last_version_path)
             if last_version:
                 reload(version)
-                return version.version != last_version
+                return self.compare_versions(version.version, last_version)
+
+    def compare_versions(self, current_version, available_version):
+        current_version = self.version_to_int(current_version)
+        available_version = self.version_to_int(available_version)
+        if len(current_version) == len(available_version):
+            for number in range(0, len(current_version)):
+                if current_version[number] < available_version[number]:
+                    return True
+                else:
+                    continue
+        else:
+            self.logger.warning('Error while comparing versions!')
+
+    def version_to_int(self, version):
+        version = version.split('.')
+        for number in range(0, len(version)):
+            version[number] = int(version[number])
+        return version
 
     def auto_update(self):
         if self.auto:
@@ -52,5 +70,4 @@ class Updater:
 if __name__ == '__main__':
     logging.basicConfig(level='INFO')
     u = Updater()
-    u.check_for_updates()
-    u.update()
+    u.new_version_available()
