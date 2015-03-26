@@ -113,7 +113,7 @@ class Sender(base_sender.BaseSender):
 
     def tempcb(self, line):
         self.logger.debug(line)
-        self.logger.debug("Current line: " + str(self.last_line))
+        #self.logger.debug("Current line: " + str(self.last_line))
         match = self.temp_re.match(line)
         if match:
             tool_temp = float(match.group(1))
@@ -129,7 +129,7 @@ class Sender(base_sender.BaseSender):
 
     def recvcb(self, line):
         #self.logger.debug(line)
-        if line.startswith == 'T':
+        if line.startswith('T'):
             self.fetch_temps(line)
         elif line[0:2] == 'ok':
              self.online_flag = True

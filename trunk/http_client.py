@@ -15,6 +15,7 @@ command_path = streamer_prefix + "/command"
 camera_path = streamer_prefix + "/camera" #json['image': base64_image ]
 cloudsync_path = "/autoupload"
 token_send_logs_path = "/oldliveview/sendLogs" #rename me!
+#token_send_logs_path = streamer_prefix + '/sendLogs' # TODO: test me
 get_last_version_path = '/a/lastclientver/get'
 
 import config
