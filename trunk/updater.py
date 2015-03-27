@@ -33,7 +33,8 @@ class Updater:
             for number in range(0, len(current_version)):
                 if current_version[number] > available_version[number]:
                     return False
-            return True
+                elif current_version[number] < available_version[number]:
+                    return True
         else:
             self.logger.warning('Error while comparing versions!')
 
