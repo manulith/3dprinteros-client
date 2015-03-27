@@ -1,14 +1,16 @@
 import collections
-import time
 import os
 import thread
 import logging
+
+import utils
 import http_client
 
 class BaseSender:
 
-    def __init__(self, profile, usb_info):
+    def __init__(self, profile, usb_info, app):
         self.logger = logging.getLogger('app.' + __name__)
+        self.app = app
         self.stop_flag = False
         self.profile = profile
         self.usb_info = usb_info
@@ -100,3 +102,9 @@ class BaseSender:
 
     def is_operational(self):
         return False
+
+    def upload_logs(self):
+        utils.make_full_log_snapshot()
+        self.logger.info("Sending logs")
+        utils.send_all_snapshots(self.app.user_login.user_token)
+        self.logger.info("Done")
