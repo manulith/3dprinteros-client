@@ -129,6 +129,8 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         page = page.replace('!!!MESSAGE!!!', message)
         if show_time:
             page = page.replace('!!!SHOW_TIME!!!', str(show_time))
+        else:
+            page = page.replace('<meta http-equiv="refresh" content="!!!SHOW_TIME!!!; url=/" />', '')
         self.write_with_autoreplace(page, response)
 
     def choose_cam(self):
