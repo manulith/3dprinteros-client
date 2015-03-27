@@ -21,7 +21,7 @@ import requests
 import version
 
 LIBS_FOLDER = 'libraries'
-ALL_LIBS = ['opencv', 'numpy']
+ALL_LIBS = ['opencv', 'numpy', 'printrun']
 LOG_SNAPSHOTS_DIR = 'log_snapshots'
 
 LOG_SNAPSHOT_LINES = 200
@@ -246,6 +246,8 @@ def make_log_snapshot():
 
 def make_full_log_snapshot():
     logger = logging.getLogger("app." + __name__)
+    for handler in logger.handlers:
+        handler.flush()
     paths = [os.path.abspath(os.path.dirname(__file__))]
     if sys.platform.startswith('linux'):
         paths.append(os.path.abspath(os.path.expanduser("~")))
@@ -253,7 +255,7 @@ def make_full_log_snapshot():
     for path in paths:
         for log in os.listdir(path):
             try:
-                if log.startswith(config.config['log_file']):
+                if log.startswith(config.config['log_file']) or log.startswith(config.config['error_file']):
                     log_files.append(log)
             except Exception:
                 continue
@@ -546,7 +548,6 @@ def add_user_groups():
             logger.info('Adding to Linux groups result: ' + stdout)
 
 def get_file_tail(file):
-    file = file
     if os.path.isfile(file):
         f = open(file).readlines()
         file_tail = []

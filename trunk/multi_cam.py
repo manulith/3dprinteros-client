@@ -8,6 +8,7 @@ import logging
 import signal
 import sys
 import os
+import traceback
 
 import http_client
 import user_login
@@ -62,7 +63,7 @@ class Camera():
 
 class CameraMaster():
     def __init__(self):
-        self.logger = utils.get_logger(config.config["camera"]["log_file"])  # init logger
+        self.logger = logging.getLogger('app.' + __name__)
         self.logger.info('Launched camera module: %s' % os.path.basename(__file__))
         signal.signal(signal.SIGINT, self.intercept_signal)  # init signals
         signal.signal(signal.SIGTERM, self.intercept_signal)
@@ -158,11 +159,20 @@ class CameraMaster():
                 time.sleep(0.5)
 
 if __name__ == '__main__':
-    CM = CameraMaster()
-    CM.run()
-    while True:
-        try:
-            time.sleep(0.1)
-        except KeyboardInterrupt:
-            CM.close()
-            break
+    #logging.basicConfig(level='INFO')
+    try:
+        CM = CameraMaster()
+        CM.run()
+        while True:
+            try:
+                time.sleep(0.1)
+            except KeyboardInterrupt:
+                CM.close()
+                break
+    except SystemExit:
+        pass
+    except:
+        trace = traceback.format_exc()
+        print trace
+        with open(config.config['error_file'], "a") as f:
+            f.write(time.ctime() + "\n" + trace + "\n")

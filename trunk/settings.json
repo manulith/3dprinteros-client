@@ -3,6 +3,7 @@
   "AUX_URL": "cli-cloud.3dprinteros.com",
   "HTTPS": true,
   "log_file": "3dprinteros_client.log",
+  "error_file": "critical_error.log",
   "web_interface": true,
   "linux_rights_warning": true,
   "max_download_retry" : 3,
@@ -18,6 +19,7 @@
     "img_qual" : 90,
     "camera_min_loop_time" : 1,
     "log_file" : "3dprinteros_camera.log",
-    "modules": {"Dual-cam": "dual_cam.py", "Multi-cam": "multi_cam.py"}
+    "modules": {"Dual camera": "dual_cam.py", "Multi camera": "multi_cam.py"},
+    "default_module_name": "Dual camera"
   }
 }
