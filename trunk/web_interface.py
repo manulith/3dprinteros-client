@@ -223,7 +223,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
     def process_login(self):
         if self.server.app.user_login.user_token:
-            self.write_message('Please logout first to re-login')
+            self.write_message('Please logout first before re-login')
             return
         body = ''
         if self.path.find('get_login'):
