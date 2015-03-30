@@ -222,6 +222,9 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.server.app.quit_flag = True
 
     def process_login(self):
+        if self.server.app.user_login.user_token:
+            self.write_message('Please logout first to re-login')
+            return
         body = ''
         if self.path.find('get_login'):
             body = str(self.path)
