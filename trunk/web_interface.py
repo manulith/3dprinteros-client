@@ -33,6 +33,8 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.logger.info("Server GET")
         if self.server.token_was_reset_flag:
             self.write_with_autoreplace("Token was reset\nPlease restart 3DPrinterOS and re-login")
+        elif self.path.find('get_login') >= 0:
+            self.process_login()
         elif self.path.find('quit') >= 0:
             self.quit_main_app()
         elif self.path.find('show_logs') >=0:
@@ -220,17 +222,19 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.server.app.quit_flag = True
 
     def process_login(self):
+        body = ''
+        if self.path.find('get_login'):
+            body = str(self.path)
+            body = body.replace('/?get_', '')
         content_length = self.headers.getheader('Content-Length')
         if content_length:
             length = int(content_length)
             body = self.rfile.read(length)
-            body = body.replace("+", "%20")
-            body = urllib.unquote(body).decode('utf8')
-            raw_login, password = body.split("&password=")
-            login = raw_login.replace("login=", "")
-            password = utils.sha256_hash(password)
-        else:
-            return
+        body = body.replace("+", "%20")
+        body = urllib.unquote(body).decode('utf8')
+        raw_login, password = body.split("&password=")
+        login = raw_login.replace("login=", "")
+        password = utils.sha256_hash(password)
         error = self.server.app.user_login.login_as_user(login, password)
         if error:
             message = str(error[1])
