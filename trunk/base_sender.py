@@ -108,3 +108,16 @@ class BaseSender:
         self.logger.info("Sending logs")
         utils.send_all_snapshots(self.app.user_login.user_token)
         self.logger.info("Done")
+
+    def switch_camera(self, module):
+        self.logger.info('Changing camera module to %s due to server request' % module)
+        self.app.switch_camera(module)
+
+    def update_sowtware(self):
+        self.logger.info('Executing update command from server')
+        self.app.updater.update()
+
+    def quit_application(self):
+        self.logger.info('Received quit command from server!')
+        self.app.stop_flag = True
+        self.app.quit_flag = True

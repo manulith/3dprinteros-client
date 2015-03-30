@@ -59,9 +59,12 @@ class App:
                 self.cam_current_module = module
 
     def switch_camera(self, module):
+        self.logger.info('Switching camera module from %s to %s' % (self.cam_current_module, module))
         if self.cam:
             self.cam.terminate()
-        self.start_camera(module)
+        self.cam_current_module = module
+        if module:
+            self.start_camera(module)
 
     def init_interface(self):
         if config.config['web_interface']:
