@@ -51,7 +51,8 @@ class App:
             client_dir = os.path.dirname(os.path.abspath(__file__))
             cam_path = os.path.join(client_dir, module)
             try:
-                self.cam = Popen([sys.executable, cam_path])
+                if module:
+                    self.cam = Popen([sys.executable, cam_path])
             except Exception as e:
                 self.logger.warning('Could not launch camera due to error:\n' + e.message)
             else:
