@@ -83,23 +83,6 @@ class BaseSender:
     def is_paused(self):
         return self.pause_flag
 
-    # def close_hanged_port(self):
-    #     self.logger.info("Trying to force close serial port %s" % self.usb_info['COM'])
-    #     if self.printer_profile["force_port_close"] and self.usb_info['COM']:
-    #         try:
-    #             port = serial.Serial(self.usb_info['COM'], self.printer_profile['baudrate'][0], timeout=1)
-    #             if port.isOpen():
-    #                 port.setDTR(1)
-    #                 time.sleep(1)
-    #                 port.setDTR(0)
-    #                 port.close()
-    #                 self.logger.info("Malfunctioning port %s was closed." % self.usb_info['COM'])
-    #         except serial.SerialException as e:
-    #             self.logger.info("Force close serial port failed with error %s" % e.message)
-    #     else:
-    #         self.logger.info("Force close serial port forbidden: \
-    #                             not serial printer or force_port_close disabled in config")
-
     def is_operational(self):
         return False
 
@@ -113,7 +96,7 @@ class BaseSender:
         self.logger.info('Changing camera module to %s due to server request' % module)
         self.app.switch_camera(module)
 
-    def update_sowtware(self):
+    def update_software(self):
         self.logger.info('Executing update command from server')
         self.app.updater.update()
 
