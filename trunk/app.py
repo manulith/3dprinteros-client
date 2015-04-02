@@ -51,16 +51,20 @@ class App:
             client_dir = os.path.dirname(os.path.abspath(__file__))
             cam_path = os.path.join(client_dir, module)
             try:
-                self.cam = Popen([sys.executable, cam_path])
+                if module:
+                    self.cam = Popen([sys.executable, cam_path])
             except Exception as e:
                 self.logger.warning('Could not launch camera due to error:\n' + e.message)
             else:
                 self.cam_current_module = module
 
     def switch_camera(self, module):
+        self.logger.info('Switching camera module from %s to %s' % (self.cam_current_module, module))
         if self.cam:
             self.cam.terminate()
-        self.start_camera(module)
+        self.cam_current_module = module
+        if module:
+            self.start_camera(module)
 
     def init_interface(self):
         if config.config['web_interface']:
@@ -105,7 +109,7 @@ class App:
         currently_connected_usb_info = [pi.usb_info for pi in self.printer_interfaces]
         for usb_info in self.detected_printers:
             if usb_info not in currently_connected_usb_info:
-                pi = printer_interface.PrinterInterface(usb_info, self.user_login.user_token)
+                pi = printer_interface.PrinterInterface(usb_info, self.user_login.user_token, self)
                 pi.start()
                 self.printer_interfaces.append(pi)
 

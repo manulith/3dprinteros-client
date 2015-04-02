@@ -340,6 +340,7 @@ def compress_and_send(user_token, log_file_name=None, server_path=http_client.to
         if '"success":true' in result:
             os.remove(os.path.join(log_file_name_path))
         else:
+            logger.warning('Error while sending logs: %s' % result)
             return result
 
 # def send_all_snapshots():
@@ -362,6 +363,7 @@ def send_all_snapshots(user_token):
         logging.info("No logs snapshots to send")
     else:
         for file_name in snapshot_dir:
+            print '\n\n%s\n\n' % str(file_name)
             if not file_name.endswith('zip'):
                 error = compress_and_send(user_token, file_name)
                 if error:

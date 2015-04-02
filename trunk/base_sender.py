@@ -1,14 +1,16 @@
 import collections
-import time
 import os
 import thread
 import logging
+
+import utils
 import http_client
 
 class BaseSender:
 
-    def __init__(self, profile, usb_info):
+    def __init__(self, profile, usb_info, app):
         self.logger = logging.getLogger('app.' + __name__)
+        self.app = app
         self.stop_flag = False
         self.profile = profile
         self.usb_info = usb_info
@@ -81,22 +83,24 @@ class BaseSender:
     def is_paused(self):
         return self.pause_flag
 
-    # def close_hanged_port(self):
-    #     self.logger.info("Trying to force close serial port %s" % self.usb_info['COM'])
-    #     if self.printer_profile["force_port_close"] and self.usb_info['COM']:
-    #         try:
-    #             port = serial.Serial(self.usb_info['COM'], self.printer_profile['baudrate'][0], timeout=1)
-    #             if port.isOpen():
-    #                 port.setDTR(1)
-    #                 time.sleep(1)
-    #                 port.setDTR(0)
-    #                 port.close()
-    #                 self.logger.info("Malfunctioning port %s was closed." % self.usb_info['COM'])
-    #         except serial.SerialException as e:
-    #             self.logger.info("Force close serial port failed with error %s" % e.message)
-    #     else:
-    #         self.logger.info("Force close serial port forbidden: \
-    #                             not serial printer or force_port_close disabled in config")
-
     def is_operational(self):
         return False
+
+    def upload_logs(self):
+        utils.make_full_log_snapshot()
+        self.logger.info("Sending logs")
+        utils.send_all_snapshots(self.app.user_login.user_token)
+        self.logger.info("Done")
+
+    def switch_camera(self, module):
+        self.logger.info('Changing camera module to %s due to server request' % module)
+        self.app.switch_camera(module)
+
+    def update_software(self):
+        self.logger.info('Executing update command from server')
+        self.app.updater.update()
+
+    def quit_application(self):
+        self.logger.info('Received quit command from server!')
+        self.app.stop_flag = True
+        self.app.quit_flag = True

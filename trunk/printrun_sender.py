@@ -16,13 +16,13 @@ class Sender(base_sender.BaseSender):
     TEMP_REQUEST_WAIT = 5
     DEFAULT_TIMEOUT_FOR_PRINTER_ONLINE = 3
 
-    def __init__(self, profile, usb_info):
+    def __init__(self, profile, usb_info, app):
         self.stop_flag = False
         self.printcore = None
         self.last_line = None
         self.temp_request_thread = None
         self.logger = logging.getLogger('app.' + __name__)
-        base_sender.BaseSender.__init__(self, profile, usb_info)
+        base_sender.BaseSender.__init__(self, profile, usb_info, app)
         self.define_regexps()
         if self.select_baudrate_and_connect():
             self.extruder_count = self.profile['extruder_count']
