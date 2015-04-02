@@ -12,6 +12,7 @@ class Updater:
         self.logger = logging.getLogger('app.' + __name__)
         self.update_flag = False
         self.auto = config.config['update']['auto_update_enabled']
+        self.http_client = http_client.HTTPClient()
 
     def check_for_updates(self):
         if self.new_version_available():
@@ -20,8 +21,8 @@ class Updater:
 
     def new_version_available(self):
         if config.config['update']['enabled']:
-            connection = http_client.connect(http_client.URL)
-            last_version = http_client.get_request(connection, None, http_client.get_last_version_path)
+            last_version = self.http_client.request('GET', self.http_client.connection, None, self.http_client.get_last_version_path, headers={})
+            print(last_version)
             if last_version:
                 reload(version)
                 return self.compare_versions(version.version, last_version)

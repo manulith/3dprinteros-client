@@ -34,6 +34,7 @@ class App:
         self.printer_interfaces = []
         self.stop_flag = False
         self.quit_flag = False
+        self.http_client = http_client.HTTPClient()
         self.cam = None
         self.cam_modules = config.config['camera']['modules']
         self.cam_current_module = self.cam_modules[config.config['camera']['default_module_name']]
@@ -115,7 +116,7 @@ class App:
 
     def disconnect_printer(self, pi, reason):
         self.logger.info('Disconnecting because of %s %s' % (reason , str(pi.usb_info)))
-        if http_client.send(http_client.package_command_request, (pi.printer_token, pi.state_report(reason), pi.acknowledge)):
+        if self.http_client.pack_and_send('command', pi.printer_token, pi.state_report(reason), pi.acknowledge):
             pi.close()
             self.printer_interfaces.remove(pi)
             self.logger.info("Successful disconnection of " + str(pi.usb_info))

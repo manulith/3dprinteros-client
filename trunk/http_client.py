@@ -77,10 +77,11 @@ class HTTPClient:
 
     def request(self, method, connection, path, payload, headers=None):
         self.logger.debug("{ Requesting...")
-        if not headers:
+        if headers is None:
             headers = {"Content-Type": "application/json", "Content-Length": str(len(payload))}
-            if self.keep_connection_flag:
-                headers["Connection"] = "keep-alive"
+            #if self.keep_connection_flag:
+                #headers["Connection"] = "keep-alive"
+        print(headers)
         try:
             connection.request(method, path, payload, headers)
             resp = connection.getresponse()
