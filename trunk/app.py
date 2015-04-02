@@ -39,7 +39,6 @@ class App:
         self.cam_modules = config.config['camera']['modules']
         self.cam_current_module = self.cam_modules[config.config['camera']['default_module_name']]
         self.updater = updater.Updater()
-        self.updater.check_for_updates()
         self.user_login = user_login.UserLogin(self)
         self.init_interface()
         self.user_login.wait_for_login()
@@ -83,7 +82,7 @@ class App:
     def main_loop(self):
         self.last_flush_time = 0
         while not self.stop_flag:
-            self.updater.auto_update()
+            self.updater.check_for_updates()
             self.time_stamp()
             self.detected_printers = usb_detect.get_printers()
             self.check_and_connect()
