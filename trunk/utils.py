@@ -16,7 +16,6 @@ import signal
 from subprocess import Popen, PIPE
 
 import config
-import http_client
 import requests
 import version
 
@@ -309,7 +308,7 @@ def make_full_log_snapshot():
 #         else:
 #             return result
 
-def compress_and_send(user_token, log_file_name=None, server_path=http_client.token_send_logs_path):
+def compress_and_send(user_token, log_file_name=None):
     logger = logging.getLogger('app.' + __name__)
     log_snapshots_dir = os.path.join(get_paths_to_settings_folder()[0], LOG_SNAPSHOTS_DIR)
     if not log_file_name:
@@ -326,7 +325,9 @@ def compress_and_send(user_token, log_file_name=None, server_path=http_client.to
         logger.warning("Error while creating logs archive " + zip_file_name)
         logger.warning('Error: ' + e.message)
     else:
-        url = 'https://' + http_client.AUX_URL + http_client.token_send_logs_path
+        import http_client
+        http_client = http_client.HTTPClient()
+        url = 'https://' + http_client.URL + http_client.token_send_logs_path
         #if http_client.multipart_upload(url, {"token": read_token()}, {'files': file}):
             #os.remove(LOG_SNAPSHOTS_DIR + '/' + log_file_name)
         user_token = {'user_token': user_token}
