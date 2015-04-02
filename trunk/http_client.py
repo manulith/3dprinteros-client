@@ -79,9 +79,8 @@ class HTTPClient:
         self.logger.debug("{ Requesting...")
         if headers is None:
             headers = {"Content-Type": "application/json", "Content-Length": str(len(payload))}
-            #if self.keep_connection_flag:
-                #headers["Connection"] = "keep-alive"
-        print(headers)
+            if self.keep_connection_flag:
+                headers["Connection"] = "keep-alive"
         try:
             connection.request(method, path, payload, headers)
             resp = connection.getresponse()

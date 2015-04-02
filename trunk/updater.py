@@ -21,7 +21,7 @@ class Updater:
 
     def new_version_available(self):
         if config.config['update']['enabled']:
-            last_version = self.http_client.request('GET', self.http_client.connection, None, self.http_client.get_last_version_path, headers={})
+            last_version = self.http_client.request('GET', self.http_client.connection, self.http_client.get_last_version_path, None, headers={})
             print(last_version)
             if last_version:
                 reload(version)
