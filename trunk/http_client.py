@@ -145,7 +145,7 @@ class HTTPClient:
         else:
             self.process_error(4, 'No such target for packaging - ' + target)
             data, path = None, None
-        if "error" in str(payloads[-1]):
+        if "error" in str(payloads[-1]).lower():
             data['error'] = payloads[-1]
         return path, json.dumps(data)
 
