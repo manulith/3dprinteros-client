@@ -109,8 +109,8 @@ class HTTPClient:
         self.logger.debug("...failed }")
         self.logger.warning("Warning: HTTP request failed!")
 
-    def pack_and_send(self, target, *payloads, **additional_payload):
-        path, packed_message = self.pack(target, *payloads, **additional_payload)
+    def pack_and_send(self, target, *payloads):
+        path, packed_message = self.pack(target, *payloads)
         return self.send(path, packed_message)
 
     def send(self, path, data):
