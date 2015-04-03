@@ -207,4 +207,3 @@ class PrinterInterface(threading.Thread):
     def close(self):
         self.logger.info('Closing printer interface of: ' + str(self.usb_info))
         self.stop_flag = True
-        self.http_client.close()
