@@ -16,6 +16,7 @@ class PrinterInterface(threading.Thread):
         self.usb_info = usb_info
         self.app = app
         self.user_token = user_token
+        self.http_client = http_client.HTTPClient(keep_connection_flag=True)
         self.printer = None
         self.printer_token = None
         self.acknowledge = None
@@ -29,7 +30,7 @@ class PrinterInterface(threading.Thread):
     def connect_to_server(self):
         self.logger.info("Connecting to server with printer: %s" % str(self.usb_info))
         while not self.stop_flag:
-            answer = http_client.send(http_client.package_printer_login, (self.user_token, self.usb_info))
+            answer = self.http_client.pack_and_send('printer_login', self.user_token, self.usb_info)
             if answer:
                 error = answer.get('error', None)
                 # TODO: remove it when server will be okay
@@ -134,7 +135,7 @@ class PrinterInterface(threading.Thread):
                 message[3] = {"code": self.printer.error_code, "message": self.printer.error_message}
             self.logger.debug("Requesting with: %s" % str(message))
             if self.printer.is_operational():
-                answer = http_client.send(http_client.package_command_request, message)
+                answer = self.http_client.pack_and_send('command', message)
                 self.logger.debug("Got answer: " + str(answer))
                 if answer:
                     self.acknowledge = self.process_command_request(answer)
@@ -150,7 +151,7 @@ class PrinterInterface(threading.Thread):
                 answer = None
                 while not answer and not self.stop_flag:
                     self.logger.debug("Trying to report error to server...")
-                    answer = http_client.send(http_client.package_command_request, message)
+                    answer = self.http_client.pack_and_send('command', message)
                     error = answer.get('error', None)
                     if error:
                         self.logger.error("Server had returned error: " + str(error))
@@ -206,3 +207,4 @@ class PrinterInterface(threading.Thread):
     def close(self):
         self.logger.info('Closing printer interface of: ' + str(self.usb_info))
         self.stop_flag = True
+        self.http_client.close()

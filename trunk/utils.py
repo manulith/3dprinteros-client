@@ -18,6 +18,7 @@ from subprocess import Popen, PIPE
 import config
 import requests
 import version
+import http_client
 
 LIBS_FOLDER = 'libraries'
 ALL_LIBS = ['opencv', 'numpy', 'printrun']
@@ -325,9 +326,8 @@ def compress_and_send(user_token, log_file_name=None):
         logger.warning("Error while creating logs archive " + zip_file_name)
         logger.warning('Error: ' + e.message)
     else:
-        import http_client
-        http_client = http_client.HTTPClient()
-        url = 'https://' + http_client.URL + http_client.token_send_logs_path
+        get_path = http_client.HTTPClient()
+        url = 'https://' + get_path.URL + get_path.token_send_logs_path
         #if http_client.multipart_upload(url, {"token": read_token()}, {'files': file}):
             #os.remove(LOG_SNAPSHOTS_DIR + '/' + log_file_name)
         user_token = {'user_token': user_token}
