@@ -147,6 +147,8 @@ class HTTPClient:
             data, path = None, None
         if "error" in additional_payload:
             data['error'] = additional_payload['error']
+        else:
+            data['error'] = None
         return path, json.dumps(data)
 
     def close(self):
