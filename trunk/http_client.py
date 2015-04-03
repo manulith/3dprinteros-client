@@ -126,7 +126,7 @@ class HTTPClient:
                 break
         return None
 
-    def pack(self, target, *payloads, **additional_payload):
+    def pack(self, target, *payloads):
         if target == 'user_login':
             data = { 'login': {'user': payloads[0], 'password': payloads[1]}, "platform": payloads[2], 'host_mac': self.MACADDR, "version": version.version }
             path = self.user_login_path
@@ -145,7 +145,7 @@ class HTTPClient:
         else:
             self.process_error(4, 'No such target for packaging - ' + target)
             data, path = None, None
-        if "error" in payloads[-1]:
+        if "error" in str(payloads[-1]):
             data['error'] = payloads[-1]
         else:
             data['error'] = None
