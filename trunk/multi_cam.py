@@ -73,7 +73,7 @@ class CameraMaster:
         ul = user_login.UserLogin(self)
         ul.wait_for_login()
         self.user_token = ul.user_token
-        self.http_client = http_client.HTTPClient()
+        self.http_client = http_client.HTTPClient(keep_connection_flag=True)
         self.init_cameras()  # init cameras for the first time
 
     def init_cameras(self):
@@ -148,6 +148,7 @@ class CameraMaster:
     def close(self):
         self.stop_flag = True
         self.release_all_cameras()
+        self.http_client.close()
         logging.shutdown()
         sys.exit(0)
 

@@ -98,6 +98,7 @@ class CameraMaster():
 class CameraImageSender(threading.Thread):
     def __init__(self, camera_number, camera_name, cap, user_token):
         self.logger = logging.getLogger("app." + __name__)
+        self.http_client = http_client.HTTPClient(keep_connection_flag=True)
         self.stop_flag = False
         self.camera_number = camera_number
         self.camera_name = camera_name
@@ -106,7 +107,6 @@ class CameraImageSender(threading.Thread):
         if not self.token:
             self.stop_flag = True
             self.error = 'No_Token'
-        self.http_client = http_client.HTTPClient()
         super(CameraImageSender, self).__init__()
 
     def take_a_picture(self):
@@ -132,6 +132,7 @@ class CameraImageSender(threading.Thread):
 
     def close(self):
         self.stop_flag = True
+        self.http_client.close()
 
     def run(self):
         while not self.stop_flag and self.cap:

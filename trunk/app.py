@@ -82,7 +82,7 @@ class App:
     def main_loop(self):
         self.last_flush_time = 0
         while not self.stop_flag:
-            self.updater.check_for_updates()
+            self.updater.timer_check_for_updates()
             self.time_stamp()
             self.detected_printers = usb_detect.get_printers()
             self.check_and_connect()

@@ -30,15 +30,14 @@ class HTTPClient:
 
     MAX_HTTP_FAILS = 5
 
-    def __init__(self, debug = False):
+    def __init__(self, debug = False, keep_connection_flag = False):
         self.logger = logging.getLogger('app.' +__name__)
         if debug:
             self.logger.setLevel('DEBUG')
         else:
             self.logger.setLevel('INFO')
-        self.keep_connection_flag = True
+        self.keep_connection_flag = keep_connection_flag
         self.connection = None
-        self.connect()
         self.http_fails_count = 0
         self.error_code = None
         self.error_message = ''
@@ -75,15 +74,17 @@ class HTTPClient:
             else:
                 self.process_error(3, "Data should be dictionary: " + str(data))
 
-    def request(self, method, connection, path, payload, headers=None):
+    def request(self, method, path, payload, headers=None):
         self.logger.debug("{ Requesting...")
         if headers is None:
             headers = {"Content-Type": "application/json", "Content-Length": str(len(payload))}
             if self.keep_connection_flag:
                 headers["Connection"] = "keep-alive"
+        if not self.connection or not self.keep_connection_flag:
+            self.connect()
         try:
-            connection.request(method, path, payload, headers)
-            resp = connection.getresponse()
+            self.connection.request(method, path, payload, headers)
+            resp = self.connection.getresponse()
         except Exception as e:
             self.process_error(6,"Error during HTTP request:" + str(e))
         else:
@@ -95,9 +96,16 @@ class HTTPClient:
             else:
                 if resp.status == httplib.OK and resp.reason == "OK":
                     self.logger.debug("...success }")
+                    if not self.keep_connection_flag:
+                        self.connection.close()
+                        self.connection = None
                     return received
                 else:
                     self.process_error(8, "Error: server response is not 200 OK\nMessage:%s" % received)
+            finally:
+                if self.connection and not self.keep_connection_flag:
+                    self.connection.close()
+                    self.connection = None
         self.logger.debug("...failed }")
         self.logger.warning("Warning: HTTP request failed!")
 
@@ -108,21 +116,14 @@ class HTTPClient:
     def send(self, path, data):
         json_answer = None
         while not json_answer:
-            if not self.connection or not self.keep_connection_flag:
-                self.connection = self.connect()
-            if self.connection:
-                json_answer = self.request("POST", self.connection, path, data)
-                if json_answer:
-                    if not self.keep_connection_flag:
-                        self.connection.close()
-                        self.connection = None
-                    return self.load_json(json_answer)
-            else:
-                time.sleep(0.5)
-                self.http_fails_count += 1
-                if self.http_fails_count > self.MAX_HTTP_FAILS:
-                    self.process_error(9, 'HTTP connection error - max retry.')
-                    break
+            json_answer = self.request("POST", path, data)
+            if json_answer:
+                return self.load_json(json_answer)
+            time.sleep(0.5)
+            self.http_fails_count += 1
+            if self.http_fails_count > self.MAX_HTTP_FAILS:
+                self.process_error(9, 'HTTP connection error - max retry.')
+                break
         return None
 
     def pack(self, target, *payloads, **additional_payload):
@@ -147,6 +148,10 @@ class HTTPClient:
         if "error" in additional_payload:
             data['error'] = additional_payload['error']
         return path, json.dumps(data)
+
+    def close(self):
+        if self.connection:
+            self.connection.close()
 
 
 class File_Downloader:

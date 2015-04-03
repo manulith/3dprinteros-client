@@ -12,7 +12,7 @@
     "auto_update_enabled": false,
     "update_file_url": "http://s3.amazonaws.com/3dprinteros-files/",
     "update_file_name": "3dprinteros_client_update.zip",
-    "check_frequency": 1
+    "check_pause": 3600
   },
   "camera": {
     "enabled" : true,
