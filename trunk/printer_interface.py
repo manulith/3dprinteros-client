@@ -16,7 +16,7 @@ class PrinterInterface(threading.Thread):
         self.usb_info = usb_info
         self.app = app
         self.user_token = user_token
-        self.http_client = http_client.HTTPClient(keep_connection_flag=True)
+        self.http_client = http_client.HTTPClient()
         self.printer = None
         self.printer_token = None
         self.acknowledge = None
