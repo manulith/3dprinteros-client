@@ -61,10 +61,10 @@ class BaseSender:
             gcodes = base64.decode(gcodes)
             self.load_gcodes(gcodes)
 
-    def download_thread(self, gcodes):
+    def download_thread(self, link):
         if not self.stop_flag:
             self.logger.info('Starting download thread')
-            gcode_file_name = self.downloader.async_download(gcodes)
+            gcode_file_name = self.downloader.async_download(link)
             if gcode_file_name:
                 with open(gcode_file_name, 'rb') as f:
                     gcodes = f.read()

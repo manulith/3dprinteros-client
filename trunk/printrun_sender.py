@@ -178,7 +178,7 @@ class Sender(base_sender.BaseSender):
             self.logger.info("Printrun is starting print")
 
     def load_gcodes(self, gcodes):
-        self.gcodes = self.preprocess_gcodes(gcodes)
+        gcodes = self.preprocess_gcodes(gcodes)
         length = len(gcodes)
         self.logger.info('Loading %i gcodes...' % length)
         if length:
