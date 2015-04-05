@@ -12,6 +12,8 @@ import serial.tools.list_ports
 import utils
 import config
 
+vid_pid_re = re.compile('(?:.*\=([0-9-A-Z-a-f]+):([0-9-A-Z-a-f]+))|(?:.*VID_([0-9-A-Z-a-f]+)\+PID_([0-9-A-Z-a-f]+)\+)')
+
 def format_vid_or_pid(vid_or_pid):
     return hex(vid_or_pid)[2:].zfill(4).upper()
 
@@ -61,7 +63,6 @@ def get_devices():
     return device_data_dcts
 
 def get_port_by_vid_pid_snr(vid, pid, snr=None):
-    vid_pid_re = re.compile('(?:.*\=([0-9-A-Z-a-f]+):([0-9-A-Z-a-f]+))|(?:.*VID_([0-9-A-Z-a-f]+)\+PID_([0-9-A-Z-a-f]+)\+)')
     for port_dct in serial.tools.list_ports.comports():
         match = vid_pid_re.match(port_dct[2])
         if match:

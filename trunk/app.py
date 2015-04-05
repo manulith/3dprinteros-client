@@ -6,6 +6,7 @@ import os
 import time
 import signal
 import logging
+import traceback
 from subprocess import Popen
 
 import utils
@@ -21,8 +22,7 @@ import updater
 
 class App:
 
-    MIN_LOOP_TIME = 2
-    READY_TIMEOUT = 10
+    LOG_FLUSH_TIME = 30
 
     def __init__(self):
         self.logger = utils.get_logger(config.config["log_file"])
@@ -35,23 +35,36 @@ class App:
         self.stop_flag = False
         self.quit_flag = False
         self.cam = None
+        self.cam_modules = config.config['camera']['modules']
+        self.cam_current_module = self.cam_modules[config.config['camera']['default_module_name']]
         self.updater = updater.Updater()
         self.updater.check_for_updates()
         self.user_login = user_login.UserLogin(self)
         self.init_interface()
         self.user_login.wait_for_login()
-        self.start_camera()
+        self.start_camera(self.cam_current_module)
         self.main_loop()
 
-    def start_camera(self):
+    def start_camera(self, module):
         if config.config["camera"]["enabled"] == True:
             self.logger.info('Launching camera subprocess')
             client_dir = os.path.dirname(os.path.abspath(__file__))
-            cam_path = os.path.join(client_dir, 'cam.py')
+            cam_path = os.path.join(client_dir, module)
             try:
-                self.cam = Popen([sys.executable, cam_path])
+                if module:
+                    self.cam = Popen([sys.executable, cam_path])
             except Exception as e:
                 self.logger.warning('Could not launch camera due to error:\n' + e.message)
+            else:
+                self.cam_current_module = module
+
+    def switch_camera(self, module):
+        self.logger.info('Switching camera module from %s to %s' % (self.cam_current_module, module))
+        if self.cam:
+            self.cam.terminate()
+        self.cam_current_module = module
+        if module:
+            self.start_camera(module)
 
     def init_interface(self):
         if config.config['web_interface']:
@@ -67,6 +80,7 @@ class App:
             self.logger.debug("...done")
 
     def main_loop(self):
+        self.last_flush_time = 0
         while not self.stop_flag:
             self.updater.auto_update()
             self.time_stamp()
@@ -78,6 +92,12 @@ class App:
                 elif not pi.is_alive():
                     self.disconnect_printer(pi, 'error')
             time.sleep(2)
+            now = time.time()
+            if now - self.last_flush_time > self.LOG_FLUSH_TIME:
+                self.last_flush_time = now
+                self.logger.info('Flushing logger handlers')
+                for handler in self.logger.handlers:
+                    handler.flush()
         # this is for quit from web interface(to release server's thread and quit)
         if self.quit_flag:
             self.quit()
@@ -89,7 +109,7 @@ class App:
         currently_connected_usb_info = [pi.usb_info for pi in self.printer_interfaces]
         for usb_info in self.detected_printers:
             if usb_info not in currently_connected_usb_info:
-                pi = printer_interface.PrinterInterface(usb_info, self.user_login.user_token)
+                pi = printer_interface.PrinterInterface(usb_info, self.user_login.user_token, self)
                 pi.start()
                 self.printer_interfaces.append(pi)
 
@@ -143,4 +163,12 @@ class App:
         sys.exit(0)
 
 if __name__ == '__main__':
-    app = App()
+    try:
+        app = App()
+    except SystemExit:
+        pass
+    except:
+        trace = traceback.format_exc()
+        print trace
+        with open(config.config['error_file'], "a") as f:
+            f.write(time.ctime() + "\n" + trace + "\n")

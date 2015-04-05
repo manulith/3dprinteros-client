@@ -277,7 +277,8 @@ class printcore():
             empty_lines = 0
             while self._listen_can_continue():
                 line = self._readline()
-                if line is None: break  # connection problem
+                if line is None:
+                    break  # connection problem
                 # workaround cases where M105 was sent before printer Serial
                 # was online an empty line means read timeout was reached,
                 # meaning no data was received thus we count those empty lines,

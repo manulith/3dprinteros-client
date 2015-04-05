@@ -14,64 +14,63 @@ class Sender(base_sender.BaseSender):
     pause_extrude_length = 7
     RETRIES_FOR_EACH_BAUDRATE = 2
     TEMP_REQUEST_WAIT = 5
-    DEFAULT_TIMEOUT_FOR_PRINTER_ONLINE = 15
+    DEFAULT_TIMEOUT_FOR_PRINTER_ONLINE = 3
 
-    def __init__(self, profile, usb_info):
-        self.temp_request_thread = None
+    def __init__(self, profile, usb_info, app):
+        self.stop_flag = False
         self.printcore = None
+        self.last_line = None
+        self.temp_request_thread = None
         self.logger = logging.getLogger('app.' + __name__)
-        base_sender.BaseSender.__init__(self, profile, usb_info)
+        base_sender.BaseSender.__init__(self, profile, usb_info, app)
         self.define_regexps()
         if self.select_baudrate_and_connect():
             self.extruder_count = self.profile['extruder_count']
             self.total_gcodes = 0
             self.temp_request_thread = threading.Thread(target=self.temp_request)
             self.temp_request_thread.start()
-            self.stop_flag = False
-            for gcode in self.profile['end_gcodes']:
-                self.printcore.send_now(gcode)
 
     def select_baudrate_and_connect(self):
         baudrates = self.profile['baudrate']
         self.logger.info('Baudrates list for %s : %s' % (self.profile['name'], str(baudrates)))
         for baudrate in baudrates:
-            #for _ in range(0, self.RETRIES_FOR_EACH_BAUDRATE):
-                self.error_code = 0
-                self.error_message = ""
-                self.logger.info("Connecting at baudrate %i" % baudrate)
-                self.printcore = printcore()
-                self.printcore.onlinecb = self.onlinecb
-                self.printcore.errorcb = self.errorcb
-                self.printcore.tempcb = self.tempcb
-                self.printcore.recvcb = self.recvcb
-                self.printcore.sendcb = self.sendcb
-                self.printcore.connect(self.profile['COM'], baudrate)
-                time.sleep(0.1)
-                if not self.printcore.printer:
-                    self.logger.warning("Error connecting to printer at %i" % baudrate)
-                    self.printcore.disconnect()
-                else:
-                    self.online_flag = False
-                    wait_start_time = time.time()
-                    self.logger.info("Waiting for printer online")
-                    while time.time() < (wait_start_time + self.DEFAULT_TIMEOUT_FOR_PRINTER_ONLINE):
-                        if self.stop_flag:
-                            return False
-                        if self.online_flag:
-                            self.logger.info("Successful connection to printer %s:%i" % (self.profile['COM'], baudrate))
-                            time.sleep(0.1)
-                            self.logger.info("Sending homing gcodes...")
-                            for gcode in self.profile["end_gcodes"]:
-                                self.printcore.send_now(gcode)
-                            self.logger.info("...done homing")
-                            return True
-                    self.logger.warning("Timeout while waiting for printer online. Reseting and reconnecting...")
-                    self.reset()
-                    time.sleep(2)
-                    self.logger.warning("...done reseting.")
+            self.error_code = 0
+            self.error_message = ""
+            self.online_flag = False
+            self.logger.info("Connecting at baudrate %i" % baudrate)
+            self.printcore = printcore()
+            self.printcore.onlinecb = self.onlinecb
+            self.printcore.errorcb = self.errorcb
+            self.printcore.tempcb = self.tempcb
+            self.printcore.recvcb = self.recvcb
+            self.printcore.sendcb = self.sendcb
+            self.printcore.connect(self.profile['COM'], baudrate)
+            time.sleep(0.1)
+            if not self.printcore.printer:
+                self.logger.warning("Error connecting to printer at %i" % baudrate)
+                self.printcore.disconnect()
+            else:
+                wait_start_time = time.time()
+                self.logger.info("Waiting for printer online")
+                while time.time() < (wait_start_time + self.DEFAULT_TIMEOUT_FOR_PRINTER_ONLINE):
+                    if self.stop_flag:
+                        return False
+                    if self.online_flag:
+                        self.logger.info("Successful connection to printer %s:%i" % (self.profile['COM'], baudrate))
+                        time.sleep(0.1)
+                        self.logger.info("Sending homing gcodes...")
+                        for gcode in self.profile["end_gcodes"]:
+                            self.printcore.send_now(gcode)
+                        self.logger.info("...done homing")
+                        return True
+                self.logger.warning("Timeout while waiting for printer online. Reseting and reconnecting...")
+                self.reset()
+                time.sleep(2)
+                self.logger.warning("...done reseting.")
         raise RuntimeError("No more baudrates to try")
 
     def onlinecb(self):
+        self.logger.info("Printer %s is ready" % str(self.usb_info))
         self.online_flag = True
 
     def endcb(self):
@@ -117,6 +116,7 @@ class Sender(base_sender.BaseSender):
 
     def tempcb(self, line):
         self.logger.debug(line)
+        #self.logger.debug("Current line: " + str(self.last_line))
         match = self.temp_re.match(line)
         if match:
             tool_temp = float(match.group(1))
@@ -131,14 +131,15 @@ class Sender(base_sender.BaseSender):
         #self.logger.debug(self.debug_position())
 
     def recvcb(self, line):
-        self.logger.debug(line)
-        if line[0] == 'T':
+        #self.logger.debug(line)
+        if line.startswith('T'):
             self.fetch_temps(line)
-        # elif line[0:2] == 'ok':
-        #     self.ready_flag = True
+        elif line[0:2] == 'ok':
+             self.online_flag = True
 
     def sendcb(self, command, gline):
-        self.logger.debug("Executing command: " + command)
+        #self.logger.debug("Executing command: " + command)
+        self.last_line = gline
         if 'M104' in command or 'M109' in command:
             tool = 0
             tool_match = re.match('.+T(\d+)', command)

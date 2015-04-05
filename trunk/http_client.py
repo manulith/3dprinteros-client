@@ -3,11 +3,13 @@ import re
 #import ssl
 import json
 import uuid
+import time
 import httplib
 import logging
 import tempfile
 import requests
 
+import version
 import config
 
 MACADDR = hex(uuid.getnode())
@@ -20,12 +22,10 @@ printer_login_path = streamer_prefix + "/printer_login"
 command_path = streamer_prefix + "/command"
 camera_path = streamer_prefix + "/camera" #json['image': base64_image ]
 cloudsync_path = "/autoupload"
-token_send_logs_path = "/oldliveview/sendLogs" #rename me!
+token_send_logs_path = streamer_prefix + "/sendLogs"
 get_last_version_path = '/a/lastclientver/get'
 
 domain_path_re = re.compile("https?:\/\/(.+)(\/.*)")
-
-#utils
 
 def load_json(jdata):
     logger = logging.getLogger('app.' +__name__)
@@ -42,19 +42,19 @@ def load_json(jdata):
 #packagers
 
 def package_user_login(username, password, platform, error = None):
-    data = { 'login': {'user': username, 'password': password}, 'host_mac': MACADDR, "platform": platform}
+    data = { 'login': {'user': username, 'password': password}, 'host_mac': MACADDR, "platform": platform, "version": version.version }
     if error:
         data['error'] = error
     return json.dumps(data), user_login_path
 
 def package_printer_login(user_token, printer_profile, error = None):
-    data = { 'user_token': user_token, 'printer': printer_profile }
+    data = { 'user_token': user_token, 'printer': printer_profile, "version": version.version, "data_time": time.ctime() }
     if error:
         data['error'] = error
     return json.dumps(data), printer_login_path
 
-def package_command_request(printer_token, state, acknowledge=None, error = None, job_id=None):
-    data = { 'printer_token': printer_token, 'report': state, 'error': error }
+def package_command_request(printer_token, state, acknowledge=None, error = None, jod_id=None):
+    data = { 'printer_token': printer_token, 'report': state, 'error': error}
     if acknowledge:
         data['command_ack'] = acknowledge
     if error:

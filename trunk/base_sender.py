@@ -4,12 +4,15 @@ import thread
 import logging
 import collections
 
+
+import utils
 import http_client
 
 class BaseSender:
 
-    def __init__(self, profile, usb_info):
+    def __init__(self, profile, usb_info, app):
         self.logger = logging.getLogger('app.' + __name__)
+        self.app = app
         self.stop_flag = False
         self.profile = profile
         self.usb_info = usb_info
@@ -112,3 +115,22 @@ class BaseSender:
 
     def is_operational(self):
         return False
+
+    def upload_logs(self):
+        utils.make_full_log_snapshot()
+        self.logger.info("Sending logs")
+        utils.send_all_snapshots(self.app.user_login.user_token)
+        self.logger.info("Done")
+
+    def switch_camera(self, module):
+        self.logger.info('Changing camera module to %s due to server request' % module)
+        self.app.switch_camera(module)
+
+    def update_software(self):
+        self.logger.info('Executing update command from server')
+        self.app.updater.update()
+
+    def quit_application(self):
+        self.logger.info('Received quit command from server!')
+        self.app.stop_flag = True
+        self.app.quit_flag = True

@@ -18,8 +18,8 @@ class Sender(base_sender.BaseSender):
     BUFFER_OVERFLOWS_BETWEEN_STATE_UPDATE = 20
     MAX_RETRY_BEFORE_ERROR = 100
 
-    def __init__(self, profile, usb_info):
-        base_sender.BaseSender.__init__(self, profile, usb_info)
+    def __init__(self, profile, usb_info, app):
+        base_sender.BaseSender.__init__(self, profile, usb_info, app)
         #self.mb = {'preheat': False, 'heat_shutdown': False}
         self.logger = logging.getLogger('app.' + __name__)
         self.logger.info('Makerbot printer created')
