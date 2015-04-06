@@ -68,7 +68,11 @@ class BaseSender:
             if gcode_file_name:
                 with open(gcode_file_name, 'rb') as f:
                     gcodes = f.read()
-                self.load_gcodes(gcodes)  # Derived class method call, for example makerbot_sender.load_gcodes(gcodes)
+                try:
+                    self.load_gcodes(gcodes)  # Derived class method call, for example makerbot_sender.load_gcodes(gcodes)
+                except Exception as e:
+                    self.error_code = 37
+                    self.error_message = "Exception occured when printrun was parsing gcodes. Corrupted gcodes? " + str(e)
                 self.downloading_flag = False  # TODO: For now it should be after gcodes() due to status error on site
                 self.logger.info('Gcodes loaded to memory, deleting temp file')
             try:
