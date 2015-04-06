@@ -250,7 +250,7 @@ class Sender(base_sender.BaseSender):
 
     def get_percent(self):
         if self.downloading_flag:
-            self.logger.info('Downloadig flag is true. Getting percent from downloader')
+            self.logger.info('Downloading flag is true. Getting percent from downloader')
             return self.downloader.get_percent()
         percent = 0
         if self.total_gcodes:
