@@ -32,10 +32,6 @@ class PrinterInterface(threading.Thread):
             answer = self.http_client.pack_and_send('printer_login', self.user_token, self.usb_info)
             if answer:
                 error = answer.get('error', None)
-                # TODO: remove it when server will be okay
-                if error and str(error['code']) == '0' and str(error['message']) == 'Unknow Hardware State downloading':
-                    self.logger.error('Received wrong state downloading message from server. Stub logic.')
-                    error = None
                 if error:
                     self.logger.warning("Error while login %s:" % str((self.user_token, self.usb_info)))
                     self.logger.warning(str(error['code']) + " " + error["message"])
@@ -88,6 +84,7 @@ class PrinterInterface(threading.Thread):
                 method = getattr(self.printer, command, None)
                 if not method:
                     self.logger.warning("Unknown command: " + str(command))
+                    self.sender_error = {"code": 40, "message": "Unknown command " + str(command)}
                 else:
                     number = data_dict.get('number', None)
                     if not number:
@@ -126,7 +123,7 @@ class PrinterInterface(threading.Thread):
                 message[4] = {"code": self.printer.error_code, "message": self.printer.error_message}
             self.logger.debug("Requesting with: %s" % str(message))
             if self.printer.is_operational():
-                answer = self.http_client.pack_and_send('command', message)
+                answer = self.http_client.pack_and_send('command', *message)
                 self.logger.debug("Got answer: " + str(answer))
                 if answer:
                     self.acknowledge = self.process_command_request(answer)
@@ -142,7 +139,7 @@ class PrinterInterface(threading.Thread):
                 answer = None
                 while not answer and not self.stop_flag:
                     self.logger.debug("Trying to report error to server...")
-                    answer = self.http_client.pack_and_send('command', message)
+                    answer = self.http_client.pack_and_send('command', *message)
                     error = answer.get('error', None)
                     if error:
                         self.logger.error("Server had returned error: " + str(error))

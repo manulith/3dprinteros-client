@@ -132,7 +132,7 @@ class HTTPClient:
             data = { 'user_token': payloads[0], 'printer': payloads[1], "version": version.version, "data_time": time.ctime() }
             path = self.printer_login_path
         elif target == 'command':
-            data = { 'printer_token': payloads[0], 'report': payloads[1], 'job_id': payloads[2], 'command_ack': payloads[3], 'error': [4]}
+            data = { 'printer_token': payloads[0], 'report': payloads[1], 'job_id': payloads[2], 'command_ack': payloads[3]}
             if data['command_ack'] == None:
                 data.pop('command_ack')
             if data['job_id'] == None:
@@ -147,7 +147,7 @@ class HTTPClient:
         else:
             self.process_error(4, 'No such target for packaging - ' + target)
             data, path = None, None
-        if "error" in str(payloads[-1]).lower():
+        if payloads[-1] and "code" in payloads[-1]:
             data['error'] = payloads[-1]
         return path, json.dumps(data)
 
