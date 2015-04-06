@@ -364,7 +364,7 @@ def send_all_snapshots(user_token):
         logging.info("No logs snapshots to send")
     else:
         for file_name in snapshot_dir:
-            print '\n\n%s\n\n' % str(file_name)
+            #print '\n\n%s\n\n' % str(file_name)
             if not file_name.endswith('zip'):
                 error = compress_and_send(user_token, file_name)
                 if error:
