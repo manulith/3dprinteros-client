@@ -74,20 +74,15 @@ class Sender(base_sender.BaseSender):
         self.logger.info('Begin of GCodes')
         self.execute(lambda: self.parser.s3g.set_RGB_LED(255, 255, 255, 0))
 
-    def gcodes(self, gcodes, is_link=False):
-        if is_link:
-            base_sender.BaseSender.gcodes(self, gcodes)
-        else:
-            gcodes = gcodes.split("\n")
-            self.set_total_gcodes()
-            for code in gcodes:
-                with self.buffer_lock:
-                    self.buffer.append(code)
-            #with self.buffer_lock:
-                #self.buffer.extend(gcodes)
-            self.logger.info('Enqueued block: ' + str(len(gcodes)) + ', total: ' + str(len(self.buffer)))
+    def load_gcodes(self, gcodes):
+        gcodes = self.preprocess_gcodes(gcodes)
+        for code in gcodes:
+            with self.buffer_lock:
+                self.buffer.append(code)
+        self.logger.info('Enqueued block: ' + str(len(gcodes)) + ', of total: ' + str(len(self.buffer)))
 
     def cancel(self, go_home=True):
+        self.job_id = None
         if self.downloading_flag:
             self.cancel_download()
             return
@@ -252,6 +247,7 @@ class Sender(base_sender.BaseSender):
                 self.buffer_lock.release()
                 if self.execute(lambda: self.parser.s3g.is_finished()):
                     self.printing_flag = False
+                    self.job_id = None
                 time.sleep(self.IDLE_WAITING_STEP)
             else:
                 self.buffer_lock.release()
