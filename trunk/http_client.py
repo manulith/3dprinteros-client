@@ -132,7 +132,11 @@ class HTTPClient:
             data = { 'user_token': payloads[0], 'printer': payloads[1], "version": version.version, "date_time": time.ctime() }
             path = self.printer_login_path
         elif target == 'command':
-            data = { 'printer_token': payloads[0], 'report': payloads[1], 'command_ack' : payloads[2], 'error': None }
+            data = { 'printer_token': payloads[0], 'report': payloads[1], 'job_id': payloads[2], 'command_ack': payloads[3]}
+            if data['command_ack'] == None:
+                data.pop('command_ack')
+            if data['job_id'] == None:
+                data.pop('job_id')
             path = self.command_path
         elif target == 'camera':
             data = {'user_token': payloads[0], 'camera_number': payloads[1], 'camera_name': payloads[2], 'file_data': payloads[3], 'host_mac': self.MACADDR }
