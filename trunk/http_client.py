@@ -129,7 +129,7 @@ class HTTPClient:
             data = { 'login': {'user': payloads[0], 'password': payloads[1]}, "platform": payloads[2], 'host_mac': self.MACADDR, "version": version.version }
             path = self.user_login_path
         elif target == 'printer_login':
-            data = { 'user_token': payloads[0], 'printer': payloads[1], "version": version.version, "date_time": time.ctime() }
+            data = { 'user_token': payloads[0], 'printer': payloads[1], "version": version.version, "data_time": time.ctime() }
             path = self.printer_login_path
         elif target == 'command':
             data = { 'printer_token': payloads[0], 'report': payloads[1], 'job_id': payloads[2], 'command_ack': payloads[3]}
