@@ -153,9 +153,9 @@ class App:
         self.logger.debug("Waiting web interface server to shutdown")
         try:
             self.web_interface.server.shutdown()
-            self.web_interface.join(1)
-        except Exception as e:
-            print e
+            self.web_interface.join()
+        except:
+            pass
         self.time_stamp()
         self.logger.info("...everything correctly closed.")
         self.logger.info("Goodbye ;-)")

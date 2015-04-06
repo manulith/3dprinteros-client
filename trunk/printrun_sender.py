@@ -73,6 +73,9 @@ class Sender(base_sender.BaseSender):
         self.logger.info("Printer %s is ready" % str(self.usb_info))
         self.online_flag = True
 
+    def endcb(self):
+        self.job_id = None
+
     def reset(self):
         if self.printcore:
             #self.logger.debug("Sending M999...")
@@ -174,23 +177,17 @@ class Sender(base_sender.BaseSender):
         else:
             self.logger.info("Printrun is starting print")
 
-    def gcodes(self, gcodes, is_link=False):
-        if is_link:
-            base_sender.BaseSender.gcodes(self, gcodes)
-        else:
-            gcodes = gcodes.split("\n")
-            while gcodes[-1] in ("\n", "\r\n", "\t", " ", "", None):
-                gcodes.pop()
-            length = len(gcodes)
-            self.set_total_gcodes(length)
-            self.logger.info('Loading %i gcodes in printcore...' % length)
-            if length:
-                self.buffer = LightGCode(gcodes)
-                if self.printcore.startprint(self.buffer):
-                    self.logger.info('...done loading gcodes.')
-                    return True
-            self.logger.warning('...failed to load gcodes.')
-            return False
+    def load_gcodes(self, gcodes):
+        gcodes = self.preprocess_gcodes(gcodes)
+        length = len(gcodes)
+        self.logger.info('Loading %i gcodes...' % length)
+        if length:
+            self.buffer = LightGCode(gcodes)
+            if self.printcore.startprint(self.buffer):
+                self.logger.info('...done loading gcodes.')
+                return True
+        self.logger.warning('...failed to load gcodes.')
+        return False
 
     def pause(self):
         self.logger.info("Printrun pause")
@@ -216,6 +213,7 @@ class Sender(base_sender.BaseSender):
             return False
 
     def cancel(self):
+        self.job_id = None
         if self.downloading_flag:
             self.cancel_download()
             return
