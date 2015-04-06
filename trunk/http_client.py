@@ -23,7 +23,7 @@ class HTTPClient:
     command_path = streamer_prefix + "/command"
     camera_path = streamer_prefix + "/camera" #json['image': base64_image ]
     cloudsync_path = "/autoupload"
-    token_send_logs_path = "/oldliveview/sendLogs" #rename me!
+    token_send_logs_path = streamer_prefix + "/sendLogs"
     get_last_version_path = '/a/lastclientver/get'
     domain_path_re = re.compile("https?:\/\/(.+)(\/.*)")
     MACADDR = hex(uuid.getnode())
