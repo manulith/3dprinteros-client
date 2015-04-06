@@ -139,7 +139,7 @@ class CameraMaster:
         picture = base64.b64encode(str(picture))
         data = self.user_token, camera_number, camera_name, picture
         answer = self.http_client.pack_and_send('camera', *data)
-        self.logger.info(camera_name + ' streaming response: %s' % answer)
+        #self.logger.info(camera_name + ' streaming response: %s' % answer)
 
     def intercept_signal(self, signal_code, frame):
         self.logger.info("SIGINT or SIGTERM received. Closing Camera Module...")
