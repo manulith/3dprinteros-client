@@ -71,9 +71,11 @@ class Cloudsync:
             self.create_shortcuts_win()
 
     def create_shortcuts_win(self):
-        Popen(['cscript', 'createLink.vbs', os.path.abspath(self.desktop_link_path), os.path.abspath(self.PATH)])
-        Popen(['cscript', 'createLink.vbs', os.path.abspath(self.favourites_link_path), os.path.abspath(self.PATH)])
-        Popen(['cscript', 'createLink.vbs', os.path.abspath(self.sendto_link_path), os.path.abspath(self.PATH)])
+        create_desktop_link = Popen(['cscript', 'createLink.vbs', os.path.abspath(self.desktop_link_path), os.path.abspath(self.PATH)])
+        create_favourites_link = Popen(['cscript', 'createLink.vbs', os.path.abspath(self.favourites_link_path), os.path.abspath(self.PATH)])
+        create_sendto_link = Popen(['cscript', 'createLink.vbs', os.path.abspath(self.sendto_link_path), os.path.abspath(self.PATH)])
+        for process in (create_desktop_link, create_favourites_link, create_sendto_link):
+            process.kill()
 
     def remove_shortcuts_win(self):
         os.remove(self.sendto_link_path)
