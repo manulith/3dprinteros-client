@@ -137,7 +137,7 @@ class HTTPClient:
                 data.pop('command_ack')
             if data['job_id'] == None:
                 data.pop('job_id')
-            if data['print_success_flag'] == None:
+            if data['printer_success'] == None:
                 data.pop('printer_success')
             path = self.command_path
         elif target == 'camera':
