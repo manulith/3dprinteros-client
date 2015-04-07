@@ -21,7 +21,7 @@ import requests
 import version
 
 LIBS_FOLDER = 'libraries'
-ALL_LIBS = ['opencv', 'numpy', 'printrun']
+ALL_LIBS = ['opencv', 'numpy', 'printrun', 'pywin']
 LOG_SNAPSHOTS_DIR = 'log_snapshots'
 
 LOG_SNAPSHOT_LINES = 200
