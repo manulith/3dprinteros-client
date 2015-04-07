@@ -71,6 +71,7 @@ class Cloudsync:
             self.create_shortcuts_win()
 
     def create_shortcuts_win(self):
+        print(os.path.abspath(self.desktop_link_path), os.path.abspath(self.PATH))
         Popen(['cscript', 'createLink.vbs', os.path.abspath(self.desktop_link_path), os.path.abspath(self.PATH)])
         Popen(['cscript', 'createLink.vbs', os.path.abspath(self.favourites_link_path), os.path.abspath(self.PATH)])
         Popen(['cscript', 'createLink.vbs', os.path.abspath(self.desktop_link_path), os.path.abspath(self.PATH)])
