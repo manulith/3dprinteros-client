@@ -1,15 +1,12 @@
-set objWSHShell = CreateObject("WScript.Shell")
-set objFso = CreateObject("Scripting.FileSystemObject")
+@echo off
 
-' command line arguments
-' TODO: error checking
-sShortcut = objWSHShell.ExpandEnvironmentStrings(WScript.Arguments.Item(0))
-sTargetPath = objWSHShell.ExpandEnvironmentStrings(WScript.Arguments.Item(1))
-sWorkingDirectory = objFso.GetAbsolutePathName(sShortcut)
+set SCRIPT="%TEMP%\%RANDOM%-%RANDOM%-%RANDOM%-%RANDOM%.vbs"
 
-set objSC = objWSHShell.CreateShortcut(sShortcut)
+echo Set oWS = WScript.CreateObject("WScript.Shell") >> %SCRIPT%
+echo sLinkFile = WScript.Arguments.Item(0) >> %SCRIPT%
+echo Set oLink = oWS.CreateShortcut(sLinkFile) >> %SCRIPT%
+echo oLink.TargetPath = WScript.Arguments.Item(1) >> %SCRIPT%
+echo oLink.Save >> %SCRIPT%
 
-objSC.TargetPath = sTargetPath
-objSC.WorkingDirectory = sWorkingDirectory
-
-objSC.Save
+cscript /nologo %SCRIPT%
+del %SCRIPT%
