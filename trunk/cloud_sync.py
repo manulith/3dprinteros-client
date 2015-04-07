@@ -10,6 +10,7 @@ import requests
 import utils
 utils.init_path_to_libs()
 import user_login
+import http_client
 
 class Cloudsync:
 
@@ -27,7 +28,7 @@ class Cloudsync:
     favourites_link_path = join(HOME_PATH, "links\Cloudsync.lnk")
     sendto_link_path = join(HOME_PATH, "AppData\Roaming\Microsoft\Windows\SendTo\Cloudsync.lnk")
     desktop_link_path = join(HOME_PATH, "desktop\CloudSync Folder.lnk")
-    URL = 'https://cli-cloud.3dprinteros.com/autoupload/'
+    URL = 'https://' + http_client.URL + http_client.cloudsync_path
     MAX_SEND_RETRY = 10
 
     def __init__(self, debug=False):
@@ -70,10 +71,9 @@ class Cloudsync:
             self.create_shortcuts_win()
 
     def create_shortcuts_win(self):
-        import winshell
-        winshell.CreateShortcut(Path = self.favourites_link_path, Target = self.PATH)
-        winshell.CreateShortcut(Path = self.sendto_link_path, Target = self.PATH)
-        winshell.CreateShortcut(Path = self.desktop_link_path, Target = self.PATH)
+        Popen('cscript', 'createLink.vbs', os.path.abspath(self.desktop_link_path), os.path.abspath(self.PATH))
+        Popen('cscript', 'createLink.vbs', os.path.abspath(self.favourites_link_path), os.path.abspath(self.PATH))
+        Popen('cscript', 'createLink.vbs', os.path.abspath(self.sendto_link_path), os.path.abspath(self.PATH))
 
     def remove_shortcuts_win(self):
         os.remove(self.sendto_link_path)
@@ -131,7 +131,7 @@ class Cloudsync:
         result = ''
         count = 1
         while count <= self.MAX_SEND_RETRY:
-            result = requests.post(self.URL, data={}, files={'file': open(file_path)})
+            result = requests.post(self.URL, data={'user_token': self.user_token}, files={'file': open(file_path)})
             result = str(result.text)
             if '"result":true' in result:
                 self.move_file(file_path, self.SENDED_PATH)
@@ -171,6 +171,6 @@ class Cloudsync:
         self.logger.info('Cloudsync is stopped')
 
 if __name__ == '__main__':
-    logging.basicConfig()
-    cs = Cloudsync()
+    logging.basicConfig(level='DEBUG')
+    cs = Cloudsync(debug=True)
     cs.start()
