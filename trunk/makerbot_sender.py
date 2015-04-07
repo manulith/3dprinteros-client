@@ -72,6 +72,8 @@ class Sender(base_sender.BaseSender):
         self.parser.state.values["build_name"] = '3DPrinterOS'
         self.parser.state.percentage = 0
         self.logger.info('Begin of GCodes')
+        self.printing_flag = False
+        self.print_success_flag = False
         self.execute(lambda: self.parser.s3g.set_RGB_LED(255, 255, 255, 0))
 
     def load_gcodes(self, gcodes):
@@ -246,7 +248,9 @@ class Sender(base_sender.BaseSender):
             except IndexError:
                 self.buffer_lock.release()
                 if self.execute(lambda: self.parser.s3g.is_finished()):
-                    self.printing_flag = False
+                    if self.printing_flag:
+                        self.printing_flag = False
+                        self.print_success_flag = True
                     self.job_id = None
                 time.sleep(self.IDLE_WAITING_STEP)
             else:

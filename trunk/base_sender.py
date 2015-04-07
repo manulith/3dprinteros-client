@@ -25,6 +25,7 @@ class BaseSender:
         self.downloading_flag = False
         self.downloader = None
         self.job_id = None
+        self.print_success_flag = False
         #self._position = [0.00,0.00,0.00]
 
     def set_total_gcodes(self, length):
