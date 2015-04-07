@@ -2,6 +2,7 @@ import sys
 import os
 import logging
 import shutil
+import time
 
 from os.path import join
 from subprocess import Popen, PIPE
@@ -74,6 +75,7 @@ class Cloudsync:
         create_desktop_link = Popen(['cscript', 'createLink.vbs', os.path.abspath(self.desktop_link_path), os.path.abspath(self.PATH)])
         create_favourites_link = Popen(['cscript', 'createLink.vbs', os.path.abspath(self.favourites_link_path), os.path.abspath(self.PATH)])
         create_sendto_link = Popen(['cscript', 'createLink.vbs', os.path.abspath(self.sendto_link_path), os.path.abspath(self.PATH)])
+        time.sleep(1)
         for process in (create_desktop_link, create_favourites_link, create_sendto_link):
             process.kill()
 
