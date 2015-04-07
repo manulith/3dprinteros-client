@@ -160,7 +160,7 @@ class Cloudsync:
         self.logger.info('Cloudsync started!')
         self.create_folders()
         if self.os == 'windows':
-            #self.create_shortcuts_win()
+            self.create_shortcuts_win()
             self.enable_disk_label()
         while not self.stop_flag:
             try:
