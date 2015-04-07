@@ -75,6 +75,7 @@ class Sender(base_sender.BaseSender):
 
     def endcb(self):
         self.job_id = None
+        self.print_success_flag = True
 
     def reset(self):
         if self.printcore:
@@ -170,6 +171,7 @@ class Sender(base_sender.BaseSender):
 
     def set_total_gcodes(self, length):
         self.total_gcodes = length
+        self.print_success_flag = False
 
     def startcb(self, resuming_flag):
         if resuming_flag:
