@@ -2,14 +2,15 @@ import sys
 import os
 import logging
 import shutil
+import requests
 
 from os.path import join
 from subprocess import Popen, PIPE
 
-import requests
+import user_login
 import utils
 utils.init_path_to_libs()
-import user_login
+import winshell
 
 class Cloudsync:
 
