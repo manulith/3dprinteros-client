@@ -168,16 +168,16 @@ def read_login():
     pack_name = 'login_info.bin'
     paths = get_paths_to_settings_folder()
     for path in paths:
-        logger.info("Searching for login info in %s" % path)
+        logger.debug("Searching for login info in %s" % path)
         try:
             login_info = read_info_zip(pack_name, path)
             if login_info:
-                logger.info('Login info loaded from ' + path)
+                logger.debug('Login info loaded from ' + path)
                 return login_info
         except Exception as e:
             logger.warning('Failed loading login from ' + path + '. Error: ' + e.message)
-        logger.info("Can't read login info in %s" % str(path))
-    logger.info('No login info found')
+        logger.debug("Can't read login info in %s" % str(path))
+    logger.debug('No login info found')
     return (None, None)
 
 def write_login(login, password):
@@ -190,7 +190,7 @@ def write_login(login, password):
         logger.warning('Login info writing error! ' + e.message)
     else:
         if result == True:
-            logger.info('Login info was written and packed.')
+            logger.debug('Login info was written and packed.')
         else:
             logger.warning("Login info wasn't written.")
         return True
