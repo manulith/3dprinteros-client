@@ -32,6 +32,10 @@ class Cloudsync:
 
     def __init__(self, debug=False):
         self.logger = logging.getLogger('app.' + __name__)
+        if debug:
+            self.logger.setLevel('DEBUG')
+        else:
+            self.logger.setLevel('INFO')
         self.stop_flag = False
         self.os = self.get_os()
         self.logger.info('Cloudsync login...')
@@ -167,6 +171,6 @@ class Cloudsync:
         self.logger.info('Cloudsync is stopped')
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig()
     cs = Cloudsync()
     cs.start()
