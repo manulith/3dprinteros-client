@@ -38,7 +38,7 @@ class Cloudsync:
             self.logger.setLevel('INFO')
         self.stop_flag = False
         self.os = self.get_os()
-        self.logger.info('Cloudsync login...')
+        self.logger.info('Cloudsync login')
         ul = user_login.UserLogin(self)
         ul.wait_for_login()
         self.user_token = ul.user_token
