@@ -103,7 +103,7 @@ class Sender(base_sender.BaseSender):
         # M190 - T:26.34 E:0 B:33.7
         # M109 - T:26.3 E:0 W:?
         #self.wait_tool_temp_re = re.compile('T:([\d\.]+) E:(\d+)')
-        self.wait_tool_temp_re = re.compile('T:([\d\.]+) E:(\d+)')
+        self.wait_tool_temp_re = re.compile('T:([\d\.]+)')
         self.wait_platform_temp_re = re.compile('.+B:(-?[\d\.]+)')
 
     def temp_request(self):
