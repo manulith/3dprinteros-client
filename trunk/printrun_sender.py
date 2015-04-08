@@ -44,6 +44,7 @@ class Sender(base_sender.BaseSender):
             self.printcore.tempcb = self.tempcb
             self.printcore.recvcb = self.recvcb
             self.printcore.sendcb = self.sendcb
+            self.printcore.endcb = self.endcb
             self.printcore.connect(self.profile['COM'], baudrate)
             time.sleep(0.1)
             if not self.printcore.printer:
@@ -75,6 +76,9 @@ class Sender(base_sender.BaseSender):
 
     def endcb(self):
         self.job_id = None
+        self.logger.debug("Number of last gcode: %i " % self.printcore.queueindex)
+        self.logger.debug("Printed %i gcodes" % self.total_gcodes)
+        self.print_success_flag = True
 
     def reset(self):
         if self.printcore:
@@ -170,6 +174,7 @@ class Sender(base_sender.BaseSender):
 
     def set_total_gcodes(self, length):
         self.total_gcodes = length
+        self.print_success_flag = False
 
     def startcb(self, resuming_flag):
         if resuming_flag:
