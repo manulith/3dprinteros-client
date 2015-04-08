@@ -126,10 +126,9 @@ class App:
     def intercept_signal(self, signal_code, frame):
         self.logger.warning("SIGINT or SIGTERM received. Closing 3DPrinterOS Client version %s_%s" % \
                 (version.version, version.build))
-        self.quit()
+        self.stop_flag = True
 
     def quit(self):
-        self.stop_flag = True
         if self.cam:
             self.cam.terminate()
             self.cam.kill()
