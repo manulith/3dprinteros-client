@@ -137,19 +137,20 @@ class App:
             pi.close()
         time.sleep(0.1) #to reduce logging spam in next
         self.time_stamp()
-        self.logger.info("Waiting for driver modules to close...")
+        self.logger.info("Waiting for gcode sending modules to close...")
         while True:
             ready_flag = True
             for pi in self.printer_interfaces:
                 if pi.isAlive():
                     ready_flag = False
-                    self.logger.debug("Waiting for driver modules to close %s" % str(pi.usb_info))
+                    self.logger.debug("Waiting for %s" % str(pi.usb_info))
                 else:
                     self.printer_interfaces.remove(pi)
-                    self.logger.info("%s was close" % str(pi.usb_info))
+                    self.logger.info("Printer on %s was closed." % str(pi.usb_info))
             if ready_flag:
                 break
             time.sleep(0.1)
+            self.logger.info("...all gcode sending modules closed.")
         self.logger.debug("Waiting web interface server to shutdown")
         try:
             self.web_interface.server.shutdown()

@@ -76,8 +76,7 @@ class Sender(base_sender.BaseSender):
 
     def endcb(self):
         self.job_id = None
-        if self.printcore.queueindex == self.total_gcodes:
-            self.print_success_flag = True
+        self.print_success_flag = True
 
     def reset(self):
         if self.printcore:
