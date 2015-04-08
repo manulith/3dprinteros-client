@@ -270,13 +270,16 @@ class Sender(base_sender.BaseSender):
         self.endcb = None
         self.tempcb = None
         self.stop_flag = True
-        self.logger.debug('Printrun sender is closing')
-        if self.printcore:
-            self.printcore.disconnect()
-        self.logger.debug('(Joining printrun threads...')
+        self.logger.info('Printrun sender is closing')
         if self.temp_request_thread:
+            self.logger.debug('(Joining printrun threads...')
             self.temp_request_thread.join(10)
             if self.temp_request_thread.isAlive():
-                self.logger.error("Error stopping temperature request thread.")
+                self.logger.error("Error stopping temperature request thread!")
             else:
                 self.logger.debug('...done)')
+        self.logger.info('Printrun sender disconnectiong from printer...')
+        if self.printcore:
+            self.printcore.disconnect()
+        self.logger.info('...done')
+
