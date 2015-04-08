@@ -153,7 +153,7 @@ class App:
         self.logger.debug("Waiting web interface server to shutdown")
         try:
             self.web_interface.server.shutdown()
-            self.web_interface.join()
+            self.web_interface.join(1)
         except:
             pass
         self.time_stamp()
