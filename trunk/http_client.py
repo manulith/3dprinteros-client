@@ -48,19 +48,21 @@ def package_user_login(username, password, platform, error = None):
     return json.dumps(data), user_login_path
 
 def package_printer_login(user_token, printer_profile, error = None):
-    data = { 'user_token': user_token, 'printer': printer_profile, "version": version.version, "data_time": time.ctime() }
+    data = { 'user_token': user_token, 'printer': printer_profile, "version": version.version, "date_time": time.ctime() }
     if error:
         data['error'] = error
     return json.dumps(data), printer_login_path
 
-def package_command_request(printer_token, state, acknowledge=None, error = None, job_id=None):
-    data = { 'printer_token': printer_token, 'report': state, 'error': error}
+def package_command_request(printer_token, state, acknowledge=None, job_id=None, print_success_flag=None, error = None,):
+    data = { 'printer_token': printer_token, 'report': state}
     if acknowledge:
         data['command_ack'] = acknowledge
     if error:
         data['error'] = error
     if job_id:
         data['job_id'] = job_id
+    if print_success_flag:
+        data["print_success"] = print_success_flag
     return json.dumps(data), command_path
 
 def package_camera_send(user_token, camera_number, camera_name, data, error = None):
