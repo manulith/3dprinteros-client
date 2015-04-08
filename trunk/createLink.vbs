@@ -1,4 +1,3 @@
-@echo off
 set objWSHShell = CreateObject("WScript.Shell")
 set objFso = CreateObject("Scripting.FileSystemObject")
 
