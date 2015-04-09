@@ -14,7 +14,7 @@ import http_client
 import user_login
 import config
 
-class CameraMaster():
+class CameraMaster:
     def __init__(self):
         self.logger = logging.getLogger('app.' + __name__)
         self.logger.info('Launched camera module: %s' % os.path.basename(__file__))
