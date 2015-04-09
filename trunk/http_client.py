@@ -117,6 +117,8 @@ class HTTPClient:
                         self.connection.close()
                         self.connection = None
                     return self.load_json(json_answer)
+                else:
+                    self.connection = None
             else:
                 time.sleep(0.5)
                 self.http_fails_count += 1
