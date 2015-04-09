@@ -143,7 +143,7 @@ class PrinterInterface(threading.Thread):
                     error = answer.get('error', None)
                     if error:
                         self.logger.error("Server had returned error: " + str(error))
-                        return
+                        break
                     command_number = answer.get("number", False)
                     if command_number:
                         self.acknowledge = {"number": command_number, "result": False}

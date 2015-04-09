@@ -112,6 +112,7 @@ class HTTPClient:
             if self.connection:
                 json_answer = self.request("POST", self.connection, path, data)
                 if json_answer:
+                    self.http_fails_count = 0
                     if not self.keep_connection_flag:
                         self.connection.close()
                         self.connection = None
