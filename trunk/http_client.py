@@ -118,6 +118,7 @@ class HTTPClient:
                         self.connection = None
                     return self.load_json(json_answer)
                 else:
+                    time.sleep(1)
                     self.connection = None
             else:
                 time.sleep(0.5)
