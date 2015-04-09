@@ -55,7 +55,8 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                     if not snr:
                         snr = ""
                     if not getattr(pi, 'printer_profile', False):
-                        profile = {'alias': "", 'name': 'Unknown printer %s:%s %s' % (pi.usb_info['PID'], pi.usb_info['VID'], snr)}
+                        profile = {'alias': "", 'name': 'Awaiting profile %s:%s %s'
+                                                        % (pi.usb_info['PID'], pi.usb_info['VID'], snr)}
                     else:
                         profile = pi.printer_profile
                     printer = '<b>%s</b> %s' % (profile['name'], snr)
