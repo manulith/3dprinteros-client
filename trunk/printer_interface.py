@@ -115,23 +115,23 @@ class PrinterInterface(threading.Thread):
     def run(self):
         if self.connect_to_server():
             self.connect_to_printer()
-        time.sleep(1)
+        time.sleep(0.1)
         self.creation_time = time.time()
         while not self.stop_flag and self.printer:
             report = self.state_report()
             self.report = report # for web_interface
             message = [self.printer_token, report, self.acknowledge, self.printer.job_id, self.printer.print_success_flag, self.sender_error]
-            if not message[5] and self.printer and self.printer.error_code:
+            if self.printer.error_code:
                 message[5] = {"code": self.printer.error_code, "message": self.printer.error_message}
+            self.printer.error_code = None
+            self.printer.error_message = None
+            self.sender_error = None
             self.logger.debug("Requesting with: %s" % str(message))
             if self.printer.is_operational():
                 answer = http_client.send(http_client.package_command_request, message)
                 self.logger.debug("Got answer: " + str(answer))
                 if answer:
                     self.acknowledge = self.process_command_request(answer)
-                    self.printer.error_code = None
-                    self.printer.error_message = None
-                    self.sender_error = None
                 else:
                     time.sleep(self.NO_COMMAND_SLEEP)
             elif (time.time() - self.creation_time < self.printer_profile.get('start_timeout', self.DEFAULT_TIMEOUT)) and not self.stop_flag:
