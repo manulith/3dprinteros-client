@@ -15,7 +15,7 @@ class PrinterInterface(threading.Thread):
         self.usb_info = usb_info
         self.app = app
         self.user_token = user_token
-        self.http_client = http_client.HTTPClient()
+        self.http_client = http_client.HTTPClient(True)
         self.printer = None
         self.printer_token = None
         self.acknowledge = None
@@ -127,11 +127,9 @@ class PrinterInterface(threading.Thread):
             self.logger.debug("Requesting with: %s" % str(message))
             if self.printer.is_operational():
                 answer = self.http_client.pack_and_send('command', *message)
-                self.logger.debug("Got answer: " + str(answer))
+                self.logger.debug("Server answer: " + str(answer))
                 if answer:
                     self.acknowledge = self.process_command_request(answer)
-                else:
-                    time.sleep(self.NO_COMMAND_SLEEP)
             elif (time.time() - self.creation_time < self.printer_profile.get('start_timeout', self.DEFAULT_TIMEOUT)) and not self.stop_flag:
                 time.sleep(0.1)
             else:
@@ -153,6 +151,7 @@ class PrinterInterface(threading.Thread):
                 self.acknowledge = None
                 self.logger.debug("...done")
                 self.stop_flag = True
+            time.sleep(1.5)
         self.close_printer_sender()
         self.logger.info('Printer interface stop.')
 
