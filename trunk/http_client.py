@@ -1,162 +1,161 @@
 import os
 import re
-#import ssl
 import json
 import uuid
-import time
 import httplib
 import logging
 import tempfile
 import requests
+import time
 
-import version
 import config
+import version
 
-MACADDR = hex(uuid.getnode())
 CONNECTION_TIMEOUT = 6
-URL = config.config['URL']
-AUX_URL = config.config['AUX_URL']
-streamer_prefix = "/streamerapi"
-user_login_path = streamer_prefix + "/user_login"
-printer_login_path = streamer_prefix + "/printer_login"
-command_path = streamer_prefix + "/command"
-camera_path = streamer_prefix + "/camera" #json['image': base64_image ]
-cloudsync_path = "/autoupload"
-token_send_logs_path = streamer_prefix + "/sendLogs"
-get_last_version_path = '/a/lastclientver/get'
 
-domain_path_re = re.compile("https?:\/\/(.+)(\/.*)")
+class HTTPClient:
 
-def load_json(jdata):
-    logger = logging.getLogger('app.' +__name__)
-    try:
-        data = json.loads(jdata)
-    except ValueError as e:
-        logger.debug("Received data is not valid json: " + e.message)
-    else:
-        if type(data) == dict and data:
-            return data
+    URL = config.config['URL']
+    HTTPS_MODE = config.config['HTTPS']
+    streamer_prefix = "/streamerapi"
+    user_login_path = streamer_prefix + "/user_login"
+    printer_login_path = streamer_prefix + "/printer_login"
+    command_path = streamer_prefix + "/command"
+    camera_path = streamer_prefix + "/camera" #json['image': base64_image ]
+    cloudsync_path = "/autoupload"
+    token_send_logs_path = streamer_prefix + "/sendLogs"
+    get_last_version_path = '/a/lastclientver/get'
+    domain_path_re = re.compile("https?:\/\/(.+)(\/.*)")
+    MACADDR = hex(uuid.getnode())
+
+    MAX_HTTP_FAILS = 5
+
+    def __init__(self, debug = False, keep_connection_flag = False):
+        self.logger = logging.getLogger('app.' +__name__)
+        if debug:
+            self.logger.setLevel('DEBUG')
         else:
-            logger.error("Data should be dictionary: " + str(data))
+            self.logger.setLevel('INFO')
+        self.keep_connection_flag = keep_connection_flag
+        self.connection = None
+        self.http_fails_count = 0
+        self.error_code = None
+        self.error_message = ''
 
-#packagers
+    def process_error(self, error_code, error_message):
+        self.error_code = error_code
+        self.error_message = error_message
+        self.logger.warning('HTTP Client error ' + str(self.error_code) + ': ' + self.error_message)
 
-def package_user_login(username, password, platform, error = None):
-    data = { 'login': {'user': username, 'password': password}, 'host_mac': MACADDR, "platform": platform, "version": version.version }
-    if error:
-        data['error'] = error
-    return json.dumps(data), user_login_path
-
-def package_printer_login(user_token, printer_profile, error = None):
-    data = { 'user_token': user_token, 'printer': printer_profile, "version": version.version, "date_time": time.ctime() }
-    if error:
-        data['error'] = error
-    return json.dumps(data), printer_login_path
-
-def package_command_request(printer_token, state, acknowledge=None, job_id=None, print_success_flag=None, error = None,):
-    data = { 'printer_token': printer_token, 'report': state}
-    if acknowledge:
-        data['command_ack'] = acknowledge
-    if error:
-        data['error'] = error
-    if job_id:
-        data['job_id'] = job_id
-    if print_success_flag:
-        data["print_success"] = print_success_flag
-    return json.dumps(data), command_path
-
-def package_camera_send(user_token, camera_number, camera_name, data, error = None):
-    data = {'user_token': user_token, 'camera_number': camera_number, 'camera_name': camera_name, 'file_data': data, 'host_mac': MACADDR}
-    if error:
-        data['error'] = error
-    return json.dumps(data), camera_path
-
-def package_cloud_sync_upload(token, file_data, file_name):
-    data = { 'user_token': token, 'file_data': file_data}
-    return json.dumps(data), cloudsync_path
-
-#senders
-
-def connect(URL, https_mode = config.config['HTTPS']):
-    logger = logging.getLogger('app.' +__name__)
-    #logger.debug("{ Connecting...")
-    try:
-        if https_mode:
-            #if ssl_has_context:
-            #    no_verify_context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
-            #    no_verify_context.verify_mode = ssl.CERT_NONE
-            #else:
-            #    no_verify_context = None
-            connection = httplib.HTTPSConnection(URL, port = 443, timeout = CONNECTION_TIMEOUT)
-        else:
-            connection = httplib.HTTPConnection(URL, port = 80, timeout = CONNECTION_TIMEOUT)
-    except httplib.error as e:
-        logger.info("Error during HTTP connection: " + str(e))
-        #logger.debug("...failed }")
-        logger.warning("Warning: connection to %s failed." % URL)
-    else:
-        #logger.debug("...success }")
-        return connection
-
-def post_request(connection, payload, path, headers=None):
-    if not headers:
-        headers = {"Content-Type": "application/json", "Content-Length": str(len(payload))}
-    return request(connection, payload, path, 'POST', headers)
-
-def get_request(connection, payload, path, headers={}):
-    return request(connection, payload, path, 'GET', headers)
-
-def request(connection, payload, path, method, headers):
-    logger = logging.getLogger('app.' +__name__)
-    #logger.debug("{ Requesting...")
-    try:
-        connection.request(method, path, payload, headers)
-        resp = connection.getresponse()
-    except Exception as e:
-        logger.info("Error during HTTP request:" + str(e))
-    else:
-        #logger.debug("Request status: %s %s" % (resp.status, resp.reason))
+    def connect(self):
+        #self.logger.debug("{ Connecting...")
         try:
-            received = resp.read()
-        except httplib.error as e:
-            logger.debug("Error reading response: " + str(e))
-        else:
-            if resp.status == httplib.OK and resp.reason == "OK":
-                connection.close()
-                #logger.debug("...success }")
-                return received
+            if self.HTTPS_MODE:
+                connection = httplib.HTTPSConnection(self.URL, port = 443, timeout = CONNECTION_TIMEOUT)
             else:
-                logger.warning("Error: server response is not 200 OK\nMessage:%s" % received)
-        finally:
-            connection.close()
-    logger.warning("Warning: http request failed!")
-
-def send(packager, payloads):
-    if type(payloads) not in (tuple, list):
-        payloads = [ payloads ]
-    connection = connect(URL)
-    if connection:
-        request_body, path = packager(*payloads)
-        json_answer = post_request(connection, request_body, path)
-        if json_answer:
-            return load_json(json_answer)
-
-def download(url):
-    logger = logging.getLogger('app.' +__name__)
-    match = domain_path_re.match(url)
-    logger.info("Downloading payload from " + url)
-    try:
-        domain, path = match.groups()
-    except AttributeError:
-        logger.warning("Unparsable link: " + url)
-    else:
-        https_mode = url.startswith("https")
-        connection = connect(domain, https_mode)
-        if connection:
-            logger.debug("Got connection to download server")
-            return get_request(connection, None, path)
+                connection = httplib.HTTPConnection(self.URL, port = 80, timeout = CONNECTION_TIMEOUT)
+        except httplib.error as e:
+            self.process_error(5, "Error during HTTP connection: " + str(e))
+            #self.logger.debug("...failed }")
+            self.logger.warning("Warning: connection to %s failed." % self.URL)
         else:
-            logger.warning("Error: no connection to download server")
+            #self.logger.debug("...success }")
+            self.connection = connection
+            return self.connection
+
+    def load_json(self, jdata):
+        try:
+            data = json.loads(jdata)
+        except ValueError as e:
+            self.process_error(2, "Received data is not valid json: " + e.message)
+        else:
+            if type(data) == dict and data:
+                return data
+            else:
+                self.process_error(3, "Data should be dictionary: " + str(data))
+
+    def request(self, method, connection, path, payload, headers=None):
+        self.logger.debug("{ Requesting...")
+        if headers is None:
+            headers = {"Content-Type": "application/json", "Content-Length": str(len(payload))}
+            if self.keep_connection_flag:
+                headers["Connection"] = "keep-alive"
+        try:
+            connection.request(method, path, payload, headers)
+            resp = connection.getresponse()
+        except Exception as e:
+            self.process_error(6,"Error during HTTP request:" + str(e))
+        else:
+            #self.logger.debug("Request status: %s %s" % (resp.status, resp.reason))
+            try:
+                received = resp.read()
+            except httplib.error as e:
+                self.process_error(7, "Error reading response: " + str(e))
+            else:
+                if resp.status == httplib.OK and resp.reason == "OK":
+                    self.logger.debug("...success }")
+                    return received
+                else:
+                    self.process_error(8, "Error: server response is not 200 OK\nMessage:%s" % received)
+        self.logger.debug("...failed }")
+        self.logger.warning("Warning: HTTP request failed!")
+
+    def pack_and_send(self, target, *payloads):
+        path, packed_message = self.pack(target, *payloads)
+        return self.send(path, packed_message)
+
+    def send(self, path, data):
+        json_answer = None
+        while not json_answer:
+            if not self.connection or not self.keep_connection_flag:
+                self.connection = self.connect()
+            if self.connection:
+                json_answer = self.request("POST", self.connection, path, data)
+                if json_answer:
+                    if not self.keep_connection_flag:
+                        self.connection.close()
+                        self.connection = None
+                    return self.load_json(json_answer)
+            else:
+                time.sleep(0.5)
+                self.http_fails_count += 1
+                if self.http_fails_count > self.MAX_HTTP_FAILS:
+                    self.process_error(9, 'HTTP connection error - max retry.')
+                    break
+        return None
+
+    def pack(self, target, *payloads):
+        if target == 'user_login':
+            data = { 'login': {'user': payloads[0], 'password': payloads[1]}, "platform": payloads[2], 'host_mac': self.MACADDR, "version": version.version }
+            path = self.user_login_path
+        elif target == 'printer_login':
+            data = { 'user_token': payloads[0], 'printer': payloads[1], "version": version.version, "data_time": time.ctime() }
+            path = self.printer_login_path
+        elif target == 'command':
+            data = { 'printer_token': payloads[0], 'report': payloads[1], 'command_ack': payloads[2], 'job_id': payloads[3], 'printer_success': payloads[4]}
+            if data['command_ack'] == None:
+                data.pop('command_ack')
+            if data['job_id'] == None:
+                data.pop('job_id')
+            if data['printer_success'] == None:
+                data.pop('printer_success')
+            path = self.command_path
+        elif target == 'camera':
+            data = {'user_token': payloads[0], 'camera_number': payloads[1], 'camera_name': payloads[2], 'file_data': payloads[3], 'host_mac': self.MACADDR }
+            path = self.camera_path
+        elif target == 'cloudsync':
+            data = { 'user_token': payloads[0], 'file_data': payloads[1]}
+            path = self.cloudsync_path
+        else:
+            self.process_error(4, 'No such target for packaging - ' + target)
+            data, path = None, None
+        if payloads[-1] and "code" in payloads[-1]:
+            data['error'] = payloads[-1]
+        return path, json.dumps(data)
+
+    def close(self):
+        if self.connection:
+            self.connection.close()
 
 
 class File_Downloader:
@@ -228,3 +227,5 @@ class File_Downloader:
                 return
         return total_size
 
+if __name__ == '__main__':
+    http_client = HTTPClient()

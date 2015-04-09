@@ -99,7 +99,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                     page = open(os.path.join(self.working_dir, 'web_interface/conveyor_warning.html')).read()
                 if not utils.is_user_groups():
                     page = open(os.path.join(self.working_dir, 'web_interface/groups_warning.html')).read()
-                if not self.server.app.updater.auto and self.server.app.updater.update_flag:
+                if not self.server.app.updater.auto_update_flag and self.server.app.updater.update_flag:
                     page = page.replace('get_updates" style="display:none"', 'get_updates" style="display:inline"')
                 self.write_with_autoreplace(page)
 

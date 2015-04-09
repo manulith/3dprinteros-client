@@ -34,11 +34,11 @@ class App:
         self.printer_interfaces = []
         self.stop_flag = False
         self.quit_flag = False
+        self.http_client = http_client.HTTPClient()
         self.cam = None
         self.cam_modules = config.config['camera']['modules']
         self.cam_current_module = self.cam_modules[config.config['camera']['default_module_name']]
         self.updater = updater.Updater()
-        self.updater.check_for_updates()
         self.user_login = user_login.UserLogin(self)
         self.init_interface()
         self.user_login.wait_for_login()
@@ -82,7 +82,7 @@ class App:
     def main_loop(self):
         self.last_flush_time = 0
         while not self.stop_flag:
-            self.updater.auto_update()
+            self.updater.timer_check_for_updates()
             self.time_stamp()
             self.detected_printers = usb_detect.get_printers()
             self.check_and_connect()
@@ -114,13 +114,12 @@ class App:
 
     def disconnect_printer(self, pi, reason):
         self.logger.info('Disconnecting because of %s %s' % (reason , str(pi.usb_info)))
-        if http_client.send(http_client.package_command_request, (pi.printer_token, pi.state_report(reason), pi.acknowledge)):
+        if self.http_client.pack_and_send('command', pi.printer_token, pi.state_report(reason), pi.acknowledge, None, None):
             pi.close()
             self.printer_interfaces.remove(pi)
             self.logger.info("Successful disconnection of " + str(pi.usb_info))
         else:
             self.logger.warning("Cant report printer interface closing to server. Not closed.")
-
 
     def intercept_signal(self, signal_code, frame):
         self.logger.warning("SIGINT or SIGTERM received. Closing 3DPrinterOS Client version %s_%s" % \
