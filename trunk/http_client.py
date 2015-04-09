@@ -30,7 +30,7 @@ class HTTPClient:
 
     MAX_HTTP_FAILS = 5
 
-    def __init__(self, debug = False, keep_connection_flag = False):
+    def __init__(self, keep_connection_flag = False, debug = False):
         self.logger = logging.getLogger('app.' +__name__)
         if debug:
             self.logger.setLevel('DEBUG')
