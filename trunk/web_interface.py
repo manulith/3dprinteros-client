@@ -220,7 +220,6 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     def quit_main_app(self):
         self.write_message('Goodbye :-)', 0)
         self.server.app.stop_flag = True
-        self.server.app.quit_flag = True
 
     def process_login(self):
         if self.server.app.user_login.user_token:

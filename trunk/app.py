@@ -91,16 +91,15 @@ class App:
                     self.disconnect_printer(pi, 'not_detected')
                 elif not pi.is_alive():
                     self.disconnect_printer(pi, 'error')
-            time.sleep(2)
+            if not self.stop_flag:
+                time.sleep(2)
             now = time.time()
             if now - self.last_flush_time > self.LOG_FLUSH_TIME:
                 self.last_flush_time = now
                 self.logger.info('Flushing logger handlers')
                 for handler in self.logger.handlers:
                     handler.flush()
-        # this is for quit from web interface(to release server's thread and quit)
-        if self.quit_flag:
-            self.quit()
+        self.quit()
 
     def time_stamp(self):
         self.logger.debug("Time stamp: " + time.strftime("%d %b %Y %H:%M:%S", time.localtime()))
@@ -126,10 +125,10 @@ class App:
     def intercept_signal(self, signal_code, frame):
         self.logger.warning("SIGINT or SIGTERM received. Closing 3DPrinterOS Client version %s_%s" % \
                 (version.version, version.build))
-        self.quit()
+        self.stop_flag = True
 
     def quit(self):
-        self.stop_flag = True
+        self.logger.info("Starting exit sequence...")
         if self.cam:
             self.cam.terminate()
             self.cam.kill()
@@ -137,19 +136,20 @@ class App:
             pi.close()
         time.sleep(0.1) #to reduce logging spam in next
         self.time_stamp()
-        self.logger.info("Waiting for driver modules to close...")
+        self.logger.info("Waiting for gcode sending modules to close...")
         while True:
             ready_flag = True
             for pi in self.printer_interfaces:
                 if pi.isAlive():
                     ready_flag = False
-                    self.logger.debug("Waiting for driver modules to close %s" % str(pi.usb_info))
+                    self.logger.debug("Waiting for %s" % str(pi.usb_info))
                 else:
                     self.printer_interfaces.remove(pi)
-                    self.logger.info("%s was close" % str(pi.usb_info))
+                    self.logger.info("Printer on %s was closed." % str(pi.usb_info))
             if ready_flag:
                 break
             time.sleep(0.1)
+            self.logger.info("...all gcode sending modules closed.")
         self.logger.debug("Waiting web interface server to shutdown")
         try:
             self.web_interface.server.shutdown()
@@ -157,7 +157,7 @@ class App:
         except:
             pass
         self.time_stamp()
-        self.logger.info("...everything correctly closed.")
+        self.logger.info("...all modules were closed correctly.")
         self.logger.info("Goodbye ;-)")
         logging.shutdown()
         sys.exit(0)

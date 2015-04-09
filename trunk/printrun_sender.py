@@ -76,8 +76,6 @@ class Sender(base_sender.BaseSender):
 
     def endcb(self):
         self.job_id = None
-        self.logger.debug("Number of last gcode: %i " % self.printcore.queueindex)
-        self.logger.debug("Printed %i gcodes" % self.total_gcodes)
         self.print_success_flag = True
 
     def reset(self):
@@ -99,11 +97,12 @@ class Sender(base_sender.BaseSender):
 
     def define_regexps(self):
         # ok T:29.0 /29.0 B:29.5 /29.0 @:0
-        self.temp_re = re.compile('.*ok T:([\d\.]+) /([\d\.]+) B:(-?[\d\.]+) /(-?[\d\.]+)')
+        self.temp_re = re.compile('.*T:([\d\.]+) /([\d\.]+) B:(-?[\d\.]+) /(-?[\d\.]+)')
         #self.position_re = re.compile('.*X:([\d\.]+) Y:([\d\.]+) Z:([\d\.]+).*')
         # M190 - T:26.34 E:0 B:33.7
         # M109 - T:26.3 E:0 W:?
-        self.wait_tool_temp_re = re.compile('T:([\d\.]+) E:(\d+)')
+        #self.wait_tool_temp_re = re.compile('T:([\d\.]+) E:(\d+)')
+        self.wait_tool_temp_re = re.compile('T:([\d\.]+)')
         self.wait_platform_temp_re = re.compile('.+B:(-?[\d\.]+)')
 
     def temp_request(self):
@@ -136,7 +135,7 @@ class Sender(base_sender.BaseSender):
 
     def recvcb(self, line):
         #self.logger.debug(line)
-        if line.startswith('T'):
+        if line.startswith('T:'):
             self.fetch_temps(line)
         elif line[0:2] == 'ok':
              self.online_flag = True
@@ -167,7 +166,8 @@ class Sender(base_sender.BaseSender):
     def fetch_temps(self, wait_temp_line):
         match = self.wait_tool_temp_re.match(wait_temp_line)
         if match:
-            self.temps[int(match.group(2)) + 1] = float(match.group(1))
+            #self.temps[int(match.group(2)) + 1] = float(match.group(1))
+            self.temps[1] = float(match.group(1))
         match = self.wait_platform_temp_re.match(wait_temp_line)
         if match:
             self.temps[0] = float(match.group(1))
@@ -263,14 +263,22 @@ class Sender(base_sender.BaseSender):
         return percent
 
     def close(self):
+        self.recvcb = None
+        self.sendcb = None
+        self.onlinecb = None
+        self.endcb = None
+        self.tempcb = None
         self.stop_flag = True
-        self.logger.debug('Printrun sender is closing')
-        if self.printcore:
-            self.printcore.disconnect()
-        self.logger.debug('(Joining printrun threads...')
+        self.logger.info('Printrun sender is closing')
         if self.temp_request_thread:
+            self.logger.debug('(Joining printrun threads...')
             self.temp_request_thread.join(10)
             if self.temp_request_thread.isAlive():
-                self.logger.error("Error stopping temperature request thread.")
+                self.logger.error("Error stopping temperature request thread!")
             else:
                 self.logger.debug('...done)')
+        self.logger.info('Printrun sender disconnectiong from printer...')
+        if self.printcore:
+            self.printcore.disconnect()
+        self.logger.info('...done')
+
