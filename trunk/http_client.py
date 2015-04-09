@@ -48,7 +48,7 @@ class HTTPClient:
         self.logger.warning('HTTP Client error ' + str(self.error_code) + ': ' + self.error_message)
 
     def connect(self):
-        #self.logger.debug("{ Connecting...")
+        self.logger.debug("{ Connecting...")
         try:
             if self.HTTPS_MODE:
                 connection = httplib.HTTPSConnection(self.URL, port = 443, timeout = CONNECTION_TIMEOUT)
@@ -56,10 +56,10 @@ class HTTPClient:
                 connection = httplib.HTTPConnection(self.URL, port = 80, timeout = CONNECTION_TIMEOUT)
         except httplib.error as e:
             self.process_error(5, "Error during HTTP connection: " + str(e))
-            #self.logger.debug("...failed }")
+            self.logger.debug("...failed }")
             self.logger.warning("Warning: connection to %s failed." % self.URL)
         else:
-            #self.logger.debug("...success }")
+            self.logger.debug("...success }")
             self.connection = connection
             return self.connection
 
