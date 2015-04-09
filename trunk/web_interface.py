@@ -55,7 +55,8 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                     if not snr:
                         snr = ""
                     if not getattr(pi, 'printer_profile', False):
-                        profile = {'alias': "", 'name': 'Unknown printer %s:%s %s' % (pi.usb_info['PID'], pi.usb_info['VID'], snr)}
+                        profile = {'alias': "", 'name': 'Awaiting profile %s:%s %s'
+                                                        % (pi.usb_info['PID'], pi.usb_info['VID'], snr)}
                     else:
                         profile = pi.printer_profile
                     printer = '<b>%s</b> %s' % (profile['name'], snr)
@@ -98,7 +99,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                     page = open(os.path.join(self.working_dir, 'web_interface/conveyor_warning.html')).read()
                 if not utils.is_user_groups():
                     page = open(os.path.join(self.working_dir, 'web_interface/groups_warning.html')).read()
-                if not self.server.app.updater.auto and self.server.app.updater.update_flag:
+                if not self.server.app.updater.auto_update_flag and self.server.app.updater.update_flag:
                     page = page.replace('get_updates" style="display:none"', 'get_updates" style="display:inline"')
                 self.write_with_autoreplace(page)
 
@@ -219,7 +220,6 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     def quit_main_app(self):
         self.write_message('Goodbye :-)', 0)
         self.server.app.stop_flag = True
-        self.server.app.quit_flag = True
 
     def process_login(self):
         if self.server.app.user_login.user_token:

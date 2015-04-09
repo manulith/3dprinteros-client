@@ -2,26 +2,40 @@ import logging
 import zipfile
 import os
 import urllib
+import time
 
 import http_client
 import version
 import config
 
 class Updater:
+
+    auto_update_flag = config.config['update']['auto_update_enabled']
+    check_pause = config.config['update']['check_pause']
+
     def __init__(self):
         self.logger = logging.getLogger('app.' + __name__)
         self.update_flag = False
-        self.auto = config.config['update']['auto_update_enabled']
+        self.http_client = http_client.HTTPClient()
+        self.check_time = 0
+
+    def timer_check_for_updates(self):
+        current_time = time.time()
+        if current_time - self.check_time > self.check_pause:
+            self.check_time = current_time
+            self.check_for_updates()
 
     def check_for_updates(self):
         if self.new_version_available():
             self.logger.info('Updates available!')
             self.update_flag = True
+            self.auto_update()
 
     def new_version_available(self):
         if config.config['update']['enabled']:
-            connection = http_client.connect(http_client.URL)
-            last_version = http_client.get_request(connection, None, http_client.get_last_version_path)
+            self.http_client.connect()
+            last_version = self.http_client.request('GET', self.http_client.connection, self.http_client.get_last_version_path, None, headers = {})
+            self.http_client.close()
             if last_version:
                 reload(version)
                 return self.compare_versions(version.version, last_version)
@@ -45,7 +59,7 @@ class Updater:
         return version
 
     def auto_update(self):
-        if self.auto:
+        if self.auto_update_flag:
             self.update()
 
     def update(self):
