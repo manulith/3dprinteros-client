@@ -29,7 +29,8 @@ class Cloudsync:
     favourites_link_path = join(HOME_PATH, "links\Cloudsync.lnk")
     sendto_link_path = join(HOME_PATH, "AppData\Roaming\Microsoft\Windows\SendTo\Cloudsync.lnk")
     desktop_link_path = join(HOME_PATH, "desktop\CloudSync Folder.lnk")
-    URL = 'https://' + http_client.URL + http_client.cloudsync_path
+    get_url = http_client.HTTPClient()
+    URL = 'https://' + get_url.URL + get_url.cloudsync_path
     MAX_SEND_RETRY = 10
 
     def __init__(self, debug=False):
