@@ -15,6 +15,7 @@ class PrinterInterface(threading.Thread):
         self.usb_info = usb_info
         self.app = app
         self.user_token = user_token
+        self.http_client = http_client.HTTPClient(True)
         self.printer = None
         self.printer_token = None
         self.acknowledge = None
@@ -28,13 +29,9 @@ class PrinterInterface(threading.Thread):
     def connect_to_server(self):
         self.logger.info("Connecting to server with printer: %s" % str(self.usb_info))
         while not self.stop_flag:
-            answer = http_client.send(http_client.package_printer_login, (self.user_token, self.usb_info))
+            answer = self.http_client.pack_and_send('printer_login', self.user_token, self.usb_info)
             if answer:
                 error = answer.get('error', None)
-                # TODO: remove it when server will be okay
-                if error and str(error['code']) == '0' and str(error['message']) == 'Unknow Hardware State downloading':
-                    self.logger.error('Received wrong state downloading message from server. Stub logic.')
-                    error = None
                 if error:
                     self.logger.warning("Error while login %s:" % str((self.user_token, self.usb_info)))
                     self.logger.warning(str(error['code']) + " " + error["message"])
@@ -87,6 +84,7 @@ class PrinterInterface(threading.Thread):
                 method = getattr(self.printer, command, None)
                 if not method:
                     self.logger.warning("Unknown command: " + str(command))
+                    self.sender_error = {"code": 40, "message": "Unknown command " + str(command)}
                 else:
                     number = data_dict.get('number', None)
                     if not number:
@@ -115,25 +113,23 @@ class PrinterInterface(threading.Thread):
     def run(self):
         if self.connect_to_server():
             self.connect_to_printer()
-        time.sleep(1)
+        time.sleep(0.1)
         self.creation_time = time.time()
         while not self.stop_flag and self.printer:
             report = self.state_report()
             self.report = report # for web_interface
             message = [self.printer_token, report, self.acknowledge, self.printer.job_id, self.printer.print_success_flag, self.sender_error]
-            if not message[3] and self.printer and self.printer.error_code:
-                message[3] = {"code": self.printer.error_code, "message": self.printer.error_message}
+            if self.printer.error_code:
+                message[5] = {"code": self.printer.error_code, "message": self.printer.error_message}
+            self.printer.error_code = None
+            self.printer.error_message = None
+            self.sender_error = None
             self.logger.debug("Requesting with: %s" % str(message))
             if self.printer.is_operational():
-                answer = http_client.send(http_client.package_command_request, message)
-                self.logger.debug("Got answer: " + str(answer))
+                answer = self.http_client.pack_and_send('command', *message)
+                self.logger.debug("Server answer: " + str(answer))
                 if answer:
                     self.acknowledge = self.process_command_request(answer)
-                    self.printer.error_code = None
-                    self.printer.error_message = None
-                    self.sender_error = None
-                else:
-                    time.sleep(self.NO_COMMAND_SLEEP)
             elif (time.time() - self.creation_time < self.printer_profile.get('start_timeout', self.DEFAULT_TIMEOUT)) and not self.stop_flag:
                 time.sleep(0.1)
             else:
@@ -141,11 +137,11 @@ class PrinterInterface(threading.Thread):
                 answer = None
                 while not answer and not self.stop_flag:
                     self.logger.debug("Trying to report error to server...")
-                    answer = http_client.send(http_client.package_command_request, message)
+                    answer = self.http_client.pack_and_send('command', *message)
                     error = answer.get('error', None)
                     if error:
                         self.logger.error("Server had returned error: " + str(error))
-                        return
+                        break
                     command_number = answer.get("number", False)
                     if command_number:
                         self.acknowledge = {"number": command_number, "result": False}
@@ -155,6 +151,7 @@ class PrinterInterface(threading.Thread):
                 self.acknowledge = None
                 self.logger.debug("...done")
                 self.stop_flag = True
+            time.sleep(1.5)
         self.close_printer_sender()
         self.logger.info('Printer interface stop.')
 

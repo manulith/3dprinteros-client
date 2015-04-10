@@ -5,13 +5,14 @@
   "log_file": "3dprinteros_client.log",
   "error_file": "critical_error.log",
   "web_interface": true,
-  "linux_rights_warning": false,
+  "linux_rights_warning": true,
   "max_download_retry" : 3,
   "update": {
     "enabled": true,
     "auto_update_enabled": false,
     "update_file_url": "http://s3.amazonaws.com/3dprinteros-files/",
-    "update_file_name": "3dprinteros_client_update.zip"
+    "update_file_name": "3dprinteros_client_update.zip",
+    "check_pause": 3600
   },
   "camera": {
     "enabled" : true,

@@ -14,12 +14,13 @@ class UserLogin:
         self.parent = parent_obj
         self.login = None
         self.user_token = None
+        self.http_client = http_client.HTTPClient()
         login, password = utils.read_login()
         if login:
             self.login_as_user(login, password)
 
     def login_as_user(self, login, password):
-        answer = http_client.send(http_client.package_user_login, (login, password, sys.platform))
+        answer = self.http_client.pack_and_send('user_login', login, password, sys.platform)
         if not answer:
             return 0, "No connection to server"
         else:
