@@ -61,7 +61,8 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                         profile = pi.printer_profile
                     printer = '<b>%s</b> %s' % (profile['name'], snr)
                     if not pi.printer_token:
-                        printer = printer + '<br>' + 'Waiting type selection from server(' + '<a href="http://forum.3dprinteros.com/t/how-to-select-printer-type/143"><font color=blue>?</font></a>)'
+                        printer = printer + '<br>' + 'Waiting type selection from server('\
+                                  + '<a href="http://forum.3dprinteros.com/t/how-to-select-printer-type/143" target="_blank"><font color=blue>?</font></a>)'
                     if pi.report:
                         report = pi.report
                         state = report['state']
