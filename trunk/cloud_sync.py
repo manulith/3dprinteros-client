@@ -3,6 +3,8 @@ import os
 import logging
 import shutil
 import signal
+import traceback
+import time
 
 from os.path import join
 from subprocess import Popen, PIPE
@@ -181,5 +183,13 @@ class Cloudsync:
 
 if __name__ == '__main__':
     logging.basicConfig(level='DEBUG')
-    cs = Cloudsync(debug=True)
-    cs.start()
+    try:
+        cs = Cloudsync(debug=True)
+        cs.start()
+    except SystemExit:
+        pass
+    except:
+        trace = traceback.format_exc()
+        print trace
+        with open(config.config['error_file'], "a") as f:
+            f.write(time.ctime() + "\n" + trace + "\n")
