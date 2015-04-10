@@ -50,23 +50,27 @@ class App:
 
     def start_cloud_sync(self):
         if config.config['cloud_sync']['enabled']:
-            self.cloud_sync = cloud_sync.Cloudsync()
-            self.cloud_sync.start()
+            self.cloud_sync = self.launch_suprocess(config.config['cloud_sync']['module'])
         else:
             self.cloud_sync = None
 
     def start_camera(self, module):
         if config.config["camera"]["enabled"] == True:
-            self.logger.info('Launching camera subprocess')
-            client_dir = os.path.dirname(os.path.abspath(__file__))
-            cam_path = os.path.join(client_dir, module)
-            try:
-                if module:
-                    self.cam = Popen([sys.executable, cam_path])
-            except Exception as e:
-                self.logger.warning('Could not launch camera due to error:\n' + e.message)
-            else:
-                self.cam_current_module = module
+            self.cam = self.launch_suprocess(module)
+            self.cam_current_module = module
+        else:
+            self.cam = None
+
+    def launch_suprocess(self, module):
+        self.logger.info('Launching as subprocess ' + module)
+        client_dir = os.path.dirname(os.path.abspath(__file__))
+        path = os.path.join(client_dir, module)
+        try:
+            process = Popen([sys.executable, path])
+        except Exception as e:
+            self.logger.warning('Could not launch ' + module + ' as subprocess due to error:\n' + e.message)
+        else:
+            return process
 
     def switch_camera(self, module):
         self.logger.info('Switching camera module from %s to %s' % (self.cam_current_module, module))
@@ -138,11 +142,9 @@ class App:
 
     def quit(self):
         self.logger.info("Starting exit sequence...")
-        if self.cloud_sync:
-            self.cloud_sync.stop()
-        if self.cam:
-            self.cam.terminate()
-            self.cam.kill()
+        for subprocess in self.cam, self.cloud_sync:
+            if subprocess:
+                subprocess.terminate()
         for pi in self.printer_interfaces:
             pi.close()
         time.sleep(0.1) #to reduce logging spam in next

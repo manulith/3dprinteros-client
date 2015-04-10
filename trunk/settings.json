@@ -24,6 +24,7 @@
   },
   "cloud_sync": {
     "enabled": true,
+    "module": "cloud_sync.py",
     "max_send_retry": 10
   }
 }

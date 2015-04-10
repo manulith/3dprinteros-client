@@ -2,6 +2,7 @@ import sys
 import os
 import logging
 import shutil
+import signal
 
 from os.path import join
 from subprocess import Popen, PIPE
@@ -31,6 +32,8 @@ class Cloudsync:
 
     def __init__(self, debug=False):
         self.logger = logging.getLogger('app.' + __name__)
+        signal.signal(signal.SIGINT, self.intercept_signal)
+        signal.signal(signal.SIGTERM, self.intercept_signal)
         if debug:
             self.logger.setLevel('DEBUG')
         else:
@@ -43,6 +46,10 @@ class Cloudsync:
         self.user_token = ul.user_token
         self.error_code = None
         self.error_message = ''
+
+    def intercept_signal(self, signal_code, frame):
+        self.logger.info("SIGINT or SIGTERM received. Closing Cloudsync Module...")
+        self.stop()
 
     def process_error(self, error_code, error_message):
         self.error_code = error_code
@@ -166,10 +173,11 @@ class Cloudsync:
                 self.stop()
 
     def stop(self):
-        self.stop_flag = True
         if self.os == 'windows':
             self.disable_disk_label()
+        self.stop_flag = True
         self.logger.info('Cloudsync is stopped')
+        os._exit(0)
 
 if __name__ == '__main__':
     logging.basicConfig(level='DEBUG')
