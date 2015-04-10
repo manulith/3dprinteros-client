@@ -18,6 +18,7 @@ import http_client
 import printer_interface
 import user_login
 import updater
+import cloud_sync
 
 
 class App:
@@ -43,7 +44,16 @@ class App:
         self.init_interface()
         self.user_login.wait_for_login()
         self.start_camera(self.cam_current_module)
+        self.cloud_sync = cloud_sync.Cloudsync()
+        self.start_cloud_sync()
         self.main_loop()
+
+    def start_cloud_sync(self):
+        if config.config['cloud_sync']['enabled']:
+            self.cloud_sync = cloud_sync.Cloudsync()
+            self.cloud_sync.start()
+        else:
+            self.cloud_sync = None
 
     def start_camera(self, module):
         if config.config["camera"]["enabled"] == True:
@@ -128,6 +138,8 @@ class App:
 
     def quit(self):
         self.logger.info("Starting exit sequence...")
+        if self.cloud_sync:
+            self.cloud_sync.stop()
         if self.cam:
             self.cam.terminate()
             self.cam.kill()

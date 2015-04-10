@@ -2,7 +2,6 @@ import sys
 import os
 import logging
 import shutil
-import time
 
 from os.path import join
 from subprocess import Popen, PIPE
@@ -12,6 +11,7 @@ import utils
 utils.init_path_to_libs()
 import user_login
 import http_client
+import config
 
 class Cloudsync:
 
@@ -20,18 +20,14 @@ class Cloudsync:
     else:
         HOME_PATH = os.environ.get('HOMEPATH')
     PATH = join(HOME_PATH, 'Cloudsync')
-    TEMP_PATH = join(PATH, '.temp')
-    BIG_FILES_PATH = join(TEMP_PATH, 'big')
-    NORMAL_FILES_PATH = join(TEMP_PATH, 'normal')
     SENDED_PATH = join(PATH, 'Sended')
     UNSENDABLE_PATH = join(PATH, 'Unsendable')
-    BIG_FILE_SIZE = 10 * 1024 * 1024
     favourites_link_path = join(HOME_PATH, "links\Cloudsync.lnk")
     sendto_link_path = join(HOME_PATH, "AppData\Roaming\Microsoft\Windows\SendTo\Cloudsync.lnk")
     desktop_link_path = join(HOME_PATH, "desktop\CloudSync Folder.lnk")
     get_url = http_client.HTTPClient()
     URL = 'https://' + get_url.URL + get_url.cloudsync_path
-    MAX_SEND_RETRY = 10
+    MAX_SEND_RETRY = config.config['cloud_sync']['max_send_retry']
 
     def __init__(self, debug=False):
         self.logger = logging.getLogger('app.' + __name__)
@@ -65,7 +61,7 @@ class Cloudsync:
 
     def create_folders(self):
         self.logger.info('Preparing Cloudsync folder: ' + self.PATH)
-        paths = [self.PATH, self.TEMP_PATH, self.BIG_FILES_PATH, self.NORMAL_FILES_PATH, self.SENDED_PATH, self.UNSENDABLE_PATH]
+        paths = [self.PATH, self.SENDED_PATH, self.UNSENDABLE_PATH]
         for path in paths:
             if not os.path.exists(path):
                 os.mkdir(path)
@@ -116,7 +112,7 @@ class Cloudsync:
         self.logger.debug(current_path + ' moved to ' + destination_folder_path)
 
     def get_files_to_send(self):
-        names_to_ignore = [os.path.basename(self.SENDED_PATH), os.path.basename(self.UNSENDABLE_PATH), os.path.basename(self.TEMP_PATH)]
+        names_to_ignore = [os.path.basename(self.SENDED_PATH), os.path.basename(self.UNSENDABLE_PATH)]
         files_to_send = os.listdir(self.PATH)
         for name in names_to_ignore:
             files_to_send.remove(name)

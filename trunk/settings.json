@@ -21,5 +21,9 @@
     "log_file" : "3dprinteros_camera.log",
     "modules": {"Dual camera": "dual_cam.py", "Multi camera": "multi_cam.py", "Disable camera": ""},
     "default_module_name": "Dual camera"
+  },
+  "cloud_sync": {
+    "enabled": true,
+    "max_send_retry": 10
   }
 }
