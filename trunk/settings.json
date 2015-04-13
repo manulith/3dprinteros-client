@@ -5,7 +5,7 @@
   "log_file": "3dprinteros_client.log",
   "error_file": "critical_error.log",
   "web_interface": true,
-  "linux_rights_warning": true,
+  "linux_rights_warning": false,
   "max_download_retry" : 3,
   "update": {
     "enabled": true,
@@ -21,6 +21,6 @@
     "camera_min_loop_time" : 1,
     "log_file" : "3dprinteros_camera.log",
     "modules": {"Dual camera": "dual_cam.py", "Multi camera": "multi_cam.py", "Disable camera": ""},
-    "default_module_name": "Dual camera"
+    "default_module_name": "Disable camera"
   }
 }

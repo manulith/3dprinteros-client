@@ -6,9 +6,9 @@ import makerbot_driver
 import makerbot_serial as serial
 import serial.serialutil
 
-import base_sender
+from base_sender import BaseSender
 
-class Sender(base_sender.BaseSender):
+class Sender(BaseSender):
 
     PAUSE_STEP_TIME = 0.5
     BUFFER_OVERFLOW_WAIT = 0.01
@@ -18,8 +18,8 @@ class Sender(base_sender.BaseSender):
     BUFFER_OVERFLOWS_BETWEEN_STATE_UPDATE = 20
     MAX_RETRY_BEFORE_ERROR = 100
 
-    def __init__(self, profile, usb_info, app):
-        base_sender.BaseSender.__init__(self, profile, usb_info, app)
+    def __init__(self, profile, usb_info):
+        BaseSender.__init__(self, profile, usb_info)
         #self.mb = {'preheat': False, 'heat_shutdown': False}
         self.logger = logging.getLogger('app.' + __name__)
         self.logger.info('Makerbot printer created')

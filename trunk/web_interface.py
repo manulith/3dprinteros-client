@@ -7,7 +7,7 @@ from SocketServer import ThreadingMixIn
 
 import utils
 import version
-import config
+from config import Config
 
 class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
@@ -178,7 +178,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.write_message(message)
 
     def show_logs(self):
-        log_file = config.config['log_file']
+        log_file = Config.instance().config['log_file']
         logs = utils.get_file_tail(log_file)
         content = ''
         if not content:

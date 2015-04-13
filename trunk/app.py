@@ -11,21 +11,22 @@ from subprocess import Popen
 
 import utils
 utils.init_path_to_libs()
-import config
-import version
 import usb_detect
 import http_client
-import printer_interface
 import user_login
 import updater
+import version
+import printer_interface
+from singleton import Singleton
+from config import Config
 
 
-class App:
+class App(Singleton):
 
     LOG_FLUSH_TIME = 30
 
     def __init__(self):
-        self.logger = utils.get_logger(config.config["log_file"])
+        self.logger = utils.get_logger(Config.instance().config["log_file"])
         self.logger.info("Welcome to 3DPrinterOS Client version %s_%s" % (version.version, version.build))
         self.time_stamp()
         signal.signal(signal.SIGINT, self.intercept_signal)
@@ -33,20 +34,19 @@ class App:
         self.detected_printers = []
         self.printer_interfaces = []
         self.stop_flag = False
-        self.quit_flag = False
-        self.http_client = http_client.HTTPClient()
         self.cam = None
-        self.cam_modules = config.config['camera']['modules']
-        self.cam_current_module = self.cam_modules[config.config['camera']['default_module_name']]
         self.updater = updater.Updater()
+        self.cam_modules = Config.instance().config['camera']['modules']
+        self.cam_current_module = self.cam_modules[Config.instance().config['camera']['default_module_name']]
+        self.http_client = http_client.HTTPClient()
         self.user_login = user_login.UserLogin(self)
+        Config.instance().set_profiles(self.user_login.profiles)
         self.init_interface()
-        self.user_login.wait_for_login()
-        self.start_camera(self.cam_current_module)
-        self.main_loop()
+        if self.user_login.wait_for_login():
+            self.start_camera(self.cam_current_module)
 
     def start_camera(self, module):
-        if config.config["camera"]["enabled"] == True:
+        if Config.instance().config["camera"]["enabled"] == True:
             self.logger.info('Launching camera subprocess')
             client_dir = os.path.dirname(os.path.abspath(__file__))
             cam_path = os.path.join(client_dir, module)
@@ -67,7 +67,8 @@ class App:
             self.start_camera(module)
 
     def init_interface(self):
-        if config.config['web_interface']:
+        print Config.instance().config['web_interface']
+        if Config.instance().config['web_interface']:
             import webbrowser
             from web_interface import WebInterface
             self.web_interface = WebInterface(self)
@@ -81,10 +82,11 @@ class App:
 
     def main_loop(self):
         self.last_flush_time = 0
+        self.detector = usb_detect.USBDetector()
         while not self.stop_flag:
             self.updater.timer_check_for_updates()
             self.time_stamp()
-            self.detected_printers = usb_detect.get_printers()
+            self.detected_printers = self.detector.get_printers()
             self.check_and_connect()
             for pi in self.printer_interfaces:
                 if pi.usb_info not in self.detected_printers:
@@ -108,7 +110,7 @@ class App:
         currently_connected_usb_info = [pi.usb_info for pi in self.printer_interfaces]
         for usb_info in self.detected_printers:
             if usb_info not in currently_connected_usb_info:
-                pi = printer_interface.PrinterInterface(usb_info, self.user_login.user_token, self)
+                pi = printer_interface.PrinterInterface(usb_info, self.user_login.user_token)
                 pi.start()
                 self.printer_interfaces.append(pi)
 
@@ -148,26 +150,27 @@ class App:
             if ready_flag:
                 break
             time.sleep(0.1)
-            self.logger.info("...all gcode sending modules closed.")
-        self.logger.debug("Waiting web interface server to shutdown")
+        self.logger.info("...all gcode sending modules are closed.")
+        self.logger.debug("Waiting web interface server to shutdown...")
         try:
             self.web_interface.server.shutdown()
             self.web_interface.join()
         except:
             pass
+        self.logger.info("...done.")
         self.time_stamp()
-        self.logger.info("...all modules were closed correctly.")
         self.logger.info("Goodbye ;-)")
         logging.shutdown()
         sys.exit(0)
 
 if __name__ == '__main__':
     try:
-        app = App()
+        app = App.instance()
+        app.main_loop()
     except SystemExit:
         pass
     except:
         trace = traceback.format_exc()
         print trace
-        with open(config.config['error_file'], "a") as f:
+        with open(Config.instance().config['error_file'], "a") as f:
             f.write(time.ctime() + "\n" + trace + "\n")

@@ -1,57 +1,36 @@
-import os
 import json
-import utils
-# use import config ; config.config to get config
 
-def get_config_file_path():
-    config_path = os.path.dirname(os.path.abspath(__file__))
-    return os.path.join(config_path, 'settings.json')
+from singleton import Singleton
 
-def get_profiles_file_path():
-    config_path = utils.get_paths_to_settings_folder()[0]
-    return os.path.join(config_path, 'profiles.json')
+class Config(Singleton):
 
-def load_config():
-    with open(get_config_file_path()) as config_file:
-        try:
-            config = json.loads(config_file.read())
-        except Exception as e:
-            print e
-            print "Config is:\n" + str(config_file.read())
-        else:
-            return config
+    CONFIG_FILE_NAME = 'settings.json'
 
-def update_config(config):
-    with open(get_config_file_path(), 'w') as config_file:
-        try:
-            jdata = json.dumps(config)
-        except Exception as e:
-            print e
-        else:
-            config_file.write(jdata)
+    def __init__(self):
+        self.config = self.read()
+        self.profiles = None
 
-def update_profiles(profiles):
-    path = utils.get_paths_to_settings_folder()[0]
-    if not os.path.isdir(path):
-        os.mkdir(path)
-    with open(get_profiles_file_path(), 'w') as profiles_file:
-        try:
-            jdata = json.dumps(profiles)
-        except Exception as e:
-            print e
-        else:
-            profiles_file.write(jdata)
+    #def get_config_file_path(self):
+        #config_path = os.path.dirname(os.path.abspath(__file__))
+        #return os.path.join(config_path, 'settings.json')
 
-def load_profiles():
-    with open(get_profiles_file_path()) as profiles_file:
-        try:
-            profiles = json.loads(profiles_file.read())
-        except Exception as e:
-            print e
-            print "Config is:\n" + str(profiles_file.read())
-        else:
-            return profiles
+    def read(self):
+        with open(self.CONFIG_FILE_NAME) as config_file:
+            try:
+                config = json.loads(config_file.read())
+            except Exception as e:
+                print "Error reading %s: %s" % (self.CONFIG_FILE_NAME, str(e))
+            else:
+                return config
 
+    def update(self, new_config):
+        with open(self.CONFIG_FILE_NAME, 'w') as config_file:
+            try:
+                jdata = json.dumps(new_config)
+            except Exception as e:
+                print "Error writing %s: %s" % (self.CONFIG_FILE_NAME, str(e))
+            else:
+                config_file.write(jdata)
 
-
-config = load_config()
+    def set_profiles(self, profiles):
+        self.profiles = profiles

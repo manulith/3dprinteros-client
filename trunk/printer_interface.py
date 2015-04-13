@@ -5,15 +5,13 @@ import threading
 
 import http_client
 
-
 class PrinterInterface(threading.Thread):
 
     DEFAULT_TIMEOUT = 10
     NO_COMMAND_SLEEP = 3
 
-    def __init__(self, usb_info, user_token, app):
+    def __init__(self, usb_info, user_token):
         self.usb_info = usb_info
-        self.app = app
         self.user_token = user_token
         self.http_client = http_client.HTTPClient(True)
         self.printer = None
@@ -61,7 +59,7 @@ class PrinterInterface(threading.Thread):
             self.sender_error = {"code": 11, "message": "No serial port for serial printer. No senders or printer firmware hanged."}
             return
         try:
-            printer = printer_sender.Sender(self.printer_profile, self.usb_info, self.app)
+            printer = printer_sender.Sender(self.printer_profile, self.usb_info)
         except RuntimeError as e:
             self.logger.warning("Can't connect to printer %s %s\nReason:%s" % (self.printer_profile['name'], str(self.usb_info), e.message))
             self.sender_error = {"code": 19,
