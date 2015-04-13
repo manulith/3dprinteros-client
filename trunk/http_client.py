@@ -141,8 +141,8 @@ class HTTPClient:
                 data.pop('command_ack')
             if data['job_id'] == None:
                 data.pop('job_id')
-            if data['printer_success'] == None:
-                data.pop('printer_success')
+            if data['print_success'] == None:
+                data.pop('print_success')
             path = self.command_path
         elif target == 'camera':
             data = {'user_token': payloads[0], 'camera_number': payloads[1], 'camera_name': payloads[2], 'file_data': payloads[3], 'host_mac': self.MACADDR }
