@@ -104,7 +104,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                     page = open(os.path.join(self.working_dir, 'web_interface/groups_warning.html')).read()
                 if not self.server.app.updater.auto_update_flag and self.server.app.updater.update_flag:
                     page = page.replace('get_updates" style="display:none"', 'get_updates"')
-                if self.server.app.cloud_sync:
+                if config.config['cloud_sync']['enabled']:
                     page = page.replace('open_cloudsync_folder" style="display:none"', 'open_cloudsync_folder"')
                 self.write_with_autoreplace(page)
 
