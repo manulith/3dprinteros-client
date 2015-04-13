@@ -10,10 +10,6 @@ class Config(Singleton):
         self.config = self.read()
         self.profiles = None
 
-    #def get_config_file_path(self):
-        #config_path = os.path.dirname(os.path.abspath(__file__))
-        #return os.path.join(config_path, 'settings.json')
-
     def read(self):
         with open(self.CONFIG_FILE_NAME) as config_file:
             try:

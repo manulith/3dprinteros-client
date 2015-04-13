@@ -108,9 +108,7 @@ if __name__ == '__main__':
     import json
     detector = USBDetector()
     for dev in detector.get_devices():
+        print "\n"
         print dev
-    # printers = get_printers()
-    # print json.dumps(printers)
-    # for printer in printers:
-    #     print "\n"
-    #     print printer
+    printers = detector.get_printers()
+    print json.dumps(printers)

@@ -7,11 +7,10 @@ class Singleton(object):
     @classmethod
     def instance(cls):
         if not cls._instance:
-            print "C1"
-            print cls.__name__
+            print "Getting instance of " + cls.__name__
             with cls.lock:
-                print "C2"
+                print "Passed through lock"
                 if not cls._instance:
-                    print "C3"
+                    print "Creating new instance of " + cls.__name__
                     cls._instance = cls()
         return cls._instance
