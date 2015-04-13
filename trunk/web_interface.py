@@ -1,13 +1,15 @@
-import os
+import os, sys
 import urllib
 import logging
 import threading
 import BaseHTTPServer
+import subprocess
 from SocketServer import ThreadingMixIn
 
 import utils
 import version
 import config
+import cloud_sync
 
 class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
@@ -125,8 +127,20 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.choose_cam()
         elif self.path.find('switch_cam') >= 0:
             self.switch_cam()
+        elif self.path.find('open_cloudsync_folder') >= 0:
+            self.open_cloudsync_folder()
         else:
             self.write_message('Not found', 0, 404)
+
+    def open_cloudsync_folder(self):
+        path = os.path.abspath(cloud_sync.Cloudsync.PATH)
+        if sys.platform.startswith('darwin'):
+            subprocess.Popen(['open', path])
+        elif sys.platform.startswith('linux'):
+            subprocess.Popen(['gnome-open', path])
+        elif sys.platform.startswith('win32'):
+            subprocess.Popen(['explorer', path])
+        self.do_GET()
 
     def write_message(self, message, show_time=2, response=200):
         page = open(os.path.join(self.working_dir, 'web_interface/message.html')).read()
