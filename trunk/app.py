@@ -80,7 +80,7 @@ class App(Singleton):
             webbrowser.open("http://127.0.0.1:8008", 2, True)
             self.logger.debug("...done")
 
-    def main_loop(self):
+    def start_main_loop(self):
         self.last_flush_time = 0
         self.detector = usb_detect.USBDetector()
         while not self.stop_flag:
@@ -166,7 +166,7 @@ class App(Singleton):
 if __name__ == '__main__':
     try:
         app = App.instance()
-        app.main_loop()
+        app.start_main_loop()
     except SystemExit:
         pass
     except:
