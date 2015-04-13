@@ -45,14 +45,13 @@ class App:
         self.user_login.wait_for_login()
         self.start_camera(self.cam_current_module)
         self.cloud_sync = cloud_sync.Cloudsync()
+        self.cloud_sync = None
         self.start_cloud_sync()
         self.main_loop()
 
     def start_cloud_sync(self):
         if config.config['cloud_sync']['enabled']:
             self.cloud_sync = self.launch_suprocess(config.config['cloud_sync']['module'])
-        else:
-            self.cloud_sync = None
 
     def start_camera(self, module):
         if config.config["camera"]["enabled"] == True:
