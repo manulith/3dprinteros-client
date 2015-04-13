@@ -95,7 +95,7 @@ class Cloudsync:
         os.remove(self.favourites_link_path)
         os.remove(self.desktop_link_path)
 
-    def enable_disk_label(self):
+    def enable_virtual_drive(self):
         process = Popen(['subst'], stdout = PIPE, stderr = PIPE)
         stdout, stderr = process.communicate()
         if stdout == '':
@@ -108,7 +108,7 @@ class Cloudsync:
                     self.logger.info("Virtual drive enabled.")
                     break
 
-    def disable_disk_label(self):
+    def disable_virtual_drive(self):
         process = Popen(['subst'], stdout = PIPE, stderr = PIPE)
         stdout, stderr = process.communicate()
         if stdout != '':
@@ -173,9 +173,9 @@ class Cloudsync:
     def start(self):
         self.logger.info('Cloudsync started!')
         self.create_folders()
-        if self.os == 'windows':
+        if self.os == 'windows' and config.config['cloud_sync']['virtual_drive_enabled']:
             self.create_shortcuts_win()
-            self.enable_disk_label()
+            self.enable_virtual_drive()
         while not self.stop_flag:
             try:
                 self.upload()
@@ -183,8 +183,8 @@ class Cloudsync:
                 self.stop()
 
     def stop(self):
-        if self.os == 'windows':
-            self.disable_disk_label()
+        if self.os == 'windows' and config.config['cloud_sync']['virtual_drive_enabled']:
+            self.disable_virtual_drive()
         self.stop_flag = True
         self.logger.info('Cloudsync is stopped')
         os._exit(0)

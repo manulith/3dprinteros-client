@@ -26,6 +26,7 @@
     "enabled": true,
     "module": "cloud_sync.py",
     "max_send_retry": 10,
-    "icon_file": "icon.ico"
+    "icon_file": "icon.ico",
+    "virtual_drive_enabled": true
   }
 }
