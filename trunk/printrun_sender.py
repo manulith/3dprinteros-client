@@ -22,6 +22,7 @@ class Sender(base_sender.BaseSender):
         self.last_line = None
         self.temp_request_thread = None
         self.logger = logging.getLogger('app.' + __name__)
+        self.logger.setLevel('INFO')
         base_sender.BaseSender.__init__(self, profile, usb_info, app)
         self.define_regexps()
         if self.select_baudrate_and_connect():
@@ -80,9 +81,6 @@ class Sender(base_sender.BaseSender):
 
     def reset(self):
         if self.printcore:
-            #self.logger.debug("Sending M999...")
-            #self.printcore.send_now("M999")
-            #time.sleep(1)
             self.logger.debug("Resetting...")
             try:
                 self.printcore.reset()
@@ -91,7 +89,7 @@ class Sender(base_sender.BaseSender):
             time.sleep(0.2)
             self.logger.debug("Disconnecting...")
             self.printcore.disconnect()
-            self.logger.debug("Successful reset and disconnect")
+            self.logger.info("Successful reset and disconnect")
         else:
             self.logger.warning("No printrun printcore to execute reset")
 
@@ -134,14 +132,14 @@ class Sender(base_sender.BaseSender):
         #self.logger.debug(self.debug_position())
 
     def recvcb(self, line):
-        #self.logger.debug(line)
+        self.logger.debug(line)
         if line.startswith('T:'):
             self.fetch_temps(line)
         elif line[0:2] == 'ok':
              self.online_flag = True
 
     def sendcb(self, command, gline):
-        #self.logger.debug("Executing command: " + command)
+        self.logger.debug("Executing command: " + command)
         self.last_line = gline
         if 'M104' in command or 'M109' in command:
             tool = 0
