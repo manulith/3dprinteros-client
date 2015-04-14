@@ -183,7 +183,7 @@ class Sender(base_sender.BaseSender):
     def load_gcodes(self, gcodes):
         gcodes = self.preprocess_gcodes(gcodes)
         length = len(gcodes)
-        self.logger.info('Loading %i gcodes...' % length)
+        self.logger.info('Loading %d gcodes...' % length)
         if length:
             self.buffer = LightGCode(gcodes)
             if self.printcore.startprint(self.buffer):
