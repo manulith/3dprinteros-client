@@ -159,10 +159,10 @@ class PrinterInterface(threading.Thread):
         if self.printer.is_operational():
             if self.printer.is_paused():
                 state = "paused"
-            elif self.printer.is_printing():
-                state = "printing"
             elif self.printer.is_downloading():
                 state = "downloading"
+            elif self.printer.is_printing():
+                state = "printing"
             else:
                 state = "ready"
         else:

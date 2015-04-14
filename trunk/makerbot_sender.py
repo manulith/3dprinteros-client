@@ -78,8 +78,8 @@ class Sender(base_sender.BaseSender):
 
     def load_gcodes(self, gcodes):
         gcodes = self.preprocess_gcodes(gcodes)
-        for code in gcodes:
-            with self.buffer_lock:
+        with self.buffer_lock:
+            for code in gcodes:
                 self.buffer.append(code)
         self.logger.info('Enqueued block: ' + str(len(gcodes)) + ', of total: ' + str(len(self.buffer)))
 
