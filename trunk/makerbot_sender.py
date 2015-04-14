@@ -22,6 +22,7 @@ class Sender(base_sender.BaseSender):
         base_sender.BaseSender.__init__(self, profile, usb_info, app)
         #self.mb = {'preheat': False, 'heat_shutdown': False}
         self.logger = logging.getLogger('app.' + __name__)
+        self.logger.setLevel('INFO')
         self.logger.info('Makerbot printer created')
         self.init_target_temp_regexps()
         self.execution_lock = threading.Lock()
