@@ -42,8 +42,8 @@ class UserLogin:
 
     def wait_for_login(self):
         self.logger.debug("Waiting for correct user login...")
-        while not self.user_token or self.parent.stop_flag:
+        while not self.user_token:
             time.sleep(0.1)
-            if getattr(self.parent, "quit_flag", False):
+            if getattr(self.parent, "stop_flag", False):
                 self.parent.quit()
         self.logger.debug("...end waiting for user login.")
