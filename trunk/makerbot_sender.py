@@ -96,7 +96,7 @@ class Sender(base_sender.BaseSender):
         self.execute(lambda: self.parser.s3g.abort_immediately())
 
     def pause(self):
-        if not self.pause_flag:
+        if not self.pause_flag and not self.cancel_flag:
             self.pause_flag = True
             time.sleep(0.1)
             self.append_position_and_lift_extruder()
@@ -105,7 +105,7 @@ class Sender(base_sender.BaseSender):
             return False
 
     def unpause(self):
-        if self.pause_flag:
+        if self.pause_flag and not self.cancel_flag:
             self.pause_flag = False
             return True
         else:
