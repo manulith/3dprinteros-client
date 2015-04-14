@@ -27,7 +27,7 @@ class Cloudsync:
     UNSENDABLE_PATH = join(PATH, 'Unsendable')
     favourites_link_path = join(HOME_PATH, "links\Cloudsync.lnk")
     sendto_link_path = join(HOME_PATH, "AppData\Roaming\Microsoft\Windows\SendTo\Cloudsync.lnk")
-    desktop_link_path = join(HOME_PATH, "desktop\CloudSync Folder.lnk")
+    desktop_link_path = join(HOME_PATH, "desktop\Cloudsync Folder.lnk")
     get_url = http_client.HTTPClient()
     URL = 'https://' + get_url.URL + get_url.cloudsync_path
     MAX_SEND_RETRY = config.config['cloud_sync']['max_send_retry']
