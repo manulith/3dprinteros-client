@@ -147,7 +147,7 @@ class Cloudsync:
         count = 1
         while count <= self.MAX_SEND_RETRY:
             try:
-                result = requests.post(self.URL, data={'user_token': self.user_token}, files={'file': open(file_path)})
+                result = requests.post(self.URL, data={'user_token': self.user_token}, files={'file': open(file_path, 'rb')})
                 result = str(result.text)
             except IOError:
                 continue
