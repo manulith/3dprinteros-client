@@ -252,7 +252,7 @@ class Sender(base_sender.BaseSender):
                     if self.printing_flag:
                         self.printing_flag = False
                         self.print_success_flag = True
-                    self.job_id = None
+                        self.job_id = None
                 time.sleep(self.IDLE_WAITING_STEP)
             else:
                 self.buffer_lock.release()
