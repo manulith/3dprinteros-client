@@ -13,5 +13,6 @@
 	New status message for printer waiting to type selection and link to manual how to do it
 	Reworked update mechanism to fix slow auto update.
 	Updated printrun to fix very rare bug on gcode resend
+	Cloudsync added
 
 4.2.0 
