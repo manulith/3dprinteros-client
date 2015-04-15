@@ -14,12 +14,13 @@ class UserLogin:
         self.parent = parent_obj
         self.login = None
         self.user_token = None
+        self.http_client = http_client.HTTPClient()
         login, password = utils.read_login()
         if login:
             self.login_as_user(login, password)
 
     def login_as_user(self, login, password):
-        answer = http_client.send(http_client.package_user_login, (login, password, sys.platform))
+        answer = self.http_client.pack_and_send('user_login', login, password, sys.platform)
         if not answer:
             return 0, "No connection to server"
         else:
@@ -41,8 +42,8 @@ class UserLogin:
 
     def wait_for_login(self):
         self.logger.debug("Waiting for correct user login...")
-        while not self.user_token or self.parent.stop_flag:
+        while not self.user_token:
             time.sleep(0.1)
-            if getattr(self.parent, "quit_flag", False):
+            if getattr(self.parent, "stop_flag", False):
                 self.parent.quit()
         self.logger.debug("...end waiting for user login.")

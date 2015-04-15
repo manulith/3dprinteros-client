@@ -18,7 +18,7 @@ FRAME_RETRY = 5
 FRAME_WIDTH = 640
 FRAME_HEIGHT = 480
 
-class Camera():
+class Camera:
     def __init__(self, device_number, cap, logger):
         self.logger = logger
         self.device_number = device_number
@@ -61,7 +61,7 @@ class Camera():
                 self.resize_level = 0
 
 
-class CameraMaster():
+class CameraMaster:
     def __init__(self):
         self.logger = logging.getLogger('app.' + __name__)
         self.logger.info('Launched camera module: %s' % os.path.basename(__file__))
@@ -73,6 +73,7 @@ class CameraMaster():
         ul = user_login.UserLogin(self)
         ul.wait_for_login()
         self.user_token = ul.user_token
+        self.http_client = http_client.HTTPClient(keep_connection_flag=True)
         self.init_cameras()  # init cameras for the first time
 
     def init_cameras(self):
@@ -136,9 +137,9 @@ class CameraMaster():
 
     def send_picture_short(self, picture, camera_number, camera_name):
         picture = base64.b64encode(str(picture))
-        message = (self.user_token, camera_number, camera_name, picture, http_client.MACADDR)
-        answer = http_client.send(http_client.package_camera_send, message)
-        #self.logger.debug(camera_name + ' streaming response: %s' % answer)
+        data = self.user_token, camera_number, camera_name, picture
+        answer = self.http_client.pack_and_send('camera', *data)
+        #self.logger.info(camera_name + ' streaming response: %s' % answer)
 
     def intercept_signal(self, signal_code, frame):
         self.logger.info("SIGINT or SIGTERM received. Closing Camera Module...")
@@ -147,6 +148,7 @@ class CameraMaster():
     def close(self):
         self.stop_flag = True
         self.release_all_cameras()
+        self.http_client.close()
         logging.shutdown()
         sys.exit(0)
 
@@ -159,7 +161,7 @@ class CameraMaster():
                 time.sleep(0.5)
 
 if __name__ == '__main__':
-    #logging.basicConfig(level='INFO')
+    logging.basicConfig(level='INFO')
     try:
         CM = CameraMaster()
         CM.run()

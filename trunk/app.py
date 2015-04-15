@@ -34,11 +34,11 @@ class App:
         self.printer_interfaces = []
         self.stop_flag = False
         self.quit_flag = False
+        self.http_client = http_client.HTTPClient()
         self.cam = None
         self.cam_modules = config.config['camera']['modules']
         self.cam_current_module = self.cam_modules[config.config['camera']['default_module_name']]
         self.updater = updater.Updater()
-        self.updater.check_for_updates()
         self.user_login = user_login.UserLogin(self)
         self.init_interface()
         self.user_login.wait_for_login()
@@ -82,7 +82,7 @@ class App:
     def main_loop(self):
         self.last_flush_time = 0
         while not self.stop_flag:
-            self.updater.auto_update()
+            self.updater.timer_check_for_updates()
             self.time_stamp()
             self.detected_printers = usb_detect.get_printers()
             self.check_and_connect()
@@ -91,16 +91,15 @@ class App:
                     self.disconnect_printer(pi, 'not_detected')
                 elif not pi.is_alive():
                     self.disconnect_printer(pi, 'error')
-            time.sleep(2)
+            if not self.stop_flag:
+                time.sleep(2)
             now = time.time()
             if now - self.last_flush_time > self.LOG_FLUSH_TIME:
                 self.last_flush_time = now
                 self.logger.info('Flushing logger handlers')
                 for handler in self.logger.handlers:
                     handler.flush()
-        # this is for quit from web interface(to release server's thread and quit)
-        if self.quit_flag:
-            self.quit()
+        self.quit()
 
     def time_stamp(self):
         self.logger.debug("Time stamp: " + time.strftime("%d %b %Y %H:%M:%S", time.localtime()))
@@ -115,21 +114,20 @@ class App:
 
     def disconnect_printer(self, pi, reason):
         self.logger.info('Disconnecting because of %s %s' % (reason , str(pi.usb_info)))
-        if http_client.send(http_client.package_command_request, (pi.printer_token, pi.state_report(reason), pi.acknowledge)):
+        if self.http_client.pack_and_send('command', pi.printer_token, pi.state_report(reason), pi.acknowledge, None, None):
             pi.close()
             self.printer_interfaces.remove(pi)
             self.logger.info("Successful disconnection of " + str(pi.usb_info))
         else:
             self.logger.warning("Cant report printer interface closing to server. Not closed.")
 
-
     def intercept_signal(self, signal_code, frame):
         self.logger.warning("SIGINT or SIGTERM received. Closing 3DPrinterOS Client version %s_%s" % \
                 (version.version, version.build))
-        self.quit()
+        self.stop_flag = True
 
     def quit(self):
-        self.stop_flag = True
+        self.logger.info("Starting exit sequence...")
         if self.cam:
             self.cam.terminate()
             self.cam.kill()
@@ -137,27 +135,28 @@ class App:
             pi.close()
         time.sleep(0.1) #to reduce logging spam in next
         self.time_stamp()
-        self.logger.info("Waiting for driver modules to close...")
+        self.logger.info("Waiting for gcode sending modules to close...")
         while True:
             ready_flag = True
             for pi in self.printer_interfaces:
                 if pi.isAlive():
                     ready_flag = False
-                    self.logger.debug("Waiting for driver modules to close %s" % str(pi.usb_info))
+                    self.logger.debug("Waiting for %s" % str(pi.usb_info))
                 else:
                     self.printer_interfaces.remove(pi)
-                    self.logger.info("%s was close" % str(pi.usb_info))
+                    self.logger.info("Printer on %s was closed." % str(pi.usb_info))
             if ready_flag:
                 break
             time.sleep(0.1)
+            self.logger.info("...all gcode sending modules closed.")
         self.logger.debug("Waiting web interface server to shutdown")
         try:
             self.web_interface.server.shutdown()
-            self.web_interface.join(1)
-        except Exception as e:
-            print e
+            self.web_interface.join()
+        except:
+            pass
         self.time_stamp()
-        self.logger.info("...everything correctly closed.")
+        self.logger.info("...all modules were closed correctly.")
         self.logger.info("Goodbye ;-)")
         logging.shutdown()
         sys.exit(0)

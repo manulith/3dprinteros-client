@@ -44,6 +44,7 @@ class Sender(base_sender.BaseSender):
             self.printcore.tempcb = self.tempcb
             self.printcore.recvcb = self.recvcb
             self.printcore.sendcb = self.sendcb
+            self.printcore.endcb = self.endcb
             self.printcore.connect(self.profile['COM'], baudrate)
             time.sleep(0.1)
             if not self.printcore.printer:
@@ -73,6 +74,10 @@ class Sender(base_sender.BaseSender):
         self.logger.info("Printer %s is ready" % str(self.usb_info))
         self.online_flag = True
 
+    def endcb(self):
+        self.job_id = None
+        self.print_success_flag = True
+
     def reset(self):
         if self.printcore:
             #self.logger.debug("Sending M999...")
@@ -92,11 +97,12 @@ class Sender(base_sender.BaseSender):
 
     def define_regexps(self):
         # ok T:29.0 /29.0 B:29.5 /29.0 @:0
-        self.temp_re = re.compile('.*ok T:([\d\.]+) /([\d\.]+) B:(-?[\d\.]+) /(-?[\d\.]+)')
+        self.temp_re = re.compile('.*T:([\d\.]+) /([\d\.]+) B:(-?[\d\.]+) /(-?[\d\.]+)')
         #self.position_re = re.compile('.*X:([\d\.]+) Y:([\d\.]+) Z:([\d\.]+).*')
         # M190 - T:26.34 E:0 B:33.7
         # M109 - T:26.3 E:0 W:?
-        self.wait_tool_temp_re = re.compile('T:([\d\.]+) E:(\d+)')
+        #self.wait_tool_temp_re = re.compile('T:([\d\.]+) E:(\d+)')
+        self.wait_tool_temp_re = re.compile('T:([\d\.]+)')
         self.wait_platform_temp_re = re.compile('.+B:(-?[\d\.]+)')
 
     def temp_request(self):
@@ -129,7 +135,7 @@ class Sender(base_sender.BaseSender):
 
     def recvcb(self, line):
         #self.logger.debug(line)
-        if line.startswith('T'):
+        if line.startswith('T:'):
             self.fetch_temps(line)
         elif line[0:2] == 'ok':
              self.online_flag = True
@@ -160,13 +166,15 @@ class Sender(base_sender.BaseSender):
     def fetch_temps(self, wait_temp_line):
         match = self.wait_tool_temp_re.match(wait_temp_line)
         if match:
-            self.temps[int(match.group(2)) + 1] = float(match.group(1))
+            #self.temps[int(match.group(2)) + 1] = float(match.group(1))
+            self.temps[1] = float(match.group(1))
         match = self.wait_platform_temp_re.match(wait_temp_line)
         if match:
             self.temps[0] = float(match.group(1))
 
     def set_total_gcodes(self, length):
         self.total_gcodes = length
+        self.print_success_flag = False
 
     def startcb(self, resuming_flag):
         if resuming_flag:
@@ -174,23 +182,17 @@ class Sender(base_sender.BaseSender):
         else:
             self.logger.info("Printrun is starting print")
 
-    def gcodes(self, gcodes, is_link=False):
-        if is_link:
-            base_sender.BaseSender.gcodes(self, gcodes)
-        else:
-            gcodes = gcodes.split("\n")
-            while gcodes[-1] in ("\n", "\r\n", "\t", " ", "", None):
-                gcodes.pop()
-            length = len(gcodes)
-            self.set_total_gcodes(length)
-            self.logger.info('Loading %i gcodes in printcore...' % length)
-            if length:
-                self.buffer = LightGCode(gcodes)
-                if self.printcore.startprint(self.buffer):
-                    self.logger.info('...done loading gcodes.')
-                    return True
-            self.logger.warning('...failed to load gcodes.')
-            return False
+    def load_gcodes(self, gcodes):
+        gcodes = self.preprocess_gcodes(gcodes)
+        length = len(gcodes)
+        self.logger.info('Loading %i gcodes...' % length)
+        if length:
+            self.buffer = LightGCode(gcodes)
+            if self.printcore.startprint(self.buffer):
+                self.logger.info('...done loading gcodes.')
+                return True
+        self.logger.warning('...failed to load gcodes.')
+        return False
 
     def pause(self):
         self.logger.info("Printrun pause")
@@ -216,6 +218,7 @@ class Sender(base_sender.BaseSender):
             return False
 
     def cancel(self):
+        self.job_id = None
         if self.downloading_flag:
             self.cancel_download()
             return
@@ -252,7 +255,7 @@ class Sender(base_sender.BaseSender):
 
     def get_percent(self):
         if self.downloading_flag:
-            self.logger.info('Downloadig flag is true. Getting percent from downloader')
+            self.logger.info('Downloading flag is true. Getting percent from downloader')
             return self.downloader.get_percent()
         percent = 0
         if self.total_gcodes:
@@ -260,14 +263,22 @@ class Sender(base_sender.BaseSender):
         return percent
 
     def close(self):
+        self.recvcb = None
+        self.sendcb = None
+        self.onlinecb = None
+        self.endcb = None
+        self.tempcb = None
         self.stop_flag = True
-        self.logger.debug('Printrun sender is closing')
-        if self.printcore:
-            self.printcore.disconnect()
-        self.logger.debug('(Joining printrun threads...')
+        self.logger.info('Printrun sender is closing')
         if self.temp_request_thread:
+            self.logger.debug('(Joining printrun threads...')
             self.temp_request_thread.join(10)
             if self.temp_request_thread.isAlive():
-                self.logger.error("Error stopping temperature request thread.")
+                self.logger.error("Error stopping temperature request thread!")
             else:
                 self.logger.debug('...done)')
+        self.logger.info('Printrun sender disconnectiong from printer...')
+        if self.printcore:
+            self.printcore.disconnect()
+        self.logger.info('...done')
+
