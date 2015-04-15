@@ -38,7 +38,7 @@ class Cloudsync:
             logging.basicConfig(level=logging.DEBUG)
         else:
             logging.basicConfig(level=logging.INFO)
-        self.logger = logging.getLogger('app')
+        self.logger = logging.getLogger('app.' + __name__)
         signal.signal(signal.SIGINT, self.intercept_signal)
         signal.signal(signal.SIGTERM, self.intercept_signal)
         self.stop_flag = False
