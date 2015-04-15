@@ -30,6 +30,7 @@ class Cloudsync:
     desktop_link_path = join(HOME_PATH, "desktop\Cloudsync Folder.lnk")
     get_url = http_client.HTTPClient()
     URL = 'https://' + get_url.URL + get_url.cloudsync_path
+    CHECK_URL = URL + '/check'
     MAX_SEND_RETRY = config.config['cloud_sync']['max_send_retry']
 
     def __init__(self, debug=False):
@@ -123,7 +124,7 @@ class Cloudsync:
         file_name, file_ext = os.path.splitext(new_file_name)
         name_count = 1
         while os.path.exists(join(destination_folder_path, new_file_name)):
-            new_file_name = file_name + " (" + str(name_count) + ")" + file_ext
+            new_file_name = file_name + "(" + str(name_count) + ")" + file_ext
             name_count += 1
         shutil.move(current_path, join(destination_folder_path, new_file_name))
         self.logger.debug(current_path + ' moved to ' + destination_folder_path)
@@ -142,7 +143,16 @@ class Cloudsync:
                 files_to_send.remove(file)
         return files_to_send
 
+    def get_send_permission(self, file_path):
+        file_ext = file_path.split('.')[-1]
+        file_size = os.path.getsize(file_path)
+        result = requests.post(self.CHECK_URL, data = {'user_token': self.user_token, 'file_ext': file_ext, 'file_size': file_size})
+        if '"result":true' in str(result.text):
+            return True
+
     def send_file(self, file_path):
+        if not self.get_send_permission(file_path):
+            return 'Permission to send denied'
         result = ''
         count = 1
         while count <= self.MAX_SEND_RETRY:
@@ -156,17 +166,17 @@ class Cloudsync:
                 return
             self.logger.info('Retrying to send ' + file_path)
             count += 1
-        self.move_file(file_path, self.UNSENDABLE_PATH)
         return result
 
     def upload(self):
         files_to_send = self.get_files_to_send()
         if files_to_send:
             error = None
-            for file_name in files_to_send:
-                error = self.send_file(file_name)
+            for file_path in files_to_send:
+                error = self.send_file(file_path)
                 if error:
-                    self.process_error(1, 'Failed to send ' + file_name + ': ' + error)
+                    self.logger.warning('Failed to send ' + file_path + '. ' + error)
+                    self.move_file(file_path, self.UNSENDABLE_PATH)
             if not error:
                 self.logger.info('Files successfully uploaded')
 
@@ -190,7 +200,7 @@ class Cloudsync:
         os._exit(0)
 
 if __name__ == '__main__':
-    logging.basicConfig(level='DEBUG')
+    logging.basicConfig(level='INFO')
     try:
         cs = Cloudsync(debug=True)
         cs.start()
