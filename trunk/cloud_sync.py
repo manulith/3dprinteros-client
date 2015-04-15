@@ -75,8 +75,6 @@ class Cloudsync:
         for path in paths:
             if not os.path.exists(path):
                 os.mkdir(path)
-        if self.os == "win":
-            self.create_shortcuts_win()
 
     def create_shortcuts_win(self):
         paths = [self.desktop_link_path, self.sendto_link_path, self.favourites_link_path]
@@ -143,16 +141,28 @@ class Cloudsync:
                 files_to_send.remove(file)
         return files_to_send
 
-    def get_send_permission(self, file_path):
-        file_ext = file_path.split('.')[-1]
+    def get_file_size(self, file_path):
         file_size = os.path.getsize(file_path)
+        while True:
+            time.sleep(1)
+            if file_size == os.path.getsize(file_path):
+                break
+            file_size = os.path.getsize(file_path)
+        return file_size
+
+    def get_permission_to_send(self, file_path):
+        file_ext = file_path.split('.')[-1]
+        file_size = self.get_file_size(file_path)
         result = requests.post(self.CHECK_URL, data = {'user_token': self.user_token, 'file_ext': file_ext, 'file_size': file_size})
-        if '"result":true' in str(result.text):
+        if '"result":true' in result.text:
             return True
+        else:
+            return result.text
 
     def send_file(self, file_path):
-        if not self.get_send_permission(file_path):
-            return 'Permission to send denied'
+        answer = self.get_permission_to_send(file_path)
+        if answer != True:
+            return 'Permission to send denied: ' + answer
         result = ''
         count = 1
         while count <= self.MAX_SEND_RETRY:
@@ -170,13 +180,14 @@ class Cloudsync:
     def upload(self):
         files_to_send = self.get_files_to_send()
         if files_to_send:
-            error = None
+            error = ''
             for file_path in files_to_send:
                 error = self.send_file(file_path)
                 if error:
                     self.logger.warning('Failed to send ' + file_path + '. ' + error)
                     self.move_file(file_path, self.UNSENDABLE_PATH)
                 else:
+                    self.logger.info(file_path + ' uploaded')
                     self.move_file(file_path, self.SENDED_PATH)
             if not error:
                 self.logger.info('Files successfully uploaded')
@@ -184,9 +195,10 @@ class Cloudsync:
     def start(self):
         self.logger.info('Cloudsync started!')
         self.create_folders()
-        if self.os == 'windows' and config.config['cloud_sync']['virtual_drive_enabled']:
+        if self.os == 'windows':
             self.create_shortcuts_win()
-            self.enable_virtual_drive()
+            if config.config['cloud_sync']['virtual_drive_enabled']:
+                self.enable_virtual_drive()
         while not self.stop_flag:
             try:
                 self.upload()
