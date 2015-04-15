@@ -1,5 +1,9 @@
 3DPrinterOS 4.5.1 release notes
 
+New version
+
+    Cloudsync added
+
 4.5.1
 
 	HTTP with keep_alive - faster camera and status/command exchange between client and server
@@ -13,6 +17,5 @@
 	New status message for printer waiting to type selection and link to manual how to do it
 	Reworked update mechanism to fix slow auto update.
 	Updated printrun to fix very rare bug on gcode resend
-	Cloudsync added
 
 4.2.0 
