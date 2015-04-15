@@ -1,0 +1,17 @@
+3DPrinterOS 4.5.1 release notes
+
+4.5.1
+
+	HTTP with keep_alive - faster camera and status/command exchange between client and server
+	State reporting mechanism fix
+	Generic Reperier Firmware support
+	MassPortal support
+	Felix 3.0 support
+	Printbot slicing settings fix
+	Quit sequence was refactored and fixed
+	Ability to disable camera
+	New status message for printer waiting to type selection and link to manual how to do it
+	Reworked update mechanism to fix slow auto update.
+	Updated printrun to fix very rare bug on gcode resend
+
+4.2.0 

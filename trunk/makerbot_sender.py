@@ -22,6 +22,7 @@ class Sender(base_sender.BaseSender):
         base_sender.BaseSender.__init__(self, profile, usb_info, app)
         #self.mb = {'preheat': False, 'heat_shutdown': False}
         self.logger = logging.getLogger('app.' + __name__)
+        self.logger.setLevel('INFO')
         self.logger.info('Makerbot printer created')
         self.init_target_temp_regexps()
         self.execution_lock = threading.Lock()
@@ -78,8 +79,8 @@ class Sender(base_sender.BaseSender):
 
     def load_gcodes(self, gcodes):
         gcodes = self.preprocess_gcodes(gcodes)
-        for code in gcodes:
-            with self.buffer_lock:
+        with self.buffer_lock:
+            for code in gcodes:
                 self.buffer.append(code)
         self.logger.info('Enqueued block: ' + str(len(gcodes)) + ', of total: ' + str(len(self.buffer)))
 
@@ -96,7 +97,7 @@ class Sender(base_sender.BaseSender):
         self.execute(lambda: self.parser.s3g.abort_immediately())
 
     def pause(self):
-        if not self.pause_flag:
+        if not self.pause_flag and not self.cancel_flag:
             self.pause_flag = True
             time.sleep(0.1)
             self.append_position_and_lift_extruder()
@@ -105,7 +106,7 @@ class Sender(base_sender.BaseSender):
             return False
 
     def unpause(self):
-        if self.pause_flag:
+        if self.pause_flag and not self.cancel_flag:
             self.pause_flag = False
             return True
         else:
@@ -251,7 +252,7 @@ class Sender(base_sender.BaseSender):
                     if self.printing_flag:
                         self.printing_flag = False
                         self.print_success_flag = True
-                    self.job_id = None
+                        self.job_id = None
                 time.sleep(self.IDLE_WAITING_STEP)
             else:
                 self.buffer_lock.release()

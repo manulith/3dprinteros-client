@@ -361,9 +361,10 @@ class GcodeParser(object):
         Because s3g takes in microseconds, we convert miliseconds into
         microseconds and send it off.
         """
-        microConstant = 1000000
-        miliConstant = 1000
-        d = codes['P'] * microConstant / miliConstant
+        # microConstant = 1000000
+        # miliConstant = 1000
+        # d = codes['P'] * microConstant / miliConstant
+        d = codes['P'] # fixed by Vladimir and Ivan
         self.s3g.delay(d)
 
     def set_toolhead_temperature(self, codes, flags, comment):

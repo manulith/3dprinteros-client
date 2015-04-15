@@ -46,7 +46,7 @@ class BaseSender:
             self.logger.info("Removing corrupted line '%s' from gcodes tail" % line)
         length = len(gcodes)
         self.set_total_gcodes(length)
-        self.logger.info('Got %i gcodes to print.')
+        self.logger.info('Got %d gcodes to print.' % length)
         return gcodes
 
     def gcodes(self, gcodes, is_link = False, job_id=None):
