@@ -34,13 +34,13 @@ class Cloudsync:
     MAX_SEND_RETRY = config.config['cloud_sync']['max_send_retry']
 
     def __init__(self, debug=False):
-        self.logger = logging.getLogger('app.' + __name__)
+        if debug:
+            logging.basicConfig(level=logging.DEBUG)
+        else:
+            logging.basicConfig(level=logging.INFO)
+        self.logger = logging.getLogger('app')
         signal.signal(signal.SIGINT, self.intercept_signal)
         signal.signal(signal.SIGTERM, self.intercept_signal)
-        if debug:
-            self.logger.setLevel('DEBUG')
-        else:
-            self.logger.setLevel('INFO')
         self.stop_flag = False
         self.os = self.get_os()
         self.logger.info('Cloudsync login')
@@ -162,7 +162,6 @@ class Cloudsync:
             except IOError:
                 continue
             if '"result":true' in result:
-                self.move_file(file_path, self.SENDED_PATH)
                 return
             self.logger.info('Retrying to send ' + file_path)
             count += 1
@@ -177,6 +176,8 @@ class Cloudsync:
                 if error:
                     self.logger.warning('Failed to send ' + file_path + '. ' + error)
                     self.move_file(file_path, self.UNSENDABLE_PATH)
+                else:
+                    self.move_file(file_path, self.SENDED_PATH)
             if not error:
                 self.logger.info('Files successfully uploaded')
 
@@ -200,9 +201,8 @@ class Cloudsync:
         os._exit(0)
 
 if __name__ == '__main__':
-    logging.basicConfig(level='INFO')
     try:
-        cs = Cloudsync(debug=True)
+        cs = Cloudsync()
         cs.start()
     except SystemExit:
         pass
