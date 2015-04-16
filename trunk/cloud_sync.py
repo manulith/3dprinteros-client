@@ -156,10 +156,8 @@ class Cloudsync:
     def get_permission_to_send(self, file_path):
         file_ext = file_path.split('.')[-1]
         file_size = self.get_file_size(file_path)
-        result = requests.post(self.CHECK_URL, data = {'user_token': self.user_token, 'file_ext': file_ext, 'file_size': file_size}, timeout = 6)
-        if '"result":true' in result.text:
-            return True
-        else:
+        result = requests.post(self.CHECK_URL, data = {'user_token': self.user_token, 'file_ext': file_ext, 'file_size': file_size})
+        if not '"result":true' in result.text:
             return result.text
 
     def send_file(self, file_path):
@@ -167,10 +165,12 @@ class Cloudsync:
         count = 1
         while count <= self.MAX_SEND_RETRY:
             try:
-                answer = self.get_permission_to_send(file_path)
-                if answer != True:
-                    return 'Permission to send denied: ' + answer
-                result = requests.post(self.URL, data={'user_token': self.user_token}, files={'file': open(file_path, 'rb')}, timeout = (6, 0))
+                error = self.get_permission_to_send(file_path)
+                if error:
+                    return 'Permission to send denied: ' + error
+                print 'azaza'
+                result = requests.post(self.URL, data={'user_token': self.user_token}, files={'file': open(file_path, 'rb')}, timeout = 3)
+                print('ololo')
                 result = str(result.text)
             except IOError, requests.RequestException:
                 continue
