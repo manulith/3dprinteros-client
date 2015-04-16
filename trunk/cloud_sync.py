@@ -156,24 +156,26 @@ class Cloudsync:
     def get_permission_to_send(self, file_path):
         file_ext = file_path.split('.')[-1]
         file_size = self.get_file_size(file_path)
-        result = requests.post(self.CHECK_URL, data = {'user_token': self.user_token, 'file_ext': file_ext, 'file_size': file_size})
+        result = requests.post(self.CHECK_URL, data = {'user_token': self.user_token, 'file_ext': file_ext, 'file_size': file_size}, timeout = 6)
         if '"result":true' in result.text:
             return True
         else:
             return result.text
 
     def send_file(self, file_path):
-        answer = self.get_permission_to_send(file_path)
-        if answer != True:
-            return 'Permission to send denied: ' + answer
         result = ''
         count = 1
         while count <= self.MAX_SEND_RETRY:
             try:
-                result = requests.post(self.URL, data={'user_token': self.user_token}, files={'file': open(file_path, 'rb')})
+                answer = self.get_permission_to_send(file_path)
+                if answer != True:
+                    return 'Permission to send denied: ' + answer
+                result = requests.post(self.URL, data={'user_token': self.user_token}, files={'file': open(file_path, 'rb')}, timeout = 6)
                 result = str(result.text)
-            except IOError:
+            except IOError, requests.RequestException:
                 continue
+            except Exception as e:
+                self.process_error(1, str(e.message))
             if '"result":true' in result:
                 return
             self.logger.info('Retrying to send ' + os.path.basename(file_path))
@@ -205,10 +207,7 @@ class Cloudsync:
                 self.enable_virtual_drive()
         while not self.stop_flag:
             time.sleep(3)
-            try:
-                self.upload()
-            except Exception as e:
-                self.process_error(1, str(e.message))
+            self.upload()
 
     def stop(self):
         if self.os == 'windows' and config.config['cloud_sync']['virtual_drive_enabled']:
