@@ -32,6 +32,7 @@ class Cloudsync:
     URL = 'https://' + get_url.URL + get_url.cloudsync_path
     CHECK_URL = URL + '/check'
     MAX_SEND_RETRY = config.config['cloud_sync']['max_send_retry']
+    CONNECTION_TIMEOUT = 6
 
     def __init__(self, debug=False):
         if debug:
@@ -156,7 +157,7 @@ class Cloudsync:
     def get_permission_to_send(self, file_path):
         file_ext = file_path.split('.')[-1]
         file_size = self.get_file_size(file_path)
-        result = requests.post(self.CHECK_URL, data = {'user_token': self.user_token, 'file_ext': file_ext, 'file_size': file_size})
+        result = requests.post(self.CHECK_URL, data = {'user_token': self.user_token, 'file_ext': file_ext, 'file_size': file_size}, timeout = self.CONNECTION_TIMEOUT)
         if not '"result":true' in result.text:
             return result.text
 
@@ -168,16 +169,17 @@ class Cloudsync:
                 error = self.get_permission_to_send(file_path)
                 if error:
                     return 'Permission to send denied: ' + error
-                print 'azaza'
-                result = requests.post(self.URL, data={'user_token': self.user_token}, files={'file': open(file_path, 'rb')}, timeout = 3)
-                print('ololo')
+                result = requests.post(self.URL, data={'user_token': self.user_token}, files={'file': open(file_path, 'rb')}, timeout = self.CONNECTION_TIMEOUT)
                 result = str(result.text)
-            except IOError, requests.RequestException:
-                continue
+                if '"result":true' in result:
+                    return
+            #TODO: fix that
+            except IOError or requests.RequestException as e:
+                result = str(e.message)
             except Exception as e:
                 self.process_error(1, str(e.message))
-            if '"result":true' in result:
-                return
+                self.logger.info('Retrying to send ' + os.path.basename(file_path))
+                count += 1
             self.logger.info('Retrying to send ' + os.path.basename(file_path))
             count += 1
         return result
