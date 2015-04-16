@@ -139,7 +139,7 @@ class Sender(base_sender.BaseSender):
 
     def sendcb(self, command, gline):
         #self.logger.debug("Executing command: " + command)
-        self.last_line = gline
+        self.last_line = command
         if 'M104' in command or 'M109' in command:
             tool = 0
             tool_match = re.match('.+T(\d+)', command)
