@@ -22,7 +22,7 @@ class Sender(base_sender.BaseSender):
         self.last_line = None
         self.temp_request_thread = None
         self.logger = logging.getLogger('app.' + __name__)
-        self.logger.setLevel('INFO')
+        #self.logger.setLevel('INFO')
         base_sender.BaseSender.__init__(self, profile, usb_info, app)
         self.define_regexps()
         if self.select_baudrate_and_connect():
@@ -116,7 +116,7 @@ class Sender(base_sender.BaseSender):
 
     def tempcb(self, line):
         self.logger.debug(line)
-        #self.logger.debug("Current line: " + str(self.last_line))
+        self.logger.debug("Last executed line: " + str(self.last_line))
         match = self.temp_re.match(line)
         if match:
             tool_temp = float(match.group(1))
@@ -131,14 +131,14 @@ class Sender(base_sender.BaseSender):
         #self.logger.debug(self.debug_position())
 
     def recvcb(self, line):
-        self.logger.debug(line)
+        #self.logger.debug(line)
         if line.startswith('T:'):
             self.fetch_temps(line)
         elif line[0:2] == 'ok':
              self.online_flag = True
 
     def sendcb(self, command, gline):
-        self.logger.debug("Executing command: " + command)
+        #self.logger.debug("Executing command: " + command)
         self.last_line = gline
         if 'M104' in command or 'M109' in command:
             tool = 0
@@ -249,7 +249,7 @@ class Sender(base_sender.BaseSender):
                    self.printcore.send_thread.is_alive()
         return False
 
-    def update_last_queindex(self):
+    def update_current_line_number(self):
         if self.current_line_number < self.printcore.queueindex:
             self.current_line_number = self.printcore.queueindex
 
@@ -259,12 +259,12 @@ class Sender(base_sender.BaseSender):
             return self.downloader.get_percent()
         percent = 0
         if self.total_gcodes:
-            self.update_last_queindex()
+            self.update_current_line_number()
             percent = int( self.current_line_number / float(self.total_gcodes) * 100 )
         return percent
 
     def get_current_line_number(self):
-        self.update_last_queindex()
+        self.update_current_line_number()
         return self.current_line_number
 
     def close(self):
