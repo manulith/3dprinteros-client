@@ -176,7 +176,7 @@ class Cloudsync:
                 continue
             if '"result":true' in result:
                 return
-            self.logger.info('Retrying to send ' + file_path)
+            self.logger.info('Retrying to send ' + os.path.basename(file_path))
             count += 1
         return result
 
@@ -187,10 +187,10 @@ class Cloudsync:
             for file_path in files_to_send:
                 error = self.send_file(file_path)
                 if error:
-                    self.logger.warning('Failed to send ' + file_path + '. ' + error)
+                    self.logger.warning('Failed to send ' + os.path.basename(file_path) + '. ' + error)
                     self.move_file(file_path, self.UNSENDABLE_PATH)
                 else:
-                    self.logger.info(file_path + ' uploaded')
+                    self.logger.info(os.path.basename(file_path) + ' uploaded')
                     self.move_file(file_path, self.SENDED_PATH)
             if not error:
                 self.logger.info('Files successfully uploaded')
