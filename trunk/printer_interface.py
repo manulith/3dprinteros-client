@@ -9,7 +9,7 @@ import http_client
 class PrinterInterface(threading.Thread):
 
     DEFAULT_TIMEOUT = 10
-    NO_COMMAND_SLEEP = 3
+    COMMAND_REQUEST_SLEEP = 1.5
 
     def __init__(self, usb_info, user_token, app):
         self.usb_info = usb_info
@@ -148,7 +148,7 @@ class PrinterInterface(threading.Thread):
                 self.acknowledge = None
                 self.logger.debug("...done")
                 self.stop_flag = True
-            time.sleep(1.5)
+            time.sleep(self.COMMAND_REQUEST_SLEEP)
         self.close_printer_sender()
         self.logger.info('Printer interface stop.')
 

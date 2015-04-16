@@ -22,6 +22,7 @@ import updater
 
 class App:
 
+    MAIN_LOOP_SLEEP = 2
     LOG_FLUSH_TIME = 30
 
     def __init__(self):
@@ -92,7 +93,7 @@ class App:
                 elif not pi.is_alive():
                     self.disconnect_printer(pi, 'error')
             if not self.stop_flag:
-                time.sleep(2)
+                time.sleep(self.MAIN_LOOP_SLEEP)
             now = time.time()
             if now - self.last_flush_time > self.LOG_FLUSH_TIME:
                 self.last_flush_time = now
