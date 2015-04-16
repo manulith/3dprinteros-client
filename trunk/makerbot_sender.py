@@ -72,9 +72,9 @@ class Sender(base_sender.BaseSender):
         self.execute(lambda: self.parser.s3g.abort_immediately())
         self.parser.state.values["build_name"] = '3DPrinterOS'
         self.parser.state.percentage = 0
+        self.current_line_number = 0
         self.logger.info('Begin of GCodes')
         self.printing_flag = False
-        self.print_success_flag = False
         self.execute(lambda: self.parser.s3g.set_RGB_LED(255, 255, 255, 0))
 
     def load_gcodes(self, gcodes):
@@ -85,7 +85,6 @@ class Sender(base_sender.BaseSender):
         self.logger.info('Enqueued block: ' + str(len(gcodes)) + ', of total: ' + str(len(self.buffer)))
 
     def cancel(self, go_home=True):
-        self.job_id = None
         if self.downloading_flag:
             self.cancel_download()
             return
@@ -251,12 +250,11 @@ class Sender(base_sender.BaseSender):
                 if self.execute(lambda: self.parser.s3g.is_finished()):
                     if self.printing_flag:
                         self.printing_flag = False
-                        self.print_success_flag = True
-                        self.job_id = None
                 time.sleep(self.IDLE_WAITING_STEP)
             else:
                 self.buffer_lock.release()
                 self.execute(command)
+                self.current_line_number += 1
         self.logger.info("Makerbot sender: sender thread ends.")
 
     def is_printing(self):
@@ -264,10 +262,9 @@ class Sender(base_sender.BaseSender):
 
     def get_percent(self):
         if self.downloading_flag:
-            self.logger.info('Downloadig flag is true. Getting percent from downloader')
+            self.logger.info('Downloading flag is true. Getting percent from downloader')
             return self.downloader.get_percent()
         return self.parser.state.percentage
 
-
-
-
+    def get_current_line_number(self):
+        return self.current_line_number

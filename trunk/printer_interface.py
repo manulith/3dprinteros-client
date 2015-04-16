@@ -97,9 +97,6 @@ class PrinterInterface(threading.Thread):
                         arguments.append(payload)
                     if data_dict.get('is_link', False):
                         arguments.append(data_dict.get('is_link'))
-                        job_id = data_dict.get('job_id', None)
-                        if job_id:
-                            arguments.append(job_id)
                     try:
                         result = method(*arguments)
                     except Exception as e:
@@ -118,9 +115,9 @@ class PrinterInterface(threading.Thread):
         while not self.stop_flag and self.printer:
             report = self.state_report()
             self.report = report # for web_interface
-            message = [self.printer_token, report, self.acknowledge, self.printer.job_id, self.printer.print_success_flag, self.sender_error]
+            message = [self.printer_token, report, self.acknowledge, self.sender_error]
             if self.printer.error_code:
-                message[5] = {"code": self.printer.error_code, "message": self.printer.error_message}
+                message[3] = {"code": self.printer.error_code, "message": self.printer.error_message}
             self.printer.error_code = None
             self.printer.error_message = None
             self.sender_error = None
@@ -178,6 +175,7 @@ class PrinterInterface(threading.Thread):
             report["temps"] = self.printer.get_temps()
             report["target_temps"] = self.printer.get_target_temps()
             report["percent"] = self.printer.get_percent()
+            report["line_number"] = self.printer.get_current_line_number()
             if outer_state:
                 report["state"] = outer_state
             else:

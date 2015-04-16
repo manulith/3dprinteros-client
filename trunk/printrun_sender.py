@@ -76,8 +76,7 @@ class Sender(base_sender.BaseSender):
         self.online_flag = True
 
     def endcb(self):
-        self.job_id = None
-        self.print_success_flag = True
+        self.logger.info("Printrun has called end callback.")
 
     def reset(self):
         if self.printcore:
@@ -172,7 +171,7 @@ class Sender(base_sender.BaseSender):
 
     def set_total_gcodes(self, length):
         self.total_gcodes = length
-        self.print_success_flag = False
+        self.current_line_number = 0
 
     def startcb(self, resuming_flag):
         if resuming_flag:
@@ -216,7 +215,6 @@ class Sender(base_sender.BaseSender):
             return False
 
     def cancel(self):
-        self.job_id = None
         if self.downloading_flag:
             self.cancel_download()
             return
@@ -251,14 +249,23 @@ class Sender(base_sender.BaseSender):
                    self.printcore.send_thread.is_alive()
         return False
 
+    def update_last_queindex(self):
+        if self.current_line_number < self.printcore.queueindex:
+            self.current_line_number = self.printcore.queueindex
+
     def get_percent(self):
         if self.downloading_flag:
             self.logger.info('Downloading flag is true. Getting percent from downloader')
             return self.downloader.get_percent()
         percent = 0
         if self.total_gcodes:
-            percent = int( self.printcore.queueindex / float(self.total_gcodes) * 100 )
+            self.update_last_queindex()
+            percent = int( self.current_line_number / float(self.total_gcodes) * 100 )
         return percent
+
+    def get_current_line_number(self):
+        self.update_last_queindex()
+        return self.current_line_number
 
     def close(self):
         self.recvcb = None
