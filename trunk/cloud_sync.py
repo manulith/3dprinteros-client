@@ -43,10 +43,7 @@ class Cloudsync:
         signal.signal(signal.SIGTERM, self.intercept_signal)
         self.stop_flag = False
         self.os = self.get_os()
-        self.logger.info('Cloudsync login')
-        ul = user_login.UserLogin(self)
-        ul.wait_for_login()
-        self.user_token = ul.user_token
+        self.user_token = None
         self.error_code = None
         self.error_message = ''
 
@@ -58,6 +55,12 @@ class Cloudsync:
         self.error_code = error_code
         self.error_message = error_message
         self.logger.warning('Error ' + str(error_code) + ' in Cloudsync. ' + error_message)
+
+    def login(self):
+        self.logger.info('Cloudsync login')
+        ul = user_login.UserLogin(self)
+        ul.wait_for_login()
+        self.user_token = ul.user_token
 
     def get_os(self):
         if sys.platform.startswith('win'):
@@ -194,16 +197,18 @@ class Cloudsync:
 
     def start(self):
         self.logger.info('Cloudsync started!')
+        self.login()
         self.create_folders()
         if self.os == 'windows':
             self.create_shortcuts_win()
             if config.config['cloud_sync']['virtual_drive_enabled']:
                 self.enable_virtual_drive()
         while not self.stop_flag:
+            time.sleep(3)
             try:
                 self.upload()
-            except KeyboardInterrupt:
-                self.stop()
+            except Exception as e:
+                self.process_error(1, str(e.message))
 
     def stop(self):
         if self.os == 'windows' and config.config['cloud_sync']['virtual_drive_enabled']:
