@@ -31,7 +31,7 @@ class PrinterInterface(threading.Thread):
         while not self.stop_flag:
             answer = self.http_client.pack_and_send('printer_login', self.user_token, self.usb_info)
             if answer:
-                error = answer.get('error', None)
+                error = answer.get('error')
                 if error:
                     self.logger.warning("Error while login %s:" % str((self.user_token, self.usb_info)))
                     self.logger.warning(str(error['code']) + " " + error["message"])
@@ -57,7 +57,7 @@ class PrinterInterface(threading.Thread):
     def connect_to_printer(self):
         printer_sender = __import__(self.printer_profile['sender'])
         self.logger.info("Connecting with profile: " + str(self.printer_profile))
-        if "baudrate" in self.printer_profile and not self.printer_profile.get("COM", False): # indication of serial printer, but no serial port
+        if "baudrate" in self.printer_profile and not self.printer_profile.get("COM"): # indication of serial printer, but no serial port
             self.sender_error = {"code": 11, "message": "No serial port for serial printer. No senders or printer firmware hanged."}
             return
         try:
@@ -75,27 +75,27 @@ class PrinterInterface(threading.Thread):
             self.logger.info("Successful connection to %s!" % (self.printer_profile['name']))
 
     def process_command_request(self, data_dict):
-        error = data_dict.get('error', None)
+        error = data_dict.get('error')
         if error:
             self.logger.warning("Server command came with errors %d %s" % (error['code'], error['message']))
         else:
-            command = data_dict.get('command', None)
+            command = data_dict.get('command')
             if command:
                 method = getattr(self.printer, command, None)
                 if not method:
                     self.logger.warning("Unknown command: " + str(command))
                     self.sender_error = {"code": 40, "message": "Unknown command " + str(command)}
                 else:
-                    number = data_dict.get('number', None)
+                    number = data_dict.get('number')
                     if not number:
                         self.logger.error("No number field in servers answer")
                         raise RuntimeError("No number field in servers answer")
                     self.logger.info("Excecuting command number %i : %s" % (number, str(command)))
-                    payload = data_dict.get('payload', None)
+                    payload = data_dict.get('payload')
                     arguments = []
                     if payload:
                         arguments.append(payload)
-                    if data_dict.get('is_link', False):
+                    if data_dict.get('is_link'):
                         arguments.append(data_dict.get('is_link'))
                     try:
                         result = method(*arguments)
