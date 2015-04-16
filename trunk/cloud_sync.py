@@ -170,7 +170,7 @@ class Cloudsync:
                 answer = self.get_permission_to_send(file_path)
                 if answer != True:
                     return 'Permission to send denied: ' + answer
-                result = requests.post(self.URL, data={'user_token': self.user_token}, files={'file': open(file_path, 'rb')}, timeout = 6)
+                result = requests.post(self.URL, data={'user_token': self.user_token}, files={'file': open(file_path, 'rb')}, timeout = (6, 0))
                 result = str(result.text)
             except IOError, requests.RequestException:
                 continue
