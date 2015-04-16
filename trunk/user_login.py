@@ -1,4 +1,3 @@
-import sys
 import time
 import json
 import logging
@@ -20,7 +19,7 @@ class UserLogin:
             self.login_as_user(login, password)
 
     def login_as_user(self, login, password):
-        answer = self.http_client.pack_and_send('user_login', login, password, sys.platform)
+        answer = self.http_client.pack_and_send('user_login', login, password)
         if not answer:
             return 0, "No connection to server"
         else:

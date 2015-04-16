@@ -1,5 +1,6 @@
 import os
 import re
+import sys
 import json
 import uuid
 import httplib
@@ -130,21 +131,21 @@ class HTTPClient:
 
     def pack(self, target, *payloads):
         if target == 'user_login':
-            data = { 'login': {'user': payloads[0], 'password': payloads[1]}, "platform": payloads[2], 'host_mac': self.MACADDR, "version": version.version }
+            data = { 'login': {'user': payloads[0], 'password': payloads[1]}, "platform": sys.platform, 'host_mac': self.MACADDR, "version": version.version }
             path = self.user_login_path
         elif target == 'printer_login':
             data = { 'user_token': payloads[0], 'printer': payloads[1], "version": version.version, "data_time": time.ctime() }
             path = self.printer_login_path
         elif target == 'command':
-            data = { 'printer_token': payloads[0], 'report': payloads[1], 'command_ack': payloads[2]}
+            data = { 'printer_token': payloads[0], 'report': payloads[1], 'command_ack': payloads[2] }
             if data['command_ack'] == None:
                 data.pop('command_ack')
             path = self.command_path
         elif target == 'camera':
-            data = {'user_token': payloads[0], 'camera_number': payloads[1], 'camera_name': payloads[2], 'file_data': payloads[3], 'host_mac': self.MACADDR }
+            data = { 'user_token': payloads[0], 'camera_number': payloads[1], 'camera_name': payloads[2], 'file_data': payloads[3], 'host_mac': self.MACADDR }
             path = self.camera_path
         elif target == 'cloudsync':
-            data = { 'user_token': payloads[0], 'file_data': payloads[1]}
+            data = { 'user_token': payloads[0], 'file_data': payloads[1] }
             path = self.cloudsync_path
         else:
             self.process_error(4, 'No such target for packaging - ' + target)
