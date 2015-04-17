@@ -191,12 +191,16 @@ class Cloudsync:
 
     def start(self):
         self.logger.info('Cloudsync started!')
+        self.stop_flag = False
         self.login()
         self.create_folders()
         if self.os == 'windows':
             self.create_shortcuts_win()
             if config.config['cloud_sync']['virtual_drive_enabled']:
                 self.enable_virtual_drive()
+        self.main_loop()
+
+    def main_loop(self):
         while not self.stop_flag:
             self.upload()
             time.sleep(3)
