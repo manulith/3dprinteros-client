@@ -26,6 +26,7 @@ class BaseSender:
         self.downloader = None
         self.job_id = None
         self.print_success_flag = False
+        self.current_line_number = 0
         #self._position = [0.00,0.00,0.00]
 
     def set_total_gcodes(self, length):
@@ -41,6 +42,7 @@ class BaseSender:
 
     def preprocess_gcodes(self, gcodes):
         gcodes = gcodes.split("\n")
+        gcodes = filter(lambda item: item, gcodes)
         while gcodes[-1] in ("\n", "\r\n", "\t", " ", "", None):
             line = gcodes.pop()
             self.logger.info("Removing corrupted line '%s' from gcodes tail" % line)
@@ -49,9 +51,7 @@ class BaseSender:
         self.logger.info('Got %d gcodes to print.' % length)
         return gcodes
 
-    def gcodes(self, gcodes, is_link = False, job_id=None):
-        if job_id:
-            self.job_id = job_id
+    def gcodes(self, gcodes, is_link = False):
         if is_link:
             if self.downloading_flag:
                 self.logger.warning('Download command received while downloading processing. Aborting...')
@@ -138,4 +138,3 @@ class BaseSender:
     def quit_application(self):
         self.logger.info('Received quit command from server!')
         self.app.stop_flag = True
-        self.app.quit_flag = True
