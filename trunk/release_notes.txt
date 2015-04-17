@@ -2,7 +2,9 @@
 
 4.5.9
 
-    Cloudsync added
+    Numerous bug fixes, small performance and code improvements
+    Support for current line reporting was added(should fix false job completion bug)
+    Cloudsync
 
 4.5.1
 
