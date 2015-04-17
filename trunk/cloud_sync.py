@@ -185,7 +185,7 @@ class Cloudsync:
                     self.logger.warning('Failed to upload ' + os.path.basename(file_path) + '. ' + error)
                     self.move_file(file_path, self.UNSENDABLE_PATH)
                 else:
-                    self.logger.info(os.path.basename(file_path) + ' uploaded')
+                    self.logger.info('Successfully uploaded: ' + os.path.basename(file_path))
                     self.move_file(file_path, self.SENDED_PATH)
             if not error:
                 self.logger.info('Files successfully uploaded')
