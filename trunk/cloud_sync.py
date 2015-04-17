@@ -124,7 +124,7 @@ class Cloudsync:
             new_file_name = file_name + "(" + str(name_count) + ")" + file_ext
             name_count += 1
         shutil.move(current_path, join(destination_folder_path, new_file_name))
-        self.logger.debug(current_path + ' moved to ' + destination_folder_path)
+        self.logger.debug('Moving ' + os.path.basename(current_path) + ' to ' + os.path.basename(destination_folder_path))
 
     def get_files_to_send(self):
         names_to_ignore = [os.path.basename(self.SENDED_PATH), os.path.basename(self.UNSENDABLE_PATH)]
