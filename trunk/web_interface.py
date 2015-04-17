@@ -135,13 +135,13 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.write_message('Not found', 0, 404)
 
     def open_cloudsync_folder(self):
-        path = cloud_sync.Cloudsync.PATH
+        path = os.path.abspath(cloud_sync.Cloudsync.PATH)
         if sys.platform.startswith('darwin'):
-            subprocess.Popen(['open', os.path.abspath(path)])
+            subprocess.Popen(['open', path])
         elif sys.platform.startswith('linux'):
-            subprocess.Popen(['gnome-open', path])
+            subprocess.Popen(['nautilus', path])
         elif sys.platform.startswith('win32'):
-            subprocess.Popen(['explorer', os.path.abspath(path)])
+            subprocess.Popen(['explorer', path])
         self.do_GET()
 
     def write_message(self, message, show_time=2, response=200):
