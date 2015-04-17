@@ -68,7 +68,6 @@ class CameraMaster:
             if sender.isAlive():
                 self.logger.warning("Failed to close camera %s" % sender.name)
         self.stop_flag = True
-        logging.shutdown()
         os._exit(0)
 
     def get_camera_names(self):

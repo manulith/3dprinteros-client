@@ -142,11 +142,9 @@ class App:
 
     def quit(self):
         self.logger.info("Starting exit sequence...")
-        if self.cloud_sync:
-            self.cloud_sync.terminate()
-        if self.cam:
-            self.cam.terminate()
-            self.cam.kill()
+        for subprocess in self.cam, self.cloud_sync:
+            if subprocess:
+                subprocess.terminate()
         for pi in self.printer_interfaces:
             pi.close()
         time.sleep(0.1) #to reduce logging spam in next
