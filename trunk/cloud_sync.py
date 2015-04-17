@@ -73,7 +73,7 @@ class Cloudsync:
         paths = [self.PATH, self.SENDED_PATH, self.UNSENDABLE_PATH]
         for path in paths:
             if not os.path.exists(path):
-                os.mkdir(path)
+                os.mkdir(os.path.abspath(path))
 
     def create_shortcuts_win(self):
         paths = [self.desktop_link_path, self.sendto_link_path, self.favourites_link_path]
