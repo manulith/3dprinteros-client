@@ -179,6 +179,7 @@ class Cloudsync:
         if files_to_send:
             error = ''
             for file_path in files_to_send:
+                self.logger.info('Uploading file ' + os.path.basename(file_path))
                 error = self.send_file(file_path)
                 if error:
                     self.logger.warning('Failed to send ' + os.path.basename(file_path) + '. ' + error)
