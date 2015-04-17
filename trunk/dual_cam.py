@@ -58,6 +58,7 @@ class CameraMaster:
         self.close()
 
     def close(self):
+        self.stop_flag = True
         start_time = time.time()
         for sender in self.cameras:
             sender.close()
@@ -67,7 +68,6 @@ class CameraMaster:
             sender.join(1)
             if sender.isAlive():
                 self.logger.warning("Failed to close camera %s" % sender.name)
-        self.stop_flag = True
         os._exit(0)
 
     def get_camera_names(self):
