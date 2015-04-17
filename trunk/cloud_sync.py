@@ -1,6 +1,5 @@
 import sys
 import os
-import logging
 import shutil
 import signal
 import traceback
@@ -34,12 +33,8 @@ class Cloudsync:
     MAX_SEND_RETRY = config.config['cloud_sync']['max_send_retry']
     CONNECTION_TIMEOUT = 6
 
-    def __init__(self, debug=False):
-        if debug:
-            logging.basicConfig(level=logging.DEBUG)
-        else:
-            logging.basicConfig(level=logging.INFO)
-        self.logger = logging.getLogger('app.' + __name__)
+    def __init__(self):
+        self.logger = utils.create_logger('cloud_sync', config.config['cloud_sync']['log_file'])
         signal.signal(signal.SIGINT, self.intercept_signal)
         signal.signal(signal.SIGTERM, self.intercept_signal)
         self.stop_flag = False
@@ -173,13 +168,8 @@ class Cloudsync:
                 result = str(result.text)
                 if '"result":true' in result:
                     return
-            #TODO: fix that
-            except IOError or requests.RequestException as e:
-                result = str(e.message)
             except Exception as e:
-                self.process_error(1, str(e.message))
-                self.logger.info('Retrying to send ' + os.path.basename(file_path))
-                count += 1
+                result = str(e.message)
             self.logger.info('Retrying to send ' + os.path.basename(file_path))
             count += 1
         return result
@@ -208,8 +198,8 @@ class Cloudsync:
             if config.config['cloud_sync']['virtual_drive_enabled']:
                 self.enable_virtual_drive()
         while not self.stop_flag:
-            time.sleep(3)
             self.upload()
+            time.sleep(3)
 
     def stop(self):
         if self.os == 'windows' and config.config['cloud_sync']['virtual_drive_enabled']:

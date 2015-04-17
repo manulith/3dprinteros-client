@@ -7,6 +7,7 @@ import time
 import signal
 import logging
 import traceback
+import platform
 from subprocess import Popen
 
 import utils
@@ -27,7 +28,8 @@ class App:
     LOG_FLUSH_TIME = 30
 
     def __init__(self):
-        self.logger = utils.get_logger(config.config["log_file"])
+        self.logger = utils.create_logger('app', config.config['log_file'])
+        self.logger.info('Operating system: ' + platform.system() + ' ' + platform.release())
         self.logger.info("Welcome to 3DPrinterOS Client version %s_%s" % (version.version, version.build))
         self.time_stamp()
         signal.signal(signal.SIGINT, self.intercept_signal)
@@ -55,11 +57,9 @@ class App:
             self.cloud_sync = self.launch_suprocess(config.config['cloud_sync']['module'])
 
     def start_camera(self, module):
-        if config.config["camera"]["enabled"] == True:
+        if config.config["camera"]["enabled"]:
             self.cam = self.launch_suprocess(module)
             self.cam_current_module = module
-        else:
-            self.cam = None
 
     def launch_suprocess(self, module):
         self.logger.info('Launching as subprocess ' + module)
@@ -142,9 +142,11 @@ class App:
 
     def quit(self):
         self.logger.info("Starting exit sequence...")
-        for subprocess in self.cam, self.cloud_sync:
-            if subprocess:
-                subprocess.terminate()
+        if self.cloud_sync:
+            self.cloud_sync.terminate()
+        if self.cam:
+            self.cam.terminate()
+            self.cam.kill()
         for pi in self.printer_interfaces:
             pi.close()
         time.sleep(0.1) #to reduce logging spam in next
