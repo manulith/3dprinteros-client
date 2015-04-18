@@ -1,13 +1,22 @@
 import os
 import urllib
+import hashlib
 import logging
 import threading
 import BaseHTTPServer
 from SocketServer import ThreadingMixIn
 
-import utils
+import log
+import paths
+import rights
+import makerware_utils
 import version
 from config import Config
+
+def sha256_hash(text):
+    hash = hashlib.sha256(text)
+    hex_str_hash = hash.hexdigest()
+    return hex_str_hash
 
 class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
@@ -96,9 +105,9 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 login = self.server.app.user_login.login
                 if login:
                     page = page.replace('!!!LOGIN!!!', login)
-                if utils.get_conveyor_pid():
+                if makerware_utils.get_conveyor_pid():
                     page = open(os.path.join(self.working_dir, 'web_interface/conveyor_warning.html')).read()
-                if not utils.is_user_groups():
+                if not rights.is_user_groups():
                     page = open(os.path.join(self.working_dir, 'web_interface/groups_warning.html')).read()
                 if not self.server.app.updater.auto_update_flag and self.server.app.updater.update_flag:
                     page = page.replace('get_updates" style="display:none"', 'get_updates" style="display:inline"')
@@ -179,7 +188,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
     def show_logs(self):
         log_file = Config.instance().settings['log_file']
-        logs = utils.get_file_tail(log_file)
+        logs = log.get_file_tail(log_file)
         content = ''
         if not content:
             content = 'No logs'
@@ -190,13 +199,13 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.write_with_autoreplace(page)
 
     def add_user_groups(self):
-        utils.add_user_groups()
+        rights.add_user_groups()
         self.quit_main_app()
 
     def kill_conveyor(self):
         fail_message = '3DPrinterOS was unable to stop conveyor.'
-        if utils.get_conveyor_pid():
-            result = utils.kill_existing_conveyor()
+        if makerware_utils.get_conveyor_pid():
+            result = makerware_utils.kill_existing_conveyor()
             if result:
                 message = 'Conveyor was successfully stopped.<br><br>Returning...'
             else:
@@ -210,8 +219,8 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.write_with_autoreplace(page)
 
     def send_logs(self):
-        making_result = utils.make_full_log_snapshot()
-        sending_result = utils.send_all_snapshots(self.server.app.user_login.user_token)
+        making_result = log.make_full_log_snapshot()
+        sending_result = log.send_all_snapshots(self.server.app.user_login.user_token)
         if making_result and sending_result:
             message = 'Logs successfully sent'
         else:
@@ -238,7 +247,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         body = urllib.unquote(body).decode('utf8')
         raw_login, password = body.split("&password=")
         login = raw_login.replace("login=", "")
-        password = utils.sha256_hash(password)
+        password = sha256_hash(password)
         error = self.server.app.user_login.login_as_user(login, password)
         if error:
             message = str(error[1])
@@ -247,8 +256,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.write_message(message)
 
     def process_logout(self):
-        paths = utils.get_paths_to_settings_folder()
-        for path in paths:
+        for path in paths.get_paths_to_settings_folder():
             login_info_path = os.path.join(path, 'login_info.bin')
             if os.path.isfile(login_info_path) == True:
                 try:

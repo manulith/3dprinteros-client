@@ -9,7 +9,7 @@ import usb.util
 import usb.backend.libusb1
 import serial.tools.list_ports
 
-import utils
+import paths
 from config import Config
 
 class USBDetector:
@@ -33,13 +33,13 @@ class USBDetector:
             if not devices:
                 raise ValueError
         except ValueError:
-            backend_from_our_directory = usb.backend.libusb1.get_backend(find_library=utils.get_libusb_path)
+            backend_from_our_directory = usb.backend.libusb1.get_backend(find_library=paths.get_libusb_path)
             devices = usb.core.find(find_all=True, backend=backend_from_our_directory)
         if not devices:
             logger.warning("Libusb error: no usb devices was detected. Check if libusb1 is installed.")
         return list(devices)
 
-    def produce_printer_list(self, devices):
+    def get_printers(self, devices):
         printers_info = []
         for dev in devices:
             dev_info = {
@@ -98,21 +98,9 @@ class USBDetector:
             if [ device['VID'], device['PID'] ] in profile[ u"vids_pids" ]:
                 return True
 
-    def get_printers(self):
-        logger = logging.getLogger('app.' + __name__)
-        devices = self.get_devices()
-        printers = self.sort_devices(devices)
-        logger.info('Detected USB printers: ')
-        for printer in printers:
-            logger.info(str(printer))
-        logger.info('-'*16)
-        return printers
-
 if __name__ == '__main__':
     import json
     detector = USBDetector()
-    for dev in detector.get_devices():
-        print "\n"
-        print dev
     printers = detector.get_printers()
+
     print json.dumps(printers)

@@ -9,8 +9,9 @@ import logging
 import traceback
 from subprocess import Popen
 
-import utils
-utils.init_path_to_libs()
+import log
+import paths
+paths.init_path_to_libs()
 import usb_detect
 import http_client
 import user_login
@@ -26,7 +27,7 @@ class App(Singleton):
     LOG_FLUSH_TIME = 30
 
     def __init__(self):
-        self.logger = utils.get_logger(Config.instance().settings["log_file"])
+        self.logger = log.get_logger(Config.instance().settings["log_file"])
         self.logger.info("Welcome to 3DPrinterOS Client version %s_%s" % (version.version, version.build))
         self.time_stamp()
         signal.signal(signal.SIGINT, self.intercept_signal)
