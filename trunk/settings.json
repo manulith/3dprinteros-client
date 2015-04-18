@@ -20,7 +20,6 @@
     "img_qual" : 90,
     "camera_min_loop_time" : 1,
     "log_file" : "3dprinteros_camera.log",
-    "modules": {"Dual camera": "dual_cam.py", "Multi camera": "multi_cam.py", "Disable camera": ""},
-    "default_module_name": "Disable camera"
+    "default": "Disable camera"
   }
 }

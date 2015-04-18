@@ -2,18 +2,17 @@
 # -*- coding: utf-8 -*-
 
 import sys
-import os
 import time
 import signal
 import logging
 import traceback
-from subprocess import Popen
 
 import log
 import paths
 paths.init_path_to_libs()
 import usb_detect
 import http_client
+import camera_controller
 import user_login
 import updater
 import version
@@ -35,40 +34,14 @@ class App(Singleton):
         self.detected_printers = []
         self.printer_interfaces = []
         self.stop_flag = False
-        self.cam = None
         self.updater = updater.Updater()
-        self.cam_modules = Config.instance().settings['camera']['modules']
-        self.cam_current_module = self.cam_modules[Config.instance().settings['camera']['default_module_name']]
-        self.http_client = http_client.HTTPClient()
         self.user_login = user_login.UserLogin(self)
-        Config.instance().set_profiles(self.user_login.profiles)
         self.init_interface()
         if self.user_login.wait_for_login():
-            self.start_camera(self.cam_current_module)
-
-    def start_camera(self, module):
-        if Config.instance().settings["camera"]["enabled"] == True:
-            self.logger.info('Launching camera subprocess')
-            client_dir = os.path.dirname(os.path.abspath(__file__))
-            cam_path = os.path.join(client_dir, module)
-            try:
-                if module:
-                    self.cam = Popen([sys.executable, cam_path])
-            except Exception as e:
-                self.logger.warning('Could not launch camera due to error:\n' + e.message)
-            else:
-                self.cam_current_module = module
-
-    def switch_camera(self, module):
-        self.logger.info('Switching camera module from %s to %s' % (self.cam_current_module, module))
-        if self.cam:
-            self.cam.terminate()
-        self.cam_current_module = module
-        if module:
-            self.start_camera(module)
+            Config.instance().set_profiles(self.user_login.profiles)
+            self.camera_controller = camera_controller.CameraController()
 
     def init_interface(self):
-        print Config.instance().settings['web_interface']
         if Config.instance().settings['web_interface']:
             import webbrowser
             from web_interface import WebInterface
@@ -84,6 +57,7 @@ class App(Singleton):
     def start_main_loop(self):
         self.last_flush_time = 0
         self.detector = usb_detect.USBDetector()
+        self.http_client = http_client.HTTPClient()
         while not self.stop_flag:
             self.updater.timer_check_for_updates()
             self.time_stamp()
@@ -131,9 +105,8 @@ class App(Singleton):
 
     def quit(self):
         self.logger.info("Starting exit sequence...")
-        if self.cam:
-            self.cam.terminate()
-            self.cam.kill()
+        if getattr(self, 'camera_controller', False):
+            self.camera_controller.close()
         for pi in self.printer_interfaces:
             pi.close()
         time.sleep(0.1) #to reduce logging spam in next

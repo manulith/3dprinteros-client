@@ -43,7 +43,7 @@ def make_log_snapshot():
     if not os.path.exists(paths.LOG_SNAPSHOTS_DIR):
         try:
             os.mkdir(paths.LOG_SNAPSHOTS_DIR)
-        except Exception as e:
+        except IOError:
             logger.warning("Can't create directory %s" % paths.LOG_SNAPSHOTS_DIR)
             return
     while True:

@@ -6,15 +6,16 @@ import sys
 import logging
 import platform
 
-LIBS_FOLDER = 'libraries'
-ALL_LIBS = ['opencv', 'numpy', 'printrun']
+LIBRARIES_FOLDER = 'libraries'
+LIBRARIES = ['opencv', 'numpy', 'printrun']
 LOG_SNAPSHOTS_DIR = 'log_snapshots'
 
 def init_path_to_libs():
-    logger = logging.getLogger('app.' + __name__)
+    logger = logging.getLogger(__name__)
+
     if sys.platform.startswith('win'):
         folder_name = "win"
-        ALL_LIBS.append('pywin')
+        LIBRARIES.append('pywin')
     elif sys.platform.startswith('linux'):
         folder_name = "linux"
     elif sys.platform.startswith('darwin'):
@@ -22,8 +23,8 @@ def init_path_to_libs():
     else:
         raise RuntimeError('Cannot define operating system')
     our_dir = os.path.dirname(os.path.abspath(__file__))
-    platform_dir = os.path.join(our_dir, LIBS_FOLDER, folder_name)
-    for lib in ALL_LIBS:
+    platform_dir = os.path.join(our_dir, LIBRARIES_FOLDER, folder_name)
+    for lib in LIBRARIES:
         lib_path = os.path.join(platform_dir, lib)
         logger.info('Using library: ' + lib_path)
         sys.path.append(lib_path)
@@ -47,7 +48,7 @@ def get_libusb_path(lib):
     else:
         raise EnvironmentError('Could not detect OS. Only GNU/LINUX, MAC OS X and MS WIN VISTA/7/8 are supported.')
     our_dir = os.path.dirname(os.path.abspath(__file__))
-    backend_path = os.path.join(our_dir, LIBS_FOLDER, folder_name, 'libusb', libusb_name)
+    backend_path = os.path.join(our_dir, LIBRARIES_FOLDER, folder_name, 'libusb', libusb_name)
     logger.info('Libusb from: ' + backend_path)
     return backend_path
 

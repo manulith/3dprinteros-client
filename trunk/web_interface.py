@@ -168,7 +168,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             body = body.replace("+", "%20")
             body = urllib.unquote(body).decode('utf8')
             body = body.split('module=')[-1]
-            self.server.app.switch_camera(self.server.app.cam_modules[body])
+            self.server.app.camera_controller.switch_camera(body)
             message = 'Live view type switched to ' + body
         else:
             message = 'Live view type not chosen'

@@ -4,7 +4,7 @@ import thread
 import logging
 import collections
 
-import utils
+import log
 import http_client
 from app import App
 
@@ -121,9 +121,9 @@ class BaseSender:
         return False
 
     def upload_logs(self):
-        utils.make_full_log_snapshot()
+        log.make_full_log_snapshot()
         self.logger.info("Sending logs")
-        utils.send_all_snapshots(App.instance().user_login.user_token)
+        log.send_all_snapshots(App.instance().user_login.user_token)
         self.logger.info("Done")
 
     def switch_camera(self, module):

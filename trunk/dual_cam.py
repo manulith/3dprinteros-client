@@ -1,5 +1,5 @@
-import utils
-utils.init_path_to_libs()
+import paths
+paths.init_path_to_libs()
 import numpy as np
 import cv2
 import time
