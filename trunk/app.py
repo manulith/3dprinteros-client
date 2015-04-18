@@ -106,7 +106,7 @@ class App(Singleton):
 
     def quit(self):
         self.logger.info("Starting exit sequence...")
-        if getattr(self, 'camera_controller', False):
+        if hasattr(self, 'camera_controller'):
             self.camera_controller.close()
         for pi in self.printer_interfaces:
             pi.close()

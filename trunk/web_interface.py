@@ -13,10 +13,6 @@ import makerware_utils
 import version
 from config import Config
 
-def sha256_hash(text):
-    hash = hashlib.sha256(text)
-    hex_str_hash = hash.hexdigest()
-    return hex_str_hash
 
 class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
@@ -63,7 +59,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                     snr = pi.usb_info['SNR']
                     if not snr:
                         snr = ""
-                    if not getattr(pi, 'printer_profile', False):
+                    if not hasattr(pi, 'printer_profile'):
                         profile = {'alias': "", 'name': 'Awaiting profile %s:%s %s'
                                                         % (pi.usb_info['PID'], pi.usb_info['VID'], snr)}
                     else:
@@ -147,7 +143,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.write_with_autoreplace(page, response)
 
     def choose_cam(self):
-        if getattr(self.server.app, 'camera_controller', False):
+        if hasattr(self.server.app, 'camera_controller'):
             modules = self.server.app.camera_controller.CAMERA_MODULES
             module_selector_html = ''
             for module in modules.keys():
@@ -247,7 +243,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         body = urllib.unquote(body).decode('utf8')
         raw_login, password = body.split("&password=")
         login = raw_login.replace("login=", "")
-        password = sha256_hash(password)
+        password = hashlib.sha256(password).hexdigest()
         error = self.server.app.user_login.login_as_user(login, password)
         if error:
             message = str(error[1])
