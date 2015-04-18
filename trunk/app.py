@@ -26,7 +26,7 @@ class App(Singleton):
     LOG_FLUSH_TIME = 30
 
     def __init__(self):
-        self.logger = utils.get_logger(Config.instance().config["log_file"])
+        self.logger = utils.get_logger(Config.instance().settings["log_file"])
         self.logger.info("Welcome to 3DPrinterOS Client version %s_%s" % (version.version, version.build))
         self.time_stamp()
         signal.signal(signal.SIGINT, self.intercept_signal)
@@ -36,8 +36,8 @@ class App(Singleton):
         self.stop_flag = False
         self.cam = None
         self.updater = updater.Updater()
-        self.cam_modules = Config.instance().config['camera']['modules']
-        self.cam_current_module = self.cam_modules[Config.instance().config['camera']['default_module_name']]
+        self.cam_modules = Config.instance().settings['camera']['modules']
+        self.cam_current_module = self.cam_modules[Config.instance().settings['camera']['default_module_name']]
         self.http_client = http_client.HTTPClient()
         self.user_login = user_login.UserLogin(self)
         Config.instance().set_profiles(self.user_login.profiles)
@@ -46,7 +46,7 @@ class App(Singleton):
             self.start_camera(self.cam_current_module)
 
     def start_camera(self, module):
-        if Config.instance().config["camera"]["enabled"] == True:
+        if Config.instance().settings["camera"]["enabled"] == True:
             self.logger.info('Launching camera subprocess')
             client_dir = os.path.dirname(os.path.abspath(__file__))
             cam_path = os.path.join(client_dir, module)
@@ -67,8 +67,8 @@ class App(Singleton):
             self.start_camera(module)
 
     def init_interface(self):
-        print Config.instance().config['web_interface']
-        if Config.instance().config['web_interface']:
+        print Config.instance().settings['web_interface']
+        if Config.instance().settings['web_interface']:
             import webbrowser
             from web_interface import WebInterface
             self.web_interface = WebInterface(self)
@@ -172,5 +172,5 @@ if __name__ == '__main__':
     except:
         trace = traceback.format_exc()
         print trace
-        with open(Config.instance().config['error_file'], "a") as f:
+        with open(Config.instance().settings['error_file'], "a") as f:
             f.write(time.ctime() + "\n" + trace + "\n")

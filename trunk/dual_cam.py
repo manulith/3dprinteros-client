@@ -39,7 +39,7 @@ class CameraMaster:
         self.logger = logging.getLogger("camera")
         self.logger.propagate = False
         self.logger.setLevel(logging.DEBUG)
-        log_name = Config.instance().config["camera"]["log_file"]
+        log_name = Config.instance().settings["camera"]["log_file"]
         file_handler = logging.handlers.RotatingFileHandler(log_name, maxBytes=1024 * 1024, backupCount=1)
         file_handler.setFormatter(
             logging.Formatter('%(levelname)s\t%(asctime)s\t%(threadName)s/%(funcName)s\t%(message)s'))
@@ -61,7 +61,7 @@ class CameraMaster:
         start_time = time.time()
         for sender in self.cameras:
             sender.close()
-        if time.time() - start_time < Config.instance().config["camera"]["camera_min_loop_time"]:
+        if time.time() - start_time < Config.instance().settings["camera"]["camera_min_loop_time"]:
             time.sleep(1)
         for sender in self.cameras:
             sender.join(1)
@@ -111,9 +111,9 @@ class CameraImageSender(threading.Thread):
 
     def take_a_picture(self):
         cap_ret, frame = self.cap.read()
-        encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), Config.instance().config["camera"]["img_qual"]]
+        encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), Config.instance().settings["camera"]["img_qual"]]
         try:
-            result, image_encode = cv2.imencode(Config.instance().config["camera"]["img_ext"], frame, encode_param)
+            result, image_encode = cv2.imencode(Config.instance().settings["camera"]["img_ext"], frame, encode_param)
         except Exception as e:
             self.logger.warning(self.camera_name + ' warning: ' + e.message)
             result, image_encode = None, None
@@ -165,5 +165,5 @@ if __name__ == '__main__':
     except:
         trace = traceback.format_exc()
         print trace
-        with open(Config.instance().config['error_file'], "a") as f:
+        with open(Config.instance().settings['error_file'], "a") as f:
             f.write(time.ctime() + "\n" + trace + "\n")

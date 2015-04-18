@@ -4,29 +4,30 @@ from singleton import Singleton
 
 class Config(Singleton):
 
-    CONFIG_FILE_NAME = 'settings.json'
+    SETTINGS_FILE_NAME = 'settings.json'
 
     def __init__(self):
-        self.config = self.read()
+        self.settings = self.load_settings()
         self.profiles = None
 
-    def read(self):
-        with open(self.CONFIG_FILE_NAME) as config_file:
+    def load_settings(self):
+        with open(self.SETTINGS_FILE_NAME) as settings_file:
             try:
-                config = json.loads(config_file.read())
+                config = json.loads(settings_file.read())
             except Exception as e:
-                print "Error reading %s: %s" % (self.CONFIG_FILE_NAME, str(e))
+                print "Error reading %s: %s" % (self.SETTINGS_FILE_NAME, str(e))
             else:
                 return config
 
-    def update(self, new_config):
-        with open(self.CONFIG_FILE_NAME, 'w') as config_file:
+    def save_settings(self, settings):
+        with open(self.SETTINGS_FILE_NAME, 'w') as settings_file:
             try:
-                jdata = json.dumps(new_config)
+                jdata = json.dumps(settings)
             except Exception as e:
-                print "Error writing %s: %s" % (self.CONFIG_FILE_NAME, str(e))
-            else:
-                config_file.write(jdata)
+                print "Error writing %s: %s" % (self.SETTINGS_FILE_NAME, str(e))
+                return False
+            settings_file.write(jdata)
+            return True
 
     def set_profiles(self, profiles):
         self.profiles = profiles

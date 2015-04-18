@@ -15,8 +15,8 @@ CONNECTION_TIMEOUT = 6
 
 class HTTPClient:
 
-    URL = Config.instance().config['URL']
-    HTTPS_MODE = Config.instance().config['HTTPS']
+    URL = Config.instance().settings['URL']
+    HTTPS_MODE = Config.instance().settings['HTTPS']
     streamer_prefix = "/streamerapi"
     user_login_path = streamer_prefix + "/user_login"
     printer_login_path = streamer_prefix + "/printer_login"
@@ -164,7 +164,7 @@ class HTTPClient:
 
 class File_Downloader:
     def __init__(self, base_sender):
-        self.max_download_retry = Config.instance().config["max_download_retry"]
+        self.max_download_retry = Config.instance().settings["max_download_retry"]
         self.base_sender = base_sender
         self.percent = None
         self.logger = logging.getLogger('app.' + "file_downloader")

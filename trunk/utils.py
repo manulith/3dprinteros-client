@@ -224,7 +224,7 @@ def tail(f, lines=200):
 
 def make_log_snapshot():
     logger = logging.getLogger("app." + __name__)
-    with open(Config.instance().config['log_file']) as log_file:
+    with open(Config.instance().settings['log_file']) as log_file:
         log_text = "3DPrinterOS %s_%s_%s\n" % (version.version, version.build, version.commit)
         log_text += tail(log_file, LOG_SNAPSHOT_LINES)
     if not os.path.exists(LOG_SNAPSHOTS_DIR):
@@ -255,7 +255,7 @@ def make_full_log_snapshot():
     for path in paths:
         for log in os.listdir(path):
             try:
-                if log.startswith(Config.instance().config['log_file']) or log.startswith(Config.instance().config['error_file']):
+                if log.startswith(Config.instance().settings['log_file']) or log.startswith(Config.instance().settings['error_file']):
                     log_files.append(log)
             except Exception:
                 continue
@@ -285,7 +285,7 @@ def make_full_log_snapshot():
 # def compress_and_send(log_file_name=None, server_path=http_client.token_send_logs_path):
 #     logger = logging.getLogger('app.' + __name__)
 #     if not log_file_name:
-#         log_file_name = Config.instance().config['log_file']
+#         log_file_name = Config.instance().settings['log_file']
 #     zip_file_name = log_file_name + ".zip"
 #     try:
 #         zf = zipfile.ZipFile(zip_file_name, mode='w')
@@ -313,7 +313,7 @@ def compress_and_send(user_token, log_file_name=None):
     logger = logging.getLogger('app.' + __name__)
     log_snapshots_dir = os.path.join(get_paths_to_settings_folder()[0], LOG_SNAPSHOTS_DIR)
     if not log_file_name:
-        log_file_name = Config.instance().config['log_file']
+        log_file_name = Config.instance().settings['log_file']
     zip_file_name = log_file_name + ".zip"
     log_file_name_path = os.path.abspath(os.path.join(log_snapshots_dir, log_file_name))
     zip_file_name_path = os.path.abspath(os.path.join(log_snapshots_dir, zip_file_name))
@@ -530,7 +530,7 @@ def kill_existing_conveyor():
 
 def is_user_groups():
     logger = logging.getLogger('app')
-    if sys.platform.startswith('linux') and Config.instance().config['linux_rights_warning']:
+    if sys.platform.startswith('linux') and Config.instance().settings['linux_rights_warning']:
         p = Popen('groups', stdout=PIPE, stderr=PIPE)
         stdout, stderr = p.communicate()
         groups = stdout

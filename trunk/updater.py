@@ -10,8 +10,8 @@ from config import Config
 
 class Updater:
 
-    auto_update_flag = Config.instance().config['update']['auto_update_enabled']
-    check_pause = Config.instance().config['update']['check_pause']
+    auto_update_flag = Config.instance().settings['update']['auto_update_enabled']
+    check_pause = Config.instance().settings['update']['check_pause']
 
     def __init__(self):
         self.logger = logging.getLogger('app.' + __name__)
@@ -32,7 +32,7 @@ class Updater:
             self.auto_update()
 
     def new_version_available(self):
-        if Config.instance().config['update']['enabled']:
+        if Config.instance().settings['update']['enabled']:
             self.http_client.connect()
             last_version = self.http_client.request('GET', self.http_client.connection, self.http_client.get_last_version_path, None, headers = {})
             self.http_client.close()
@@ -66,8 +66,8 @@ class Updater:
         if self.update_flag:
             self.logger.info('Updating client...')
             try:
-                update_file_name = Config.instance().config['update']['update_file_name']
-                urllib.urlretrieve(Config.instance().config['update']['update_file_url'] + update_file_name, update_file_name)
+                update_file_name = Config.instance().settings['update']['update_file_name']
+                urllib.urlretrieve(Config.instance().settings['update']['update_file_url'] + update_file_name, update_file_name)
                 z = zipfile.ZipFile(update_file_name)
                 z.extractall()
                 z.close()
