@@ -21,7 +21,7 @@ class CameraController:
             camera_name = Config.instance().settings['camera']['default_module_name']
         module_name = self.CAMERA_MODULES[camera_name]
         cam_path = os.path.join(self.CURRENT_PATH, module_name)
-        if module_name and Config.instance().settings["camera"]["enabled"]:
+        if module_name:
             try:
                 self.camera_process = subprocess.Popen([sys.executable, cam_path])
             except Exception as e:

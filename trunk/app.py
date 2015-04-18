@@ -39,7 +39,8 @@ class App(Singleton):
         self.init_interface()
         if self.user_login.wait_for_login():
             Config.instance().set_profiles(self.user_login.profiles)
-            self.camera_controller = camera_controller.CameraController()
+            if Config.instance().settings["camera"]["enabled"]:
+                self.camera_controller = camera_controller.CameraController()
 
     def init_interface(self):
         if Config.instance().settings['web_interface']:

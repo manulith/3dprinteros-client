@@ -147,16 +147,16 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.write_with_autoreplace(page, response)
 
     def choose_cam(self):
-        if self.server.app.cam:
-            modules = self.server.app.cam_modules
-            modules_select = ''
+        if getattr(self.server.app, 'camera_controller', False):
+            modules = self.server.app.camera_controller.CAMERA_MODULES
+            module_selector_html = ''
             for module in modules.keys():
-                if modules[module] == self.server.app.cam_current_module:
-                    modules_select = modules_select + '<p><input type="radio" disabled> ' + module + '</p>'
+                if modules[module] == self.server.app.camera_controller.current_camera_name:
+                    module_selector_html += '<p><input type="radio" disabled> ' + module + '</p>'
                 else:
-                    modules_select = modules_select + '<p><input type="radio" name="module" value="' + module + '"> ' + module + '</p>'
+                    module_selector_html += '<p><input type="radio" name="module" value="' + module + '"> ' + module + '</p>'
             page = open(os.path.join(self.working_dir, 'web_interface/choose_cam.html')).read()
-            page = page.replace('!!!MODULES_SELECT!!!', modules_select)
+            page = page.replace('!!!MODULES_SELECT!!!', module_selector_html)
             self.write_with_autoreplace(page)
         else:
             self.write_message('Live view feature disabled')
@@ -285,7 +285,7 @@ class WebInterface(threading.Thread):
         except Exception as e:
             self.logger.error(e)
         else:
-            self.logger.info("...web server started"    )
+            self.logger.info("...web server started")
             self.server.app = self.app
             self.server.token_was_reset_flag = False
             self.server.serve_forever()
