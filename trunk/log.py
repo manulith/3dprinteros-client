@@ -173,11 +173,12 @@ def tail(f, lines=200):
 
 def get_file_tail(file):
     if os.path.isfile(file):
-        f = open(file).readlines()
+        with open(file) as f:
+            lines = f.readlines()
         file_tail = []
         for line in range(-1,-100, -1):
             try:
-                file_tail.append(f[line])
+                file_tail.append(lines[line])
             except IndexError:
                 break
         if file_tail:
