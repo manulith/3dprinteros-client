@@ -9,7 +9,7 @@ from config import Config
 class CameraController:
 
     CAMERA_MODULES = { "Dual camera": "dual_cam.py", "Multi camera": "multi_cam.py", "Disable camera": None }
-    CURRENT_PATH = os.path.dirname(os.path.abspath(__file__))
+
 
     def __init__(self):
         self.logger = logging.getLogger("app." + __name__)
@@ -20,7 +20,7 @@ class CameraController:
         if not camera_name:
             camera_name = Config.instance().settings['camera']['default_module_name']
         module_name = self.CAMERA_MODULES[camera_name]
-        cam_path = os.path.join(self.CURRENT_PATH, module_name)
+        cam_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), module_name)
         if module_name:
             try:
                 self.camera_process = subprocess.Popen([sys.executable, cam_path])

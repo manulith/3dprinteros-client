@@ -15,17 +15,18 @@ from config import Config
 class USBDetector:
     vid_pid_re = re.compile(
         '(?:.*\=([0-9-A-Z-a-f]+):([0-9-A-Z-a-f]+))|(?:.*VID_([0-9-A-Z-a-f]+)\+PID_([0-9-A-Z-a-f]+)\+)')
+    serial_number_re = re.compile('.*SNR\=([0-9-A-Z-a-f]+).*')
+
 
     @classmethod
     def format_vid_or_pid(vid_or_pid):
         return hex(vid_or_pid)[2:].zfill(4).upper()
 
     def __init__(self):
-        self.all_devices = []
-        self.used_serial_ports = []
+        self.unused_serial_ports = []
         self.printers = []
 
-    def get_devices(self):
+    def detect_devices(self):
         logger = logging.getLogger('app.' + __name__)
         try:
             devices = usb.core.find(find_all=True)
@@ -37,11 +38,18 @@ class USBDetector:
             devices = usb.core.find(find_all=True, backend=backend_from_our_directory)
         if not devices:
             logger.warning("Libusb error: no usb devices was detected. Check if libusb1 is installed.")
-        return list(devices)
+        self.all_devices = list(devices)
 
-    def get_printers(self, devices):
+    def detect_serial_ports(self):
+        serial_ports = serial.tools.list_ports.comports()
+        self.all_serial_ports = serial_ports
+        self.unused_serial_ports = filter(lambda x: x[2] != "n/a", serial_ports)
+
+    def create_printers_list(self):
+        self.detect_devices()
+        self.detect_serial_ports()
         printers_info = []
-        for dev in devices:
+        for dev in self.all_devices:
             dev_info = {
                 'VID': USBDetector.format_vid_or_pid(dev.idVendor), #cuts "0x", fill with zeroes if needed, doing case up
                 'PID': USBDetector.format_vid_or_pid(dev.idProduct),
@@ -56,26 +64,43 @@ class USBDetector:
                         if not symbol in string.printable:
                             SNR = None
                             break
+            dev_info['SNR'] = SNR
+            # try:
+            # manufacturer = dev.manufacturer  # can provoke crash of libusb
+            #     device_dct['Manufacturer'] = manufacturer
+            # except (usb.core.USBError, AttributeError, NotImplementedError):
+            #     pass
+            # try:
+            #     product = dev.product  # can provoke                 can provoke crash of libusb
+            #     device_dct['Product'] = product
+            # except (usb.core.USBError, AttributeError, NotImplementedError):
+            #     pass
             if self.device_is_printer(dev_info):
-                # try:
-                #     manufacturer = dev.manufacturer  # can provoke PIPE ERROR
-                #     device_dct['Manufacturer'] = manufacturer
-                # except (usb.core.USBError, AttributeError, NotImplementedError):
-                #     pass
-                # try:
-                #     product = dev.product  # can provoke PIPE ERROR
-                #     device_dct['Product'] = product
-                # except (usb.core.USBError, AttributeError, NotImplementedError):
-                #     pass
-                dev_info['SNR'] = SNR
-                dev_info['COM'] = self.get_serial_port(dev_info['VID'], dev_info['PID'], SNR)
+                if SNR:
+                    dev_info['COM'] = self.get_serial_port_name(dev_info['VID'], dev_info['PID'], SNR)
+                else:
+                    dev_info['COM'] = None
                 printers_info.append(dev_info)
-                #dev.close()
-                #logger.debug(device_dct)
+            #dev.close()
+            #logger.debug(device_dct)
+        for printer_info in printers_info:
+            if not printer_info['SNR']:
+                serial_port_name = self.get_serial_port_name(printer_info['VID'], printer_info['PID'])
+                serial_number = self.get_snr_by_serial_port_name(serial_port_name)
+                printer_info['COM'] = serial_port_name
+                printer_info['SNR'] = serial_number
         return printers_info
 
-    def get_serial_port(self, vid, pid, snr):
-        for port_dct in serial.tools.list_ports.comports():
+    def get_snr_by_serial_port_name(self, serial_port_name):
+        for port_dct in self.all_serial_ports:
+            if port_dct[0] == serial_port_name:
+                vid_pid_snr_string = port_dct[2]
+                match = self.serial_number_re.match(vid_pid_snr_string)
+                if match:
+                    return match.group(1)
+
+    def get_serial_port_name(self, vid, pid, snr):
+        for port_dct in self.unused_serial_ports:
             match = self.vid_pid_re.match(port_dct[2])
             if match:
                 vid_of_comport = match.group(1)
@@ -88,7 +113,7 @@ class USBDetector:
                 if vid == vid_of_comport and pid == pid_of_comport:
                     if snr and not 'SNR=' + snr in port_dct[2].upper():
                         continue
-                    self.used_serial_ports.append(port_dct[0])
+                    self.unused_serial_ports.remove(port_dct)
                     return port_dct[0]
         return None
 
