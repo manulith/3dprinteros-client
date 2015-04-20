@@ -18,8 +18,8 @@
     "enabled" : true,
     "img_ext" : ".jpg",
     "img_qual" : 90,
-    "camera_min_loop_time" : 1,
+    "min_loop_time" : 1,
     "log_file" : "3dprinteros_camera.log",
-    "default": "Disable camera"
+    "default": "Dual Camera"
   }
 }

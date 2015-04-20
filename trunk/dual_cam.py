@@ -61,7 +61,7 @@ class CameraMaster:
         start_time = time.time()
         for sender in self.cameras:
             sender.close()
-        if time.time() - start_time < Config.instance().settings["camera"]["camera_min_loop_time"]:
+        if time.time() - start_time < Config.instance().settings["camera"]["min_loop_time"]:
             time.sleep(1)
         for sender in self.cameras:
             sender.join(1)

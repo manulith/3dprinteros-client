@@ -10,7 +10,6 @@ class CameraController:
 
     CAMERA_MODULES = { "Dual camera": "dual_cam.py", "Multi camera": "multi_cam.py", "Disable camera": None }
 
-
     def __init__(self):
         self.logger = logging.getLogger("app." + __name__)
         self.start_camera_process()
@@ -18,10 +17,10 @@ class CameraController:
     def start_camera_process(self, camera_name=None):
         self.logger.info('Launching camera subprocess')
         if not camera_name:
-            camera_name = Config.instance().settings['camera']['default_module_name']
+            camera_name = Config.instance().settings['camera']['default']
         module_name = self.CAMERA_MODULES[camera_name]
-        cam_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), module_name)
         if module_name:
+            cam_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), module_name)
             try:
                 self.camera_process = subprocess.Popen([sys.executable, cam_path])
             except Exception as e:
@@ -39,5 +38,3 @@ class CameraController:
     def close(self):
         if self.camera_process:
             self.camera_process.terminate()
-
-
