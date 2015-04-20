@@ -7,6 +7,7 @@ import time
 import signal
 import logging
 import traceback
+import platform
 from subprocess import Popen
 
 import utils
@@ -18,14 +19,17 @@ import http_client
 import printer_interface
 import user_login
 import updater
+import cloud_sync
 
 
 class App:
 
+    MAIN_LOOP_SLEEP = 2
     LOG_FLUSH_TIME = 30
 
     def __init__(self):
-        self.logger = utils.get_logger(config.config["log_file"])
+        self.logger = utils.create_logger('app', config.config['log_file'])
+        self.logger.info('Operating system: ' + platform.system() + ' ' + platform.release())
         self.logger.info("Welcome to 3DPrinterOS Client version %s_%s" % (version.version, version.build))
         self.time_stamp()
         signal.signal(signal.SIGINT, self.intercept_signal)
@@ -43,20 +47,19 @@ class App:
         self.init_interface()
         self.user_login.wait_for_login()
         self.start_camera(self.cam_current_module)
+        self.cloud_sync = cloud_sync.Cloudsync()
+        self.cloud_sync = None
+        self.start_cloud_sync()
         self.main_loop()
 
+    def start_cloud_sync(self):
+        if config.config['cloud_sync']['enabled']:
+            self.cloud_sync = utils.launch_suprocess(config.config['cloud_sync']['module'])
+
     def start_camera(self, module):
-        if config.config["camera"]["enabled"] == True:
-            self.logger.info('Launching camera subprocess')
-            client_dir = os.path.dirname(os.path.abspath(__file__))
-            cam_path = os.path.join(client_dir, module)
-            try:
-                if module:
-                    self.cam = Popen([sys.executable, cam_path])
-            except Exception as e:
-                self.logger.warning('Could not launch camera due to error:\n' + e.message)
-            else:
-                self.cam_current_module = module
+        if config.config["camera"]["enabled"]:
+            self.cam = utils.launch_suprocess(module)
+            self.cam_current_module = module
 
     def switch_camera(self, module):
         self.logger.info('Switching camera module from %s to %s' % (self.cam_current_module, module))
@@ -92,7 +95,7 @@ class App:
                 elif not pi.is_alive():
                     self.disconnect_printer(pi, 'error')
             if not self.stop_flag:
-                time.sleep(2)
+                time.sleep(self.MAIN_LOOP_SLEEP)
             now = time.time()
             if now - self.last_flush_time > self.LOG_FLUSH_TIME:
                 self.last_flush_time = now
@@ -128,9 +131,9 @@ class App:
 
     def quit(self):
         self.logger.info("Starting exit sequence...")
-        if self.cam:
-            self.cam.terminate()
-            self.cam.kill()
+        for subprocess in self.cam, self.cloud_sync:
+            if subprocess:
+                subprocess.terminate()
         for pi in self.printer_interfaces:
             pi.close()
         time.sleep(0.1) #to reduce logging spam in next

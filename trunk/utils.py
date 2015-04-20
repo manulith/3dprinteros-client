@@ -27,6 +27,17 @@ LOG_SNAPSHOTS_DIR = 'log_snapshots'
 LOG_SNAPSHOT_LINES = 200
 
 
+def launch_suprocess(file_name):
+    logger = logging.getLogger('app')
+    logger.info('Launching as subprocess ' + file_name)
+    client_dir = os.path.dirname(os.path.abspath(__file__))
+    path = os.path.join(client_dir, file_name)
+    try:
+        process = Popen([sys.executable, path])
+    except Exception as e:
+        logger.warning('Could not launch ' + file_name + ' as subprocess due to error:\n' + e.message)
+    else:
+        return process
 
 def is_admin():
     import ctypes, os
@@ -168,16 +179,16 @@ def read_login():
     pack_name = 'login_info.bin'
     paths = get_paths_to_settings_folder()
     for path in paths:
-        logger.info("Searching for login info in %s" % path)
+        logger.debug("Searching for login info in %s" % path)
         try:
             login_info = read_info_zip(pack_name, path)
             if login_info:
-                logger.info('Login info loaded from ' + path)
+                logger.debug('Login info loaded from ' + path)
                 return login_info
         except Exception as e:
             logger.warning('Failed loading login from ' + path + '. Error: ' + e.message)
-        logger.info("Can't read login info in %s" % str(path))
-    logger.info('No login info found')
+        logger.debug("Can't read login info in %s" % str(path))
+    logger.debug('No login info found')
     return (None, None)
 
 def write_login(login, password):
@@ -190,7 +201,7 @@ def write_login(login, password):
         logger.warning('Login info writing error! ' + e.message)
     else:
         if result == True:
-            logger.info('Login info was written and packed.')
+            logger.debug('Login info was written and packed.')
         else:
             logger.warning("Login info wasn't written.")
         return True
@@ -433,22 +444,21 @@ def remove_corrupted_lines(lines):
             lines.remove(line)
     return lines
 
-def get_logger(log_file):
-    logger = logging.getLogger("app")
+def create_logger(logger_name, log_file_name):
+    logger = logging.getLogger(logger_name)
     logger.propagate = False
     logger.setLevel(logging.DEBUG)
     stderr_handler = logging.StreamHandler()
     stderr_handler.setLevel(logging.DEBUG)
     logger.addHandler(stderr_handler)
-    if log_file:
+    if log_file_name:
         try:
-            file_handler = logging.handlers.RotatingFileHandler(log_file, maxBytes=1024*1024*10, backupCount=10)
+            file_handler = logging.handlers.RotatingFileHandler(log_file_name, maxBytes=1024*1024*10, backupCount=10)
             file_handler.setFormatter(logging.Formatter('%(levelname)s\t%(asctime)s\t%(threadName)s/%(funcName)s\t%(message)s'))
             file_handler.setLevel(logging.DEBUG)
             logger.addHandler(file_handler)
         except Exception as e:
             logger.debug('Could not create log file because' + e.message + '\n.No log mode.')
-    logger.info('Operating system: ' + platform.system() + ' ' + platform.release())
     return logger
 
 def detect_makerware_paths():

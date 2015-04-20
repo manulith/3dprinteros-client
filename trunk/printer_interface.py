@@ -9,7 +9,7 @@ import http_client
 class PrinterInterface(threading.Thread):
 
     DEFAULT_TIMEOUT = 10
-    NO_COMMAND_SLEEP = 3
+    COMMAND_REQUEST_SLEEP = 1.5
 
     def __init__(self, usb_info, user_token, app):
         self.usb_info = usb_info
@@ -31,7 +31,7 @@ class PrinterInterface(threading.Thread):
         while not self.stop_flag:
             answer = self.http_client.pack_and_send('printer_login', self.user_token, self.usb_info)
             if answer:
-                error = answer.get('error', None)
+                error = answer.get('error')
                 if error:
                     self.logger.warning("Error while login %s:" % str((self.user_token, self.usb_info)))
                     self.logger.warning(str(error['code']) + " " + error["message"])
@@ -57,7 +57,7 @@ class PrinterInterface(threading.Thread):
     def connect_to_printer(self):
         printer_sender = __import__(self.printer_profile['sender'])
         self.logger.info("Connecting with profile: " + str(self.printer_profile))
-        if "baudrate" in self.printer_profile and not self.printer_profile.get("COM", False): # indication of serial printer, but no serial port
+        if "baudrate" in self.printer_profile and not self.printer_profile.get("COM"): # indication of serial printer, but no serial port
             self.sender_error = {"code": 11, "message": "No serial port for serial printer. No senders or printer firmware hanged."}
             return
         try:
@@ -75,31 +75,28 @@ class PrinterInterface(threading.Thread):
             self.logger.info("Successful connection to %s!" % (self.printer_profile['name']))
 
     def process_command_request(self, data_dict):
-        error = data_dict.get('error', None)
+        error = data_dict.get('error')
         if error:
             self.logger.warning("Server command came with errors %d %s" % (error['code'], error['message']))
         else:
-            command = data_dict.get('command', None)
+            command = data_dict.get('command')
             if command:
                 method = getattr(self.printer, command, None)
                 if not method:
                     self.logger.warning("Unknown command: " + str(command))
                     self.sender_error = {"code": 40, "message": "Unknown command " + str(command)}
                 else:
-                    number = data_dict.get('number', None)
+                    number = data_dict.get('number')
                     if not number:
                         self.logger.error("No number field in servers answer")
                         raise RuntimeError("No number field in servers answer")
                     self.logger.info("Excecuting command number %i : %s" % (number, str(command)))
-                    payload = data_dict.get('payload', None)
+                    payload = data_dict.get('payload')
                     arguments = []
                     if payload:
                         arguments.append(payload)
-                    if data_dict.get('is_link', False):
+                    if data_dict.get('is_link'):
                         arguments.append(data_dict.get('is_link'))
-                        job_id = data_dict.get('job_id', None)
-                        if job_id:
-                            arguments.append(job_id)
                     try:
                         result = method(*arguments)
                     except Exception as e:
@@ -118,9 +115,9 @@ class PrinterInterface(threading.Thread):
         while not self.stop_flag and self.printer:
             report = self.state_report()
             self.report = report # for web_interface
-            message = [self.printer_token, report, self.acknowledge, self.printer.job_id, self.printer.print_success_flag, self.sender_error]
+            message = [self.printer_token, report, self.acknowledge, self.sender_error]
             if self.printer.error_code:
-                message[5] = {"code": self.printer.error_code, "message": self.printer.error_message}
+                message[3] = {"code": self.printer.error_code, "message": self.printer.error_message}
             self.printer.error_code = None
             self.printer.error_message = None
             self.sender_error = None
@@ -151,7 +148,7 @@ class PrinterInterface(threading.Thread):
                 self.acknowledge = None
                 self.logger.debug("...done")
                 self.stop_flag = True
-            time.sleep(1.5)
+            time.sleep(self.COMMAND_REQUEST_SLEEP)
         self.close_printer_sender()
         self.logger.info('Printer interface stop.')
 
@@ -159,10 +156,10 @@ class PrinterInterface(threading.Thread):
         if self.printer.is_operational():
             if self.printer.is_paused():
                 state = "paused"
-            elif self.printer.is_printing():
-                state = "printing"
             elif self.printer.is_downloading():
                 state = "downloading"
+            elif self.printer.is_printing():
+                state = "printing"
             else:
                 state = "ready"
         else:
@@ -178,6 +175,7 @@ class PrinterInterface(threading.Thread):
             report["temps"] = self.printer.get_temps()
             report["target_temps"] = self.printer.get_target_temps()
             report["percent"] = self.printer.get_percent()
+            report["line_number"] = self.printer.get_current_line_number()
             if outer_state:
                 report["state"] = outer_state
             else:

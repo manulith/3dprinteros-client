@@ -38,7 +38,10 @@
 	<body bgcolor=#003333 link="#fff" vlink="#fff" alink="#fff">
 	<div align='right' style="color: #006666">!!!VERSION!!!</div>
     <form action="/get_updates" style="display:none" method="post">
-        <input type="submit" value="Get updates" style="background: #FF9900; border: none; width: 160px; height: 30px; font-family: 'Trebuchet MS', Helvetica, sans-serif; color: #ffffff; font-weight: bold; font-size: 14px; margin-left: 20px;  margin-bottom: 15px">
+        <input type="submit" value="Get updates" style="background: #FF9900; border: none; width: 160px; height: 30px; font-family: 'Trebuchet MS', Helvetica, sans-serif; color: #ffffff; font-weight: bold; font-size: 14px; margin-left: 20px">
+    </form>
+    <form action="/open_cloudsync_folder" style="display:none"  method="post">
+        <input type="submit" value="Cloudsync folder" title="Copy your files to Cloudsync folder to automatically upload files to 3DprinterOS cloud" style='background: #009999; border: none; width: 160px; height: 30px; font-family: "Trebuchet MS", Helvetica, sans-serif; color: #ffffff; font-weight: bold; font-size: 14px; margin-left: 20px'>
     </form>
     <form action="/choose_cam" method="post">
         <input type="submit" value="Switch cam" style='background: #009999; border: none; width: 160px; height: 30px; font-family: "Trebuchet MS", Helvetica, sans-serif; color: #ffffff; font-weight: bold; font-size: 14px; margin-left: 20px'>

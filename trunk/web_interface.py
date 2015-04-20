@@ -1,13 +1,15 @@
-import os
+import os, sys
 import urllib
 import logging
 import threading
 import BaseHTTPServer
+import subprocess
 from SocketServer import ThreadingMixIn
 
 import utils
 import version
 import config
+import cloud_sync
 
 class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
@@ -23,11 +25,14 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         return host
 
     def write_with_autoreplace(self, page, response=200):
-        page = page.replace('!!!VERSION!!!', 'Client v.' + version.version + ', build ' + version.build + ', commit ' + version.commit)
-        page = page.replace('3DPrinterOS', '3DPrinterOS Client v.' + version.version)
-        self.send_response(response)
-        self.end_headers()
-        self.wfile.write(page)
+        try:
+            page = page.replace('!!!VERSION!!!', 'Client v.' + version.version + ', build ' + version.build + ', commit ' + version.commit)
+            page = page.replace('3DPrinterOS', '3DPrinterOS Client v.' + version.version)
+            self.send_response(response)
+            self.end_headers()
+            self.wfile.write(page)
+        except Exception as e:
+            self.logger.error(str(e.message))
 
     def do_GET(self):
         self.logger.info("Server GET")
@@ -42,67 +47,80 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         elif self.path.find('download_logs') >= 0:
             self.download_logs()
         else:
-            if self.server.app:
-                if self.server.app.user_login.user_token:
-                    name = os.path.join(self.working_dir, 'web_interface/main_loop_form.html')
+            page = self.form_main_page()
+            self.write_with_autoreplace(page)
+
+    def form_main_page(self):
+        page = ''
+        if self.server.app:
+            if self.server.app.user_login.user_token:
+                name = os.path.join(self.working_dir, 'web_interface/main_loop_form.html')
+            else:
+                name = os.path.join(self.working_dir, 'web_interface/login.html')
+            with open(name) as f:
+                page = f.read()
+            printers = self.get_printers_payload()
+            page = page.replace('!!!PRINTERS!!!', printers)
+            login = self.server.app.user_login.login
+            if login:
+                page = page.replace('!!!LOGIN!!!', login)
+            if utils.get_conveyor_pid():
+                page = open(os.path.join(self.working_dir, 'web_interface/conveyor_warning.html')).read()
+            if not utils.is_user_groups():
+                page = open(os.path.join(self.working_dir, 'web_interface/groups_warning.html')).read()
+            if not self.server.app.updater.auto_update_flag and self.server.app.updater.update_flag:
+                page = page.replace('get_updates" style="display:none"', 'get_updates"')
+            if config.config['cloud_sync']['enabled']:
+                page = page.replace('open_cloudsync_folder" style="display:none"', 'open_cloudsync_folder"')
+        return page
+
+    def get_printers_payload(self):
+        printers_list = []
+        for pi in self.server.app.printer_interfaces:
+            snr = pi.usb_info['SNR']
+            if not snr:
+                snr = ""
+            if not getattr(pi, 'printer_profile', False):
+                profile = {'alias': "", 'name': 'Awaiting profile %s:%s %s'
+                                                % (pi.usb_info['PID'], pi.usb_info['VID'], snr)}
+            else:
+                profile = pi.printer_profile
+            printer = '<b>%s</b> %s' % (profile['name'], snr)
+            if not pi.printer_token:
+                printer = printer + '<br>' + 'Waiting type selection from server('\
+                          + '<a href="http://forum.3dprinteros.com/t/how-to-select-printer-type/143" target="_blank"><font color=blue>?</font></a>)'
+            if pi.report:
+                report = pi.report
+                state = report['state']
+                progress = ''
+                if state == 'ready':
+                    color = 'green'
+                elif state == 'printing':
+                    color = 'blue'
+                    progress = ' | ' + str(report['percent']) + '%'
+                elif state == 'paused':
+                    color = 'orange'
+                    progress = ' | ' + str(report['percent']) + '%'
+                elif state == 'downloading':
+                    color = 'lightblue'
                 else:
-                    name = os.path.join(self.working_dir, 'web_interface/login.html')
-                with open(name) as f:
-                    page = f.read()
-                printers_list = []
-                for pi in self.server.app.printer_interfaces:
-                    snr = pi.usb_info['SNR']
-                    if not snr:
-                        snr = ""
-                    if not getattr(pi, 'printer_profile', False):
-                        profile = {'alias': "", 'name': 'Awaiting profile %s:%s %s'
-                                                        % (pi.usb_info['PID'], pi.usb_info['VID'], snr)}
-                    else:
-                        profile = pi.printer_profile
-                    printer = '<b>%s</b> %s' % (profile['name'], snr)
-                    if not pi.printer_token:
-                        printer = printer + '<br>' + 'Waiting type selection from server('\
-                                  + '<a href="http://forum.3dprinteros.com/t/how-to-select-printer-type/143" target="_blank"><font color=blue>?</font></a>)'
-                    if pi.report:
-                        report = pi.report
-                        state = report['state']
-                        progress = ''
-                        if state == 'ready':
-                            color = 'green'
-                        elif state == 'printing':
-                            color = 'blue'
-                            progress = ' | ' + str(report['percent']) + '%'
-                        elif state == 'paused':
-                            color = 'orange'
-                            progress = ' | ' + str(report['percent']) + '%'
-                        else:
-                            color = 'red'
-                        printer = printer + ' - ' + '<font color="' + color + '">' + state + progress + '</font><br>'
-                        temps = report['temps']
-                        target_temps = report['target_temps']
-                        if temps and target_temps:
-                            if len(temps) == 3 and len(target_temps) == 3:
-                                printer = printer + 'Second Tool: ' + str(temps[2]) + '/' + str(target_temps[2]) + ' | '
-                            printer = printer + 'First Tool: ' + str(temps[1]) + '/' + str(target_temps[1]) + ' | ' \
-                                      + 'Heated Bed: ' + str(temps[0]) + '/' + str(target_temps[0])
-                    printers_list.append(printer)
-                printers = ''.join(map(lambda x: "<p>" + x + "</p>", printers_list))
-                if not printers:
-                    printers = '<p><b>No printers detected</b>\
-                        <br>Please do a power cycle for printers\
-                        <br>and then ensure your printers are connected\
-                        <br>to power outlet and usb cord</p>'
-                page = page.replace('!!!PRINTERS!!!', printers)
-                login = self.server.app.user_login.login
-                if login:
-                    page = page.replace('!!!LOGIN!!!', login)
-                if utils.get_conveyor_pid():
-                    page = open(os.path.join(self.working_dir, 'web_interface/conveyor_warning.html')).read()
-                if not utils.is_user_groups():
-                    page = open(os.path.join(self.working_dir, 'web_interface/groups_warning.html')).read()
-                if not self.server.app.updater.auto_update_flag and self.server.app.updater.update_flag:
-                    page = page.replace('get_updates" style="display:none"', 'get_updates" style="display:inline"')
-                self.write_with_autoreplace(page)
+                    color = 'red'
+                printer = printer + ' - ' + '<font color="' + color + '">' + state + progress + '</font><br>'
+                temps = report['temps']
+                target_temps = report['target_temps']
+                if temps and target_temps:
+                    if len(temps) == 3 and len(target_temps) == 3:
+                        printer = printer + 'Second Tool: ' + str(temps[2]) + '/' + str(target_temps[2]) + ' | '
+                    printer = printer + 'First Tool: ' + str(temps[1]) + '/' + str(target_temps[1]) + ' | ' \
+                              + 'Heated Bed: ' + str(temps[0]) + '/' + str(target_temps[0])
+            printers_list.append(printer)
+        printers = ''.join(map(lambda x: "<p>" + x + "</p>", printers_list))
+        if not printers:
+            printers = '<p><b>No printers detected</b>\
+                <br>Please do a power cycle for printers\
+                <br>and then ensure your printers are connected\
+                <br>to power outlet and usb cord</p>'
+        return printers
 
     def do_POST(self):
         if self.path.find('login') >= 0:
@@ -125,8 +143,20 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.choose_cam()
         elif self.path.find('switch_cam') >= 0:
             self.switch_cam()
+        elif self.path.find('open_cloudsync_folder') >= 0:
+            self.open_cloudsync_folder()
         else:
             self.write_message('Not found', 0, 404)
+
+    def open_cloudsync_folder(self):
+        path = os.path.abspath(cloud_sync.Cloudsync.PATH)
+        if sys.platform.startswith('darwin'):
+            subprocess.Popen(['open', path])
+        elif sys.platform.startswith('linux'):
+            subprocess.Popen(['nautilus', path])
+        elif sys.platform.startswith('win32'):
+            subprocess.Popen(['explorer', path])
+        self.do_GET()
 
     def write_message(self, message, show_time=2, response=200):
         page = open(os.path.join(self.working_dir, 'web_interface/message.html')).read()
@@ -277,7 +307,7 @@ class WebInterface(threading.Thread):
         except Exception as e:
             self.logger.error(e)
         else:
-            self.logger.info("...web server started"    )
+            self.logger.info("...web server started")
             self.server.app = self.app
             self.server.token_was_reset_flag = False
             self.server.serve_forever()

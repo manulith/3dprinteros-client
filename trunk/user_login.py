@@ -1,4 +1,3 @@
-import sys
 import time
 import json
 import logging
@@ -20,12 +19,12 @@ class UserLogin:
             self.login_as_user(login, password)
 
     def login_as_user(self, login, password):
-        answer = self.http_client.pack_and_send('user_login', login, password, sys.platform)
+        answer = self.http_client.pack_and_send('user_login', login, password)
         if not answer:
             return 0, "No connection to server"
         else:
-            user_token = answer.get('user_token', None)
-            error = answer.get('error', None)
+            user_token = answer.get('user_token')
+            error = answer.get('error')
             if user_token and not error:
                 profiles_str = answer['all_profiles']
                 all_profiles = json.loads(profiles_str)
@@ -33,7 +32,7 @@ class UserLogin:
                 if utils.write_login(login, password):
                     self.login = login # for web_interface to display
                     self.user_token = answer["user_token"]
-                    self.logger.info("Successful login from user " + login, extra = { 'login': login })
+                    self.logger.info("Successful login from user " + login)
                     return
             else:
                 self.logger.warning("Error processing user_login " + str(error))

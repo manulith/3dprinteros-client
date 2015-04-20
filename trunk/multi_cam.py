@@ -70,6 +70,7 @@ class CameraMaster:
         self.stop_flag = False  # stop flag to know when end application
         self.cameras = []
         self.logger.info('Camera module login...')
+        self.http_client = None
         ul = user_login.UserLogin(self)
         ul.wait_for_login()
         self.user_token = ul.user_token
@@ -148,7 +149,8 @@ class CameraMaster:
     def close(self):
         self.stop_flag = True
         self.release_all_cameras()
-        self.http_client.close()
+        if self.http_client:
+            self.http_client.close()
         logging.shutdown()
         sys.exit(0)
 
