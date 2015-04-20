@@ -27,6 +27,16 @@ LOG_SNAPSHOTS_DIR = 'log_snapshots'
 LOG_SNAPSHOT_LINES = 200
 
 
+def launch_suprocess(self, file_name):
+    self.logger.info('Launching as subprocess ' + file_name)
+    client_dir = os.path.dirname(os.path.abspath(__file__))
+    path = os.path.join(client_dir, file_name)
+    try:
+        process = Popen([sys.executable, path])
+    except Exception as e:
+        self.logger.warning('Could not launch ' + file_name + ' as subprocess due to error:\n' + e.message)
+    else:
+        return process
 
 def is_admin():
     import ctypes, os

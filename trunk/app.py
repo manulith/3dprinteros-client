@@ -54,23 +54,12 @@ class App:
 
     def start_cloud_sync(self):
         if config.config['cloud_sync']['enabled']:
-            self.cloud_sync = self.launch_suprocess(config.config['cloud_sync']['module'])
+            self.cloud_sync = utils.launch_suprocess(config.config['cloud_sync']['module'])
 
     def start_camera(self, module):
         if config.config["camera"]["enabled"]:
-            self.cam = self.launch_suprocess(module)
+            self.cam = utils.launch_suprocess(module)
             self.cam_current_module = module
-
-    def launch_suprocess(self, module):
-        self.logger.info('Launching as subprocess ' + module)
-        client_dir = os.path.dirname(os.path.abspath(__file__))
-        path = os.path.join(client_dir, module)
-        try:
-            process = Popen([sys.executable, path])
-        except Exception as e:
-            self.logger.warning('Could not launch ' + module + ' as subprocess due to error:\n' + e.message)
-        else:
-            return process
 
     def switch_camera(self, module):
         self.logger.info('Switching camera module from %s to %s' % (self.cam_current_module, module))
