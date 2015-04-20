@@ -19,7 +19,7 @@ class USBDetector:
 
 
     @classmethod
-    def format_vid_or_pid(vid_or_pid):
+    def format_vid_or_pid(cls, vid_or_pid):
         return hex(vid_or_pid)[2:].zfill(4).upper()
 
     def __init__(self):
@@ -45,7 +45,7 @@ class USBDetector:
         self.all_serial_ports = serial_ports
         self.unused_serial_ports = filter(lambda x: x[2] != "n/a", serial_ports)
 
-    def create_printers_list(self):
+    def get_printers_list(self):
         self.detect_devices()
         self.detect_serial_ports()
         printers_info = []
@@ -85,7 +85,7 @@ class USBDetector:
             #logger.debug(device_dct)
         for printer_info in printers_info:
             if not printer_info['SNR']:
-                serial_port_name = self.get_serial_port_name(printer_info['VID'], printer_info['PID'])
+                serial_port_name = self.get_serial_port_name(printer_info['VID'], printer_info['PID'], None)
                 serial_number = self.get_snr_by_serial_port_name(serial_port_name)
                 printer_info['COM'] = serial_port_name
                 printer_info['SNR'] = serial_number
@@ -119,6 +119,7 @@ class USBDetector:
 
     def device_is_printer(self, device):
         profiles = Config.instance().profiles
+        if not profiles: return True #for debug purposes
         for profile in profiles:
             if [ device['VID'], device['PID'] ] in profile[ u"vids_pids" ]:
                 return True
@@ -126,6 +127,5 @@ class USBDetector:
 if __name__ == '__main__':
     import json
     detector = USBDetector()
-    printers = detector.get_printers()
-
+    printers = detector.get_printers_list()
     print json.dumps(printers)
