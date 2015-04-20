@@ -44,9 +44,7 @@ class BaseSender:
         self.logger.info('Got %i gcodes to print.')
         return gcodes
 
-    def gcodes(self, gcodes, is_link = False, job_id=None):
-        if job_id:
-            self.job_id = job_id
+    def gcodes(self, gcodes, is_link = False):
         if is_link:
             if self.downloading_flag:
                 self.logger.warning('Download command received while downloading processing. Aborting...')
@@ -99,7 +97,6 @@ class BaseSender:
 
     def close(self):
         self.stop_flag = True
-        self.job_id = None
 
     def get_error_code(self):
         return self.error_code
