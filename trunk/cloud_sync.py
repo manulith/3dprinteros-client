@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 import sys
 import os
 import shutil
@@ -37,15 +40,15 @@ class Cloudsync:
         self.logger = utils.create_logger('cloud_sync', config.config['cloud_sync']['log_file'])
         signal.signal(signal.SIGINT, self.intercept_signal)
         signal.signal(signal.SIGTERM, self.intercept_signal)
-        self.stop_flag = False
-        self.os = self.get_os()
+        self.mswin = sys.platform.startswith('win')
         self.user_token = None
         self.error_code = None
         self.error_message = ''
+        self.start()
 
     def intercept_signal(self, signal_code, frame):
         self.logger.info("SIGINT or SIGTERM received. Closing Cloudsync Module...")
-        self.stop()
+        self.stop_flag = True
 
     def process_error(self, error_code, error_message):
         self.error_code = error_code
@@ -57,16 +60,6 @@ class Cloudsync:
         ul = user_login.UserLogin(self)
         ul.wait_for_login()
         self.user_token = ul.user_token
-
-    def get_os(self):
-        if sys.platform.startswith('win'):
-            return "windows"
-        elif sys.platform.startswith('linux'):
-            return "linux"
-        elif sys.platform.startswith('darwin'):
-            return "mac"
-        else:
-            raise EnvironmentError('Could not detect OS. Only GNU/LINUX, MAC OS X and MS WIN VISTA/7/8 are supported.')
 
     def create_folders(self):
         self.logger.info('Preparing Cloudsync folder: ' + self.PATH)
@@ -159,7 +152,7 @@ class Cloudsync:
     def send_file(self, file_path):
         result = ''
         count = 1
-        while count <= self.MAX_SEND_RETRY:
+        while count <= self.MAX_SEND_RETRY and not self.stop_flag:
             try:
                 error = self.get_permission_to_send(file_path)
                 if error:
@@ -195,7 +188,7 @@ class Cloudsync:
         self.stop_flag = False
         self.login()
         self.create_folders()
-        if self.os == 'windows':
+        if self.mswin:
             self.create_shortcuts_win()
             if config.config['cloud_sync']['virtual_drive_enabled']:
                 self.enable_virtual_drive()
@@ -205,18 +198,17 @@ class Cloudsync:
         while not self.stop_flag:
             self.upload()
             time.sleep(3)
+        self.quit()
 
-    def stop(self):
-        if self.os == 'windows' and config.config['cloud_sync']['virtual_drive_enabled']:
+    def quit(self):
+        if self.mswin and config.config['cloud_sync']['virtual_drive_enabled']:
             self.disable_virtual_drive()
-        self.stop_flag = True
         self.logger.info('Cloudsync is stopped')
         os._exit(0)
 
 if __name__ == '__main__':
     try:
         cs = Cloudsync()
-        cs.start()
     except SystemExit:
         pass
     except:
