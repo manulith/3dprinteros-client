@@ -1,6 +1,5 @@
 {
   "URL": "pinshape-acorn.3dprinteros.com",
-  "AUX_URL": "pinshape-acorn.3dprinteros.com",
   "HTTPS": true,
   "log_file": "3dprinteros_client.log",
   "error_file": "critical_error.log",
