@@ -200,10 +200,13 @@ class Cloudsync:
             time.sleep(3)
         self.quit()
 
+    def stop(self):
+        self.stop_flag = True
+
     def quit(self):
         if self.mswin and config.config['cloud_sync']['virtual_drive_enabled']:
             self.disable_virtual_drive()
-        self.logger.info('Cloudsync is stopped')
+        self.logger.info('Cloudsync stopped')
         os._exit(0)
 
 if __name__ == '__main__':
