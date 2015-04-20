@@ -40,6 +40,7 @@ class App:
         self.quit_flag = False
         self.http_client = http_client.HTTPClient()
         self.cam = None
+        self.cloud_sync = None
         self.cam_modules = config.config['camera']['modules']
         self.cam_current_module = self.cam_modules[config.config['camera']['default_module_name']]
         self.updater = updater.Updater()
@@ -48,7 +49,6 @@ class App:
         self.user_login.wait_for_login()
         self.start_camera(self.cam_current_module)
         self.cloud_sync = cloud_sync.Cloudsync()
-        self.cloud_sync = None
         self.start_cloud_sync()
         self.main_loop()
 
