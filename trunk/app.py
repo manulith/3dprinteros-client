@@ -48,7 +48,6 @@ class App:
         self.init_interface()
         self.user_login.wait_for_login()
         self.start_camera(self.cam_current_module)
-        self.cloud_sync = cloud_sync.Cloudsync()
         self.start_cloud_sync()
         self.main_loop()
 
