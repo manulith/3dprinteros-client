@@ -25,11 +25,14 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         return host
 
     def write_with_autoreplace(self, page, response=200):
-        page = page.replace('!!!VERSION!!!', 'Client v.' + version.version + ', build ' + version.build + ', commit ' + version.commit)
-        page = page.replace('3DPrinterOS', '3DPrinterOS Client v.' + version.version)
-        self.send_response(response)
-        self.end_headers()
-        self.wfile.write(page)
+        try:
+            page = page.replace('!!!VERSION!!!', 'Client v.' + version.version + ', build ' + version.build + ', commit ' + version.commit)
+            page = page.replace('3DPrinterOS', '3DPrinterOS Client v.' + version.version)
+            self.send_response(response)
+            self.end_headers()
+            self.wfile.write(page)
+        except Exception as e:
+            self.logger.error(str(e.message))
 
     def do_GET(self):
         self.logger.info("Server GET")
@@ -304,7 +307,7 @@ class WebInterface(threading.Thread):
         except Exception as e:
             self.logger.error(e)
         else:
-            self.logger.info("...web server started"    )
+            self.logger.info("...web server started")
             self.server.app = self.app
             self.server.token_was_reset_flag = False
             self.server.serve_forever()
