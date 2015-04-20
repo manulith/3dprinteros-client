@@ -110,8 +110,7 @@ class PrinterInterface(threading.Thread):
                     return ack
 
     def form_message(self):
-        return [self.printer_token, self.report, self.acknowledge, self.printer.job_id,
-                      self.printer.print_success_flag, self.sender_error]
+        return [self.printer_token, self.report, self.acknowledge, self.sender_error]
 
     def run(self):
         if self.connect_to_server():
@@ -121,7 +120,7 @@ class PrinterInterface(threading.Thread):
             self.report = self.state_report()
             message = self.form_message()
             if self.printer.error_code:
-                message[5] = {"code": self.printer.error_code, "message": self.printer.error_message}
+                message[3] = {"code": self.printer.error_code, "message": self.printer.error_message}
             self.printer.error_code = None
             self.printer.error_message = None
             self.sender_error = None
@@ -131,9 +130,6 @@ class PrinterInterface(threading.Thread):
                 self.logger.debug("Server answer: " + str(answer))
                 if answer:
                     self.acknowledge = self.process_command_request(answer)
-            # elif (time.time() - self.creation_time <
-            #           self.printer_profile.get('start_timeout', self.DEFAULT_TIMEOUT)) and not self.stop_flag:
-            #     time.sleep(0.1)
             else:
                 self.report_error()
             time.sleep(1.5)

@@ -11,7 +11,6 @@ from app import App
 class BaseSender:
 
     def __init__(self, profile, usb_info):
-        self.logger = logging.getLogger('app.' + __name__)
         self.stop_flag = False
         self.profile = profile
         self.usb_info = usb_info
@@ -23,9 +22,6 @@ class BaseSender:
         self.buffer = collections.deque()
         self.downloading_flag = False
         self.downloader = None
-        self.job_id = None
-        self.print_success_flag = False
-        #self._position = [0.00,0.00,0.00]
 
     def set_total_gcodes(self, length):
         raise NotImplementedError

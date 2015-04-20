@@ -17,12 +17,10 @@ class Sender(BaseSender):
     DEFAULT_TIMEOUT_FOR_PRINTER_ONLINE = 3
 
     def __init__(self, profile, usb_info):
-        self.stop_flag = False
+        BaseSender.__init__(self, profile, usb_info)
+        self.logger = logging.getLogger('app.' + __name__)
         self.printcore = None
         self.last_line = None
-        self.temp_request_thread = None
-        self.logger = logging.getLogger('app.' + __name__)
-        BaseSender.__init__(self, profile, usb_info)
         self.define_regexps()
         if self.select_baudrate_and_connect():
             self.extruder_count = self.profile['extruder_count']
@@ -55,6 +53,7 @@ class Sender(BaseSender):
                 self.logger.info("Waiting for printer online")
                 while time.time() < (wait_start_time + self.DEFAULT_TIMEOUT_FOR_PRINTER_ONLINE):
                     if self.stop_flag:
+                        self.close()
                         return False
                     if self.online_flag:
                         self.logger.info("Successful connection to printer %s:%i" % (self.profile['COM'], baudrate))
@@ -270,7 +269,7 @@ class Sender(BaseSender):
         self.tempcb = None
         self.stop_flag = True
         self.logger.info('Printrun sender is closing')
-        if self.temp_request_thread:
+        if hasattr(self, 'temp_request_thread'):
             self.logger.debug('(Joining printrun threads...')
             self.temp_request_thread.join(10)
             if self.temp_request_thread.isAlive():
