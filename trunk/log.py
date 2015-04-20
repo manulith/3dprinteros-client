@@ -17,22 +17,21 @@ import version
 
 LOG_SNAPSHOT_LINES = 200
 
-def get_logger(log_file):
-    logger = logging.getLogger("app")
+def create_logger(logger_name, log_file_name):
+    logger = logging.getLogger(logger_name)
     logger.propagate = False
     logger.setLevel(logging.DEBUG)
     stderr_handler = logging.StreamHandler()
     stderr_handler.setLevel(logging.DEBUG)
     logger.addHandler(stderr_handler)
-    if log_file:
+    if log_file_name:
         try:
-            file_handler = logging.handlers.RotatingFileHandler(log_file, maxBytes=1024*1024*10, backupCount=10)
+            file_handler = logging.handlers.RotatingFileHandler(log_file_name, maxBytes=1024*1024*10, backupCount=10)
             file_handler.setFormatter(logging.Formatter('%(levelname)s\t%(asctime)s\t%(threadName)s/%(funcName)s\t%(message)s'))
             file_handler.setLevel(logging.DEBUG)
             logger.addHandler(file_handler)
         except Exception as e:
             logger.debug('Could not create log file because' + e.message + '\n.No log mode.')
-    logger.info('Operating system: ' + platform.system() + ' ' + platform.release())
     return logger
 
 def make_log_snapshot():

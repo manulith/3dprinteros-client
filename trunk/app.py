@@ -26,7 +26,8 @@ class App(Singleton):
     LOG_FLUSH_TIME = 30
 
     def __init__(self):
-        self.logger = log.get_logger(Config.instance().settings["log_file"])
+        log_file_name = Config.instance().settings["log_file"]
+        self.logger = log.create_logger("app", log_file_name)
         self.logger.info("Welcome to 3DPrinterOS Client version %s_%s" % (version.version, version.build))
         self.time_stamp()
         signal.signal(signal.SIGINT, self.intercept_signal)
