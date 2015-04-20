@@ -63,7 +63,7 @@ class App(Singleton):
         while not self.stop_flag:
             self.updater.timer_check_for_updates()
             self.time_stamp()
-            self.detected_printers = self.detector.get_printers()
+            self.detected_printers = self.detector.get_printers_list()
             self.check_and_connect()
             for pi in self.printer_interfaces:
                 if pi.usb_info not in self.detected_printers:

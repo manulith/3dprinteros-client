@@ -125,7 +125,13 @@ class USBDetector:
                 return True
 
 if __name__ == '__main__':
-    import json
     detector = USBDetector()
     printers = detector.get_printers_list()
-    print json.dumps(printers)
+    print "\nAll devices:"
+    for printer in printers:
+        print printer
+    printers = filter(lambda x: x['COM'], printers)
+    print "\nDevices with serial port:"
+    for printer in printers:
+        print printer
+
