@@ -112,7 +112,6 @@ class Cloudsync:
                 self.logger.info("Virtual drive disabled.")
 
     def move_file(self, current_path, destination_folder_path):
-        print current_path
         new_file_name = os.path.basename(current_path)
         file_name, file_ext = os.path.splitext(new_file_name)
         name_count = 1
@@ -218,8 +217,12 @@ class Cloudsync:
 
     def main_loop(self):
         while not self.stop_flag:
+            try:
                 self.upload()
                 time.sleep(3)
+            except IOError:
+                if self.mswin:
+                    break
         self.quit()
 
     def stop(self):
