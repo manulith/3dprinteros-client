@@ -125,17 +125,19 @@ class Cloudsync:
         for name in self.names_to_ignore:
             files_to_send.remove(name)
         for position in range(0, len(files_to_send)):
-            files_to_send[position] = join(self.PATH, files_to_send[position])
+            files_to_send[position] = unicode(join(self.PATH, files_to_send[position]))
             path = files_to_send[position]
             if os.path.isdir(path):
                 self.logger.warning('Folders are not sendable!')
                 self.move_file(path, self.UNSENDABLE_PATH)
                 files_to_send.remove(path)
+            '''
             if self.mswin and '?' in path:
                 name = os.path.basename(path)
                 self.logger.warning('Wrong file name ' + name + '\n Windows is unable to operate with such names')
                 files_to_send.remove(path)
                 self.names_to_ignore.append(name)
+            '''
         return files_to_send
 
     def get_file_size(self, file_path):
@@ -167,7 +169,7 @@ class Cloudsync:
         file = open(file_path, 'rb')
         file_name = os.path.basename(file_path).decode('utf-8')
         data = { 'user_token': self.user_token, 'file_name': file_name }
-        files = { 'file': (file_name, file) }
+        files = { 'file': (' ', file) }
         while count <= self.MAX_SEND_RETRY and not self.stop_flag:
             try:
                 result = requests.post(self.URL, data = data, files = files, timeout = self.CONNECTION_TIMEOUT)
