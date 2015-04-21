@@ -208,7 +208,7 @@ class Cloudsync:
             try:
                 self.upload()
                 time.sleep(3)
-            except:
+            except IOError:
                 break
         self.quit()
 
