@@ -143,12 +143,15 @@ class Cloudsync:
         return file_size
 
     def get_permission_to_send(self, file_path):
-        file_ext = file_path.split('.')[-1]
-        file_size = self.get_file_size(file_path)
-        data = {'user_token': self.user_token, 'file_ext': file_ext, 'file_size': file_size}
-        result = requests.post(self.CHECK_URL, data = data, timeout = self.CONNECTION_TIMEOUT)
-        if not '"result":true' in result.text:
-            return result.text
+        try:
+            file_ext = file_path.split('.')[-1]
+            file_size = self.get_file_size(file_path)
+            data = {'user_token': self.user_token, 'file_ext': file_ext, 'file_size': file_size}
+            result = requests.post(self.CHECK_URL, data = data, timeout = self.CONNECTION_TIMEOUT)
+            if not '"result":true' in result.text:
+                return result.text
+        except Exception as e:
+            return str(e)
 
     def send_file(self, file_path):
         error = self.get_permission_to_send(file_path)
