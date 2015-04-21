@@ -58,9 +58,9 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         page = ''
         if self.server.app:
             if self.server.app.user_login.user_token:
-                name = 'web_interface/login.html'
-            else:
                 name = 'web_interface/main_loop_form.html'
+            else:
+                name = 'web_interface/login.html'
             page = self.read_file(name)
             printers = self.get_printers_payload()
             page = page.replace('!!!PRINTERS!!!', printers)
