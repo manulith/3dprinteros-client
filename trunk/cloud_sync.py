@@ -205,8 +205,11 @@ class Cloudsync:
 
     def main_loop(self):
         while not self.stop_flag:
-            self.upload()
-            time.sleep(3)
+            try:
+                self.upload()
+                time.sleep(3)
+            except:
+                break
         self.quit()
 
     def stop(self):
