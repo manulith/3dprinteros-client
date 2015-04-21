@@ -58,7 +58,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         page = ''
         if self.server.app:
             if self.server.app.user_login.user_token:
-                name = 'web_interface/main_loop_form.html'
+                name = 'web_interface/login.html'
             else:
                 name = 'web_interface/main_loop_form.html'
             page = self.read_file(name)
