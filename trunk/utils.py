@@ -560,9 +560,10 @@ def add_user_groups():
         if stdout:
             logger.info('Adding to Linux groups result: ' + stdout)
 
-def get_file_tail(file):
-    if os.path.isfile(file):
-        f = open(file).readlines()
+def get_file_tail(file_path):
+    if os.path.isfile(file_path):
+        with open(file_path) as file:
+            f = file.readlines()
         file_tail = []
         for line in range(-1,-100, -1):
             try:

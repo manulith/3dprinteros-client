@@ -145,26 +145,32 @@ class Cloudsync:
     def get_permission_to_send(self, file_path):
         file_ext = file_path.split('.')[-1]
         file_size = self.get_file_size(file_path)
-        result = requests.post(self.CHECK_URL, data = {'user_token': self.user_token, 'file_ext': file_ext, 'file_size': file_size}, timeout = self.CONNECTION_TIMEOUT)
+        data = {'user_token': self.user_token, 'file_ext': file_ext, 'file_size': file_size}
+        result = requests.post(self.CHECK_URL, data = data, timeout = self.CONNECTION_TIMEOUT)
         if not '"result":true' in result.text:
             return result.text
 
     def send_file(self, file_path):
+        error = self.get_permission_to_send(file_path)
+        if error:
+            return 'Permission to send denied: ' + error
         result = ''
         count = 1
+        file = open(file_path, 'rb')
+        file_name = os.path.basename(file_path).decode('utf-8')
+        data = { 'user_token': self.user_token, 'file_name': file_name }
+        files = { 'file': (file_name, file) }
         while count <= self.MAX_SEND_RETRY and not self.stop_flag:
             try:
-                error = self.get_permission_to_send(file_path)
-                if error:
-                    return 'Permission to send denied: ' + error
-                result = requests.post(self.URL, data={'user_token': self.user_token}, files={'file': (os.path.basename(file_path).decode('utf-8'), open(file_path, 'rb'))}, timeout = self.CONNECTION_TIMEOUT)
+                result = requests.post(self.URL, data = data, files = files, timeout = self.CONNECTION_TIMEOUT)
                 result = str(result.text)
                 if '"result":true' in result:
                     return
             except Exception as e:
-                result = str(e.message)
+                result = str(e)
             self.logger.info('Retrying to send ' + os.path.basename(file_path))
             count += 1
+        file.close()
         return result
 
     def upload(self):
