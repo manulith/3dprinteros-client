@@ -126,14 +126,15 @@ class Cloudsync:
             files_to_send.remove(name)
         for position in range(0, len(files_to_send)):
             files_to_send[position] = join(self.PATH, files_to_send[position])
-            file = files_to_send[position]
-            if os.path.isdir(file):
+            name = files_to_send[position]
+            if os.path.isdir(name):
                 self.logger.warning('Folders are not sendable!')
-                self.move_file(file, self.UNSENDABLE_PATH)
-                files_to_send.remove(file)
-            if self.mswin and '?' in file:
-                self.logger.warning('Wrong file name ' + file + '\n Windows is unable to operate with such names')
-                self.names_to_ignore.append(file)
+                self.move_file(name, self.UNSENDABLE_PATH)
+                files_to_send.remove(name)
+            if self.mswin and '?' in name:
+                self.logger.warning('Wrong file name ' + name + '\n Windows is unable to operate with such names')
+                self.names_to_ignore.append(name)
+                files_to_send.remove(name)
         return files_to_send
 
     def get_file_size(self, file_path):
