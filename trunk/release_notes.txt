@@ -1,6 +1,6 @@
 3DPrinterOS 4.5.1 release notes
 
-4.6.0
+4.6.2
 
     Numerous bug fixes, small performance and code improvements
     Code reorganized to improve memory usage and refuse some bugs (web interface)
