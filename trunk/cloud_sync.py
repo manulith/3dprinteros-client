@@ -134,6 +134,7 @@ class Cloudsync:
             if self.mswin and '?' in name:
                 self.logger.warning('Wrong file name ' + name + '\n Windows is unable to operate with such names')
                 files_to_send.remove(name)
+                self.names_to_ignore.append(name)
         return files_to_send
 
     def get_file_size(self, file_path):
