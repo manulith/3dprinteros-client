@@ -144,6 +144,8 @@ class Cloudsync:
 
     def get_permission_to_send(self, file_path):
         try:
+            if self.mswin:
+                file_path = file_path.replace('?', '$')
             file_ext = file_path.split('.')[-1]
             file_size = self.get_file_size(file_path)
             data = {'user_token': self.user_token, 'file_ext': file_ext, 'file_size': file_size}
@@ -209,7 +211,7 @@ class Cloudsync:
                 self.upload()
                 time.sleep(3)
             except IOError:
-                continue
+                break
         self.quit()
 
     def stop(self):
