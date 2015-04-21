@@ -41,6 +41,7 @@ class Cloudsync:
         signal.signal(signal.SIGINT, self.intercept_signal)
         signal.signal(signal.SIGTERM, self.intercept_signal)
         self.mswin = sys.platform.startswith('win')
+        self.names_to_ignore = [os.path.basename(self.SENDED_PATH), os.path.basename(self.UNSENDABLE_PATH)]
         self.user_token = None
         self.error_code = None
         self.error_message = ''
@@ -120,9 +121,8 @@ class Cloudsync:
         self.logger.debug('Moving ' + os.path.basename(current_path) + ' to ' + os.path.basename(destination_folder_path))
 
     def get_files_to_send(self):
-        names_to_ignore = [os.path.basename(self.SENDED_PATH), os.path.basename(self.UNSENDABLE_PATH)]
         files_to_send = os.listdir(self.PATH)
-        for name in names_to_ignore:
+        for name in self.names_to_ignore:
             files_to_send.remove(name)
         for position in range(0, len(files_to_send)):
             files_to_send[position] = join(self.PATH, files_to_send[position])
@@ -131,6 +131,9 @@ class Cloudsync:
                 self.logger.warning('Folders are not sendable!')
                 self.move_file(file, self.UNSENDABLE_PATH)
                 files_to_send.remove(file)
+            if self.mswin and '?' in file:
+                self.logger.warning('Wrong file name ' + file + '\n Windows is unable to operate with such names')
+                self.names_to_ignore.append(file)
         return files_to_send
 
     def get_file_size(self, file_path):
@@ -153,14 +156,7 @@ class Cloudsync:
         except Exception as e:
             return str(e)
 
-    def correct_wrong_filename(self, file_path):
-        new_path = file_path.replace('?', '$')
-        os.rename(file_path, new_path)
-        return new_path
-
     def send_file(self, file_path):
-        if self.mswin:
-            self.correct_wrong_filename(file_path)
         error = self.get_permission_to_send(file_path)
         if error:
             return 'Permission to send denied: ' + error
