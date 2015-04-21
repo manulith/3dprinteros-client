@@ -134,7 +134,7 @@ class Cloudsync:
                 files_to_send.remove(path)
             for char in os.path.basename(path):
                 if not char in string.printable:
-                    self.logger.warning('Files with non-printable names are not sendable!')
+                    self.logger.warning('Warning! Filename containing unicode characters are not supported by 3DPrinterOS CloudSync')
                     self.move_file(path, self.UNSENDABLE_PATH)
                     files_to_send.remove(path)
                     break
@@ -221,8 +221,7 @@ class Cloudsync:
                 self.upload()
                 time.sleep(3)
             except IOError:
-                if self.mswin:
-                    break
+                break
         self.quit()
 
     def stop(self):
