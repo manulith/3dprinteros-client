@@ -41,6 +41,7 @@ class Cloudsync:
         signal.signal(signal.SIGINT, self.intercept_signal)
         signal.signal(signal.SIGTERM, self.intercept_signal)
         self.mswin = sys.platform.startswith('win')
+        self.names_to_ignore = [os.path.basename(self.SENDED_PATH), os.path.basename(self.UNSENDABLE_PATH)]
         self.user_token = None
         self.error_code = None
         self.error_message = ''
@@ -120,17 +121,21 @@ class Cloudsync:
         self.logger.debug('Moving ' + os.path.basename(current_path) + ' to ' + os.path.basename(destination_folder_path))
 
     def get_files_to_send(self):
-        names_to_ignore = [os.path.basename(self.SENDED_PATH), os.path.basename(self.UNSENDABLE_PATH)]
         files_to_send = os.listdir(self.PATH)
-        for name in names_to_ignore:
+        for name in self.names_to_ignore:
             files_to_send.remove(name)
         for position in range(0, len(files_to_send)):
             files_to_send[position] = join(self.PATH, files_to_send[position])
-            file = files_to_send[position]
-            if os.path.isdir(file):
+            name = files_to_send[position]
+            if os.path.isdir(name):
                 self.logger.warning('Folders are not sendable!')
-                self.move_file(file, self.UNSENDABLE_PATH)
-                files_to_send.remove(file)
+                self.move_file(name, self.UNSENDABLE_PATH)
+                files_to_send.remove(name)
+            if self.mswin and '?' in name:
+                self.logger.warning('Wrong file name ' + name + '\n Windows is unable to operate with such names')
+                self.names_to_ignore.append(name)
+                if name in files_to_send:
+                    files_to_send.remove(name)
         return files_to_send
 
     def get_file_size(self, file_path):
@@ -143,12 +148,15 @@ class Cloudsync:
         return file_size
 
     def get_permission_to_send(self, file_path):
-        file_ext = file_path.split('.')[-1]
-        file_size = self.get_file_size(file_path)
-        data = {'user_token': self.user_token, 'file_ext': file_ext, 'file_size': file_size}
-        result = requests.post(self.CHECK_URL, data = data, timeout = self.CONNECTION_TIMEOUT)
-        if not '"result":true' in result.text:
-            return result.text
+        try:
+            file_ext = file_path.split('.')[-1]
+            file_size = self.get_file_size(file_path)
+            data = {'user_token': self.user_token, 'file_ext': file_ext, 'file_size': file_size}
+            result = requests.post(self.CHECK_URL, data = data, timeout = self.CONNECTION_TIMEOUT)
+            if not '"result":true' in result.text:
+                return result.text
+        except Exception as e:
+            return str(e)
 
     def send_file(self, file_path):
         error = self.get_permission_to_send(file_path)
@@ -202,8 +210,11 @@ class Cloudsync:
 
     def main_loop(self):
         while not self.stop_flag:
-            self.upload()
-            time.sleep(3)
+            try:
+                self.upload()
+                time.sleep(3)
+            except IOError:
+                break
         self.quit()
 
     def stop(self):
