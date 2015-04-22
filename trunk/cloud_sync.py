@@ -121,28 +121,31 @@ class Cloudsync:
         shutil.move(current_path, join(destination_folder_path, new_file_name))
         self.logger.debug('Moving ' + os.path.basename(current_path) + ' to ' + os.path.basename(destination_folder_path))
 
+    def is_sendable(self, file_path):
+        name = os.path.basename(file_path)
+        if self.mswin and '?' in name:
+            self.logger.warning('Wrong file name ' + name + '\n Windows is unable to operate with such names')
+            self.names_to_ignore.append(name)
+            return
+        if os.path.isdir(file_path):
+            self.logger.warning('Folders are not sendable!')
+            self.move_file(file_path, self.UNSENDABLE_PATH)
+            return
+        for char in name:
+            if not char in string.printable:
+                self.logger.warning('Warning! Filename containing unicode characters are not supported by 3DPrinterOS CloudSync')
+                self.move_file(file_path, self.UNSENDABLE_PATH)
+                return
+        return True
+
     def get_files_to_send(self):
         files_to_send = os.listdir(self.PATH)
         for name in self.names_to_ignore:
             files_to_send.remove(name)
-        for position in range(0, len(files_to_send)):
-            files_to_send[position] = join(self.PATH, files_to_send[position])
-            path = files_to_send[position]
-            if os.path.isdir(path):
-                self.logger.warning('Folders are not sendable!')
-                self.move_file(path, self.UNSENDABLE_PATH)
-                files_to_send.remove(path)
-            for char in os.path.basename(path):
-                if not char in string.printable:
-                    self.logger.warning('Warning! Filename containing unicode characters are not supported by 3DPrinterOS CloudSync')
-                    self.move_file(path, self.UNSENDABLE_PATH)
-                    files_to_send.remove(path)
-                    break
-            if self.mswin and '?' in path:
-                name = os.path.basename(path)
-                self.logger.warning('Wrong file name ' + name + '\n Windows is unable to operate with such names')
-                files_to_send.remove(path)
-                self.names_to_ignore.append(name)
+        for index, name in enumerate(files_to_send):
+            name = files_to_send[index] = join(self.PATH, name)
+            if not self.is_sendable(name):
+                files_to_send.remove(name)
         return files_to_send
 
     def get_file_size(self, file_path):
