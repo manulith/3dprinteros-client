@@ -7,6 +7,7 @@ import shutil
 import signal
 import traceback
 import time
+import string
 
 from os.path import join
 from subprocess import Popen, PIPE
@@ -131,6 +132,12 @@ class Cloudsync:
                 self.logger.warning('Folders are not sendable!')
                 self.move_file(path, self.UNSENDABLE_PATH)
                 files_to_send.remove(path)
+            for char in os.path.basename(path):
+                if not char in string.printable:
+                    self.logger.warning('Warning! Filename containing unicode characters are not supported by 3DPrinterOS CloudSync')
+                    self.move_file(path, self.UNSENDABLE_PATH)
+                    files_to_send.remove(path)
+                    break
             if self.mswin and '?' in path:
                 name = os.path.basename(path)
                 self.logger.warning('Wrong file name ' + name + '\n Windows is unable to operate with such names')
@@ -165,9 +172,9 @@ class Cloudsync:
         result = ''
         count = 1
         file = open(file_path, 'rb')
-        file_name = os.path.basename(file_path).decode('utf-8')
+        file_name = os.path.basename(file_path)
         data = { 'user_token': self.user_token, 'file_name': file_name }
-        files = { 'file': (' ', file) }
+        files = { 'file': file }
         while count <= self.MAX_SEND_RETRY and not self.stop_flag:
             try:
                 result = requests.post(self.URL, data = data, files = files, timeout = self.CONNECTION_TIMEOUT)
