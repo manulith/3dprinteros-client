@@ -1,7 +1,7 @@
-3DPrinterOS 4.5.1 release notes
+3DPrinterOS release notes
 
     Fixed opening Cloundsync folder with file managers other that Nautilus
-    Fixed rare bug of to many opened files
+    Fixed rare bug of too many opened files
 
 4.6.2
 
