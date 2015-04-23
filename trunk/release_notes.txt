@@ -6,7 +6,6 @@
 4.6.2
 
     Numerous bug fixes, small performance and code improvements
-    Code reorganized to improve memory usage and refuse some bugs (web interface)
     Support for current line reporting was added(should fix false job completion bug)
     Cloudsync
 
