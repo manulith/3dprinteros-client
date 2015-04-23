@@ -48,6 +48,11 @@ class Sender(base_sender.BaseSender):
         self.temp_request_thread = threading.Thread(target=self.temp_request)
         self.temp_request_thread.start()
         self.sending_thread = threading.Thread(target=self.sending)
+        self.sending_thread.start()
+
+    def set_total_gcodes(self, length):
+        self.total_gcodes = len(self.buffer)
+        self.current_line_number = 0
 
     def connect(self):
         backend_from_our_directory = usb.backend.libusb1.get_backend(find_library=utils.get_libusb_path)
@@ -105,7 +110,7 @@ class Sender(base_sender.BaseSender):
         while not self.stop_flag:
             if not self.printing_flag:
                 time.sleep(0.1)
-            times_to_read = (self.sent_gcodes - self.oks) + self.temp_request_counter + self.get_pos_counter
+            times_to_read = (self.sent_gcodes - self.oks) + self.temp_request_counter + self.get_pos_counter # TODO: need test +1 here
             for _ in range(times_to_read):
                 data = self.read()
                 if data:
@@ -118,11 +123,11 @@ class Sender(base_sender.BaseSender):
                             if ret:
                                 self.parse_response(ret)
                     else:
-                        time.sleep(0.1)
+                        time.sleep(0.001)
                         continue
                 else:
                     continue
-            time.sleep(0.1)
+            time.sleep(0.001)
 
     def read(self):
         try:
@@ -145,14 +150,11 @@ class Sender(base_sender.BaseSender):
             self.oks += 1
         elif ret.startswith('ok T:'):
             self.temp_request_counter -= 1
-            #self.match_temps(ret)
-            if self.match_temps(ret):
-                self.logger.info('T match!')
-            else:
-                self.logger.info('T NOT match!')
+            self.match_temps(ret)
         elif ret.startswith('Position X:'):
             match = self.position_re.match(ret)
             if match:
+                self.get_pos_counter -= 1
                 self.pos_x = match.group(1)
                 self.pos_y = match.group(2)
                 self.pos_z = match.group(3)
@@ -224,15 +226,28 @@ class Sender(base_sender.BaseSender):
 
     def sending(self):
         self.logger.info('Sending thread started!')
-        self.gcode_lines = len(self.buffer)
-        percent_step = self.gcode_lines / 100
-        self.printing_flag = True
-        self.percent = 0
-        self.sent_gcodes = 0
-        self.oks = 0
-        time.sleep(0.2)  # Just let read thread start reading first
-        self.logger.info('Start sending!')
-        while not self.stop_flag and self.printing_flag and self.buffer:
+        while not self.stop_flag:
+            if not self.printing_flag:
+                time.sleep(0.1)
+                continue
+            self.logger.info('Sending started!')
+            self.read()  # Clear buffer from previous printing or cancel command
+            self.init_sending_values()
+            self.sending_loop()
+            self.logger.info('All gcodes are sent to printer. Waiting for finish')
+            self.wait_for_sending_end()
+            self.logger.info('Printer has finished printing!')
+            self.percent = 100
+            self.printing_flag = False
+
+    def wait_for_sending_end(self):
+        while self.oks < self.sent_gcodes:
+            if not self.stop_flag:
+                self.logger.info('Waiting... %s/%s' % (self.oks, self.sent_gcodes))
+                time.sleep(1)
+
+    def sending_loop(self):
+        while self.printing_flag and self.buffer:
             gcode = None
             if self.pause_flag:
                 time.sleep(0.1)
@@ -246,18 +261,19 @@ class Sender(base_sender.BaseSender):
                     self.write(gcode)
                     self.sent_gcodes += 1
                     self.logger.info('Progress: %s/%s' % (self.oks, self.sent_gcodes))
-                    self.percent = self.sent_gcodes / percent_step
+                    self.percent = self.sent_gcodes / self.percent_step
             else:
                 time.sleep(0.001)
-        self.logger.info('All gcodes are sent to printer. Waiting for finish')
-        while self.oks < self.sent_gcodes:
-            if not self.stop_flag:
-                self.logger.info('Waiting... %s/%s' % (self.oks, self.sent_gcodes))
-                time.sleep(1)
-        self.logger.info('Printer has finished printing!')
-        self.percent = 100
-        self.printing_flag = False
-        self.stop_flag = True
+
+    def init_sending_values(self):
+            self.gcode_lines = len(self.buffer)
+            self.percent_step = self.gcode_lines / 100
+            self.printing_flag = True
+            self.percent = 0
+            self.sent_gcodes = 0
+            self.oks = 0
+            #time.sleep(0.2)  # Just let read thread start reading first
+            self.logger.info('Start sending!')
 
     def load_gcodes(self, gcodes):
         if self.printing_flag or self.pause_flag:
@@ -271,7 +287,7 @@ class Sender(base_sender.BaseSender):
                 if line:
                     self.buffer.append(line)
             self.logger.info('Loaded gcodes: %d' % len(self.buffer))
-            self.sending_thread.start()
+            self.printing_flag = True
             return True
 
 if __name__ == '__main__':
