@@ -156,7 +156,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         if sys.platform.startswith('darwin'):
             subprocess.Popen(['open', path])
         elif sys.platform.startswith('linux'):
-            subprocess.Popen(['nautilus', path])
+            subprocess.Popen(['xdg-open', path])
         elif sys.platform.startswith('win32'):
             subprocess.Popen(['explorer', path])
         self.do_GET()
