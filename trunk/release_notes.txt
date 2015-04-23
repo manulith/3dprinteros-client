@@ -1,4 +1,4 @@
-3DPrinterOS 4.5.1 release notes
+3DPrinterOS release notes
 
     ZMorph support
 
