@@ -1,5 +1,8 @@
 3DPrinterOS 4.5.1 release notes
 
+    Fixed opening Cloundsync folder with file managers other that Nautilus
+    Fixed rare bug of to many opened files
+
 4.6.2
 
     Numerous bug fixes, small performance and code improvements
