@@ -11,32 +11,15 @@ import base_sender
 utils.init_path_to_libs()
 
 TEMP_REQUEST_WAIT = 5
-pause_lift_height = 5
-
-int_vid = int('0x1d50', 16)
-int_pid = int('0x6015', 16)
+PAUSE_LIFT_HEIGHT = 5
 
 class Sender(base_sender.BaseSender):
     def __init__(self, profile, usb_info, app):
-
-        # TODO: remove
-        # self.logger = logging.getLogger("smoothie")
-        # self.logger.setLevel(logging.DEBUG)
-        # handler = logging.StreamHandler()
-        # handler.setLevel(logging.DEBUG)
-        # self.logger.addHandler
-        self.logger = logging.getLogger('app.' + __name__)
         base_sender.BaseSender.__init__(self, profile, usb_info, app)
-
+        self.logger = logging.getLogger('app.' + __name__)
         self.logger.info('Raw USB Sender started!')
-
-        # TODO: These are exist in base_sender, remove when adding module to app.
-        # self.stop_flag = False
-        # self.temps = [0, 0]
-        # self.target_temps = [0, 0]
-
-        #self.int_vid = int(usb_info['VID'], 16)
-        #self.int_pid = int(usb_info['VID'], 16)
+        self.int_vid = int(usb_info['VID'], 16)
+        self.int_pid = int(usb_info['PID'], 16)
         self.end_gcodes = profile['end_gcodes']
 
         self.pause_flag = False
@@ -68,7 +51,7 @@ class Sender(base_sender.BaseSender):
 
     def connect(self):
         backend_from_our_directory = usb.backend.libusb1.get_backend(find_library=utils.get_libusb_path)
-        self.dev = usb.core.find(idVendor=int_vid, idProduct=int_pid, backend=backend_from_our_directory)
+        self.dev = usb.core.find(idVendor=self.int_vid, idProduct=self.int_pid, backend=backend_from_our_directory)
         # Checking and claiming interface 0 - interrupt interface for command sending
         # Zmorph also has interface 1 - bulk interface, assuming for file upload.
         if self.dev.is_kernel_driver_active(0) is True:
@@ -206,7 +189,7 @@ class Sender(base_sender.BaseSender):
 
 
     def lift_extruder(self):
-        gcode = 'G1 Z' + str(float(self.pos_z) + pause_lift_height)
+        gcode = 'G1 Z' + str(float(self.pos_z) + PAUSE_LIFT_HEIGHT)
         self.write(gcode)
         self.sent_gcodes += 1
         self.logger.info("Paused successfully")
@@ -249,7 +232,7 @@ class Sender(base_sender.BaseSender):
         self.oks = 0
         time.sleep(0.2)  # Just let read thread start reading first
         self.logger.info('Start sending!')
-        while not self.stop_flag and self.printing_flag and len(self.buffer):
+        while not self.stop_flag and self.printing_flag and self.buffer:
             gcode = None
             if self.pause_flag:
                 time.sleep(0.1)
@@ -263,9 +246,9 @@ class Sender(base_sender.BaseSender):
                     self.write(gcode)
                     self.sent_gcodes += 1
                     self.logger.info('Progress: %s/%s' % (self.oks, self.sent_gcodes))
-                    #self.percent = self.sent_gcodes / percent_step
+                    self.percent = self.sent_gcodes / percent_step
             else:
-                time.sleep(0.1)
+                time.sleep(0.001)
         self.logger.info('All gcodes are sent to printer. Waiting for finish')
         while self.oks < self.sent_gcodes:
             if not self.stop_flag:
@@ -287,7 +270,7 @@ class Sender(base_sender.BaseSender):
                 line = line.replace('\r', '')
                 if line:
                     self.buffer.append(line)
-            self.logger.info('Loaded Gcodes: %d' % len(self.buffer))
+            self.logger.info('Loaded gcodes: %d' % len(self.buffer))
             self.sending_thread.start()
             return True
 

@@ -1,5 +1,7 @@
 3DPrinterOS 4.5.1 release notes
 
+    ZMorph support
+
 4.6.2
 
     Numerous bug fixes, small performance and code improvements
