@@ -31,6 +31,7 @@ class Sender(base_sender.BaseSender):
         self.pos_z = None
 
         self.heating_gcodes = []
+        self.start_gcodes = []
 
         self.buffer = collections.deque()
         self.buffer_lock = threading.Lock()
@@ -247,6 +248,7 @@ class Sender(base_sender.BaseSender):
                 time.sleep(5)
                 #continue
             if self.temp_request_counter:
+                print 'TEMP REQ COUNTER : %d' % self.temp_request_counter
                 time.sleep(1.5)
                 no_answer_counter += 1
                 if no_answer_counter >= no_answer_cap and self.temp_request_counter > 0:
