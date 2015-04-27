@@ -24,8 +24,6 @@ class BaseSender:
         self.buffer = collections.deque()
         self.downloading_flag = False
         self.downloader = None
-        self.job_id = None
-        self.print_success_flag = False
         self.current_line_number = 0
         #self._position = [0.00,0.00,0.00]
 
@@ -104,7 +102,6 @@ class BaseSender:
 
     def close(self):
         self.stop_flag = True
-        self.job_id = None
 
     def get_error_code(self):
         return self.error_code

@@ -2,13 +2,11 @@
 # -*- coding: utf-8 -*-
 
 import sys
-import os
 import time
 import signal
 import logging
 import traceback
 import platform
-from subprocess import Popen
 
 import utils
 utils.init_path_to_libs()
@@ -19,7 +17,6 @@ import http_client
 import printer_interface
 import user_login
 import updater
-import cloud_sync
 
 
 class App:
@@ -48,7 +45,6 @@ class App:
         self.init_interface()
         self.user_login.wait_for_login()
         self.start_camera(self.cam_current_module)
-        self.cloud_sync = cloud_sync.Cloudsync()
         self.start_cloud_sync()
         self.main_loop()
 
