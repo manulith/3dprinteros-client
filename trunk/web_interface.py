@@ -274,7 +274,8 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         if error:
             message = str(error[1])
         else:
-            message = 'Login successful!<br><br>Processing...'
+            success_image_path = os.path.join(os.getcwd(), 'web_interface/success.jpg')
+            message = 'Login successful!<br><br>Processing... <img src="' + success_image_path + '" style="display: none;"></img>'
         self.write_message(message)
 
     def process_logout(self):
