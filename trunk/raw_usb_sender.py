@@ -44,18 +44,25 @@ class Sender(base_sender.BaseSender):
 
         self.temp_re = re.compile('.*ok T:([\d\.]+) /([\d\.]+) .* B:(-?[\d\.]+) /(-?[\d\.]+) .*')
         self.position_re = re.compile('Position X: ([\d\.]+), Y: ([\d\.]+), Z: ([\d\.]+)')
+        self.get_temp_bed_re = re.compile('bed temp: ([\d\.]+)/([\d\.]+) @')
+        self.get_temp_hotend_re = re.compile('hotend temp: ([\d\.]+)/([\d\.]+) @')
         self.bed_heating_re = re.compile('M190 S([\d\.]+)')
         self.tool_heating_re = re.compile('M109 T0 S([\d\.]+)')
         self.dev = None
         self.endpoint_in = None
         self.endpoint_out = None
-        self.read_thread = threading.Thread(target=self.reading)
-        self.connect()
+
+        connect = self.connect()
         time.sleep(2)  # Important!
-        self.temp_request_thread = threading.Thread(target=self.temp_request)
-        self.temp_request_thread.start()
-        self.sending_thread = threading.Thread(target=self.sending)
-        self.sending_thread.start()
+        if connect:
+            self.read_thread = threading.Thread(target=self.reading)
+            self.read_thread.start()
+            self.temp_request_thread = threading.Thread(target=self.temp_request)
+            self.temp_request_thread.start()
+            self.sending_thread = threading.Thread(target=self.sending)
+            self.sending_thread.start()
+        else:
+            raise Exception('Cannot connect to USB device.')
 
     def set_total_gcodes(self, length):
         self.total_gcodes = len(self.buffer)
@@ -94,7 +101,6 @@ class Sender(base_sender.BaseSender):
             cfg = self.dev.get_active_configuration()
             self.endpoint_in = cfg[(0, 0)][0]
             self.endpoint_out = cfg[(0, 0)][1]
-            self.read_thread.start()
             return True
 
     # Now works for linux
@@ -109,7 +115,7 @@ class Sender(base_sender.BaseSender):
 
     def write(self, gcode):
         try:
-            self.endpoint_out.write(gcode + '\n', 2000)
+            self.endpoint_out.write(gcode + '\n', 4000)
         #except usb.core.USBError:
         except Exception as e:
             self.logger.warning('Error while writing gcode "%s"\nError: %s' % (gcode, e.message))
@@ -128,7 +134,7 @@ class Sender(base_sender.BaseSender):
         while not self.stop_flag:
             if not self.printing_flag:
                 time.sleep(0.1)
-            times_to_read = (self.sent_gcodes - self.oks) + self.temp_request_counter + self.get_pos_counter # TODO: need test +1 here
+            times_to_read = (self.sent_gcodes - self.oks) + self.temp_request_counter + self.get_pos_counter
             for _ in range(times_to_read):
                 with self.read_lock:
                     data = self.read()
@@ -150,7 +156,7 @@ class Sender(base_sender.BaseSender):
 
     def read(self):
         try:
-            data = self.dev.read(self.endpoint_in.bEndpointAddress, self.endpoint_in.wMaxPacketSize, 2000)
+            data = self.dev.read(self.endpoint_in.bEndpointAddress, self.endpoint_in.wMaxPacketSize, 4000)
         except Exception as e:
             self.logger.warning('Error while reading gcode: %s' % str(e))
             return None
@@ -164,7 +170,7 @@ class Sender(base_sender.BaseSender):
             return True
         return False
 
-    def parse_response(self, ret):
+    def parse_response1(self, ret):
         if ret == 'ok':
             self.oks += 1
         elif ret.startswith('ok T:'):
@@ -172,7 +178,6 @@ class Sender(base_sender.BaseSender):
             match = self.match_temps(ret)
             if match:
                 self.logger.info('TEMP UPDATE')
-
         elif ret.startswith('Position X:'):
             match = self.position_re.match(ret)
             if match:
@@ -187,7 +192,31 @@ class Sender(base_sender.BaseSender):
             self.logger.warning('Got unpredictable answer from printer: %s' % ret.decode())
             pass
 
-    def match_temps(self, request):
+    def parse_response(self, ret):
+        if ret == 'ok':
+            self.oks += 1
+        elif ret.startswith('bed temp:') or ret.startswith('hotend temp:'):
+            print 'PARSING %s' % ret
+            self.temp_request_counter -= 1
+            match = self.match_temps(ret)
+            if match:
+                self.logger.info('TEMP UPDATE')
+        elif ret.startswith('Position X:'):
+            match = self.position_re.match(ret)
+            if match:
+                self.get_pos_counter -= 1
+                self.pos_x = match.group(1)
+                self.pos_y = match.group(2)
+                self.pos_z = match.group(3)
+                self.lift_extruder()
+            else:
+                self.logger.warning('Got position answer, but it does not match! Response: %s' % ret)
+        else:
+            self.logger.warning('Got unpredictable answer from printer: %s' % ret.decode())
+            pass
+
+    # M105 based matching. Redefine if needed.
+    def match_temps1(self, request):
         match = self.temp_re.match(request)
         if match:
             tool_temp = float(match.group(1))
@@ -197,6 +226,21 @@ class Sender(base_sender.BaseSender):
             self.temps = [platform_temp, tool_temp]
             self.target_temps = [platform_target_temp, tool_target_temp]
             #self.logger.info('Got temps: T %s/%s B %s/%s' % (tool_temp, tool_target_temp, platform_temp, platform_target_temp))
+            return True
+        return False
+
+    def match_temps(self, request):
+        match = self.get_temp_bed_re.match(request)
+        if match:
+            print 'MATCHED BED'
+            self.temps[0] = round(float(match.group(1)), 2)
+            self.target_temps[0] = round(float(match.group(2)), 2)
+            return True
+        match = self.get_temp_hotend_re.match(request)
+        if match:
+            print 'MATCHED TOOL'
+            self.temps[1] = round(float(match.group(1)), 2)
+            self.target_temps[1] = round(float(match.group(2)), 2)
             return True
         return False
 
@@ -220,7 +264,7 @@ class Sender(base_sender.BaseSender):
         self.sent_gcodes += 1
         self.logger.info("Paused successfully")
 
-    def pause(self):
+    def pause(self):  # TODO: del
         if not self.pause_flag:
             self.logger.info("Pausing...")
             self.pause_flag = True
@@ -238,7 +282,7 @@ class Sender(base_sender.BaseSender):
             self.pause_flag = False
             self.logger.info("Unpaused successfully")
 
-    def temp_request(self):
+    def temp_request1(self):
         self.temp_request_counter = 0
         no_answer_counter = 0
         no_answer_cap = 5
@@ -255,7 +299,34 @@ class Sender(base_sender.BaseSender):
                 no_answer_counter = 0
                 self.temp_request_counter += 1
                 with self.write_lock:
-                    self.write('M105')
+                    if self.heating_flag:
+                        self.write('M105')
+                    else:
+                        self.write('get temp hotend')
+
+    def temp_request(self):
+        self.temp_request_counter = 0
+        no_answer_counter = 0
+        no_answer_cap = 5
+        while not self.stop_flag:
+            if self.heating_flag:
+                time.sleep(1)
+                #continue
+            if self.temp_request_counter:
+                time.sleep(2)
+                no_answer_counter += 1
+                if no_answer_counter >= no_answer_cap and self.temp_request_counter > 0:
+                    self.temp_request_counter -= 1
+            else:
+                no_answer_counter = 0
+                with self.write_lock:
+                    self.write('get temp hotend')
+                self.temp_request_counter += 1
+                time.sleep(2)
+                with self.write_lock:
+                    self.write('get temp bed')
+                self.temp_request_counter += 1
+
 
     def get_current_line_number(self):
         return self.oks
@@ -303,23 +374,21 @@ class Sender(base_sender.BaseSender):
                 self.write(gcode)
             self.sent_gcodes += 1
             if self.bed_heating_re.match(gcode):
-                self.logger.info('Waiting heating bed')
+                self.logger.info('Heating bed')
                 while not self.temps[0] or not self.target_temps[0]:
                     time.sleep(0.05)
+                self.logger.info('Waiting heating bed')
                 while self.temps[0] < self.target_temps[0]:
                     time.sleep(0.05)
                 self.logger.info('Bed heated!')
             if self.tool_heating_re.match(gcode):
-                self.logger.info('Waiting heating tool')
+                self.logger.info('Heating tool')
                 while not self.temps[1] or not self.target_temps[1]:
                     time.sleep(0.05)
+                self.logger.info('Waiting heating tool')
                 while self.temps[1] < self.target_temps[1]:
                     time.sleep(0.05)
                 self.logger.info('Tool heated!')
-        # while not self.temps[0] or not self.temps[1] or not self.target_temps[0] or not self.target_temps[1]:
-        #     time.sleep(0.05)
-        # while self.temps[0] < self.target_temps[0] and self.temps[1] < self.target_temps[1]:
-        #     time.sleep(0.05)
         self.logger.info('Finished heating!')
         self.heating_flag = False
 
@@ -369,7 +438,6 @@ class Sender(base_sender.BaseSender):
             self.percent = 0
             self.sent_gcodes = 0
             self.oks = 0
-            #time.sleep(0.2)  # Just let read thread start reading first
             self.logger.info('Start sending!')
 
     def load_gcodes(self, gcodes):

@@ -31,7 +31,6 @@ class Sender(base_sender.BaseSender):
         self.pos_z = None
 
         self.heating_gcodes = []
-        self.start_gcodes = []
 
         self.buffer = collections.deque()
         self.buffer_lock = threading.Lock()
@@ -248,7 +247,6 @@ class Sender(base_sender.BaseSender):
                 time.sleep(5)
                 #continue
             if self.temp_request_counter:
-                print 'TEMP REQ COUNTER : %d' % self.temp_request_counter
                 time.sleep(1.5)
                 no_answer_counter += 1
                 if no_answer_counter >= no_answer_cap and self.temp_request_counter > 0:
@@ -305,16 +303,18 @@ class Sender(base_sender.BaseSender):
                 self.write(gcode)
             self.sent_gcodes += 1
             if self.bed_heating_re.match(gcode):
-                self.logger.info('Waiting heating bed')
+                self.logger.info('Heating bed')
                 while not self.temps[0] or not self.target_temps[0]:
                     time.sleep(0.05)
+                self.logger.info('Waiting heating bed')
                 while self.temps[0] < self.target_temps[0]:
                     time.sleep(0.05)
                 self.logger.info('Bed heated!')
             if self.tool_heating_re.match(gcode):
-                self.logger.info('Waiting heating tool')
+                self.logger.info('Heating tool')
                 while not self.temps[1] or not self.target_temps[1]:
                     time.sleep(0.05)
+                self.logger.info('Waiting heating tool')
                 while self.temps[1] < self.target_temps[1]:
                     time.sleep(0.05)
                 self.logger.info('Tool heated!')
