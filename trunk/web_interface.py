@@ -40,9 +40,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
     def do_GET(self):
         self.logger.info("Server GET")
-        if self.server.token_was_reset_flag:
-            self.write_with_autoreplace("Token was reset\nPlease restart 3DPrinterOS and re-login")
-        elif self.path.find('get_login') >= 0:
+        if self.path.find('get_login') >= 0:
             self.process_login()
         elif self.path.find('quit') >= 0:
             self.quit_main_app()
