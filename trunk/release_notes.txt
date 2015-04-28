@@ -1,5 +1,6 @@
 3DPrinterOS release notes
 
+    Smoothie printers partial support
     ZMorph support
 
 4.6.2
