@@ -53,8 +53,7 @@ class Sender(BaseSender):
                 self.logger.info("Waiting for printer online")
                 while time.time() < (wait_start_time + self.DEFAULT_TIMEOUT_FOR_PRINTER_ONLINE):
                     if self.stop_flag:
-                        self.close()
-                        return False
+                        raise RuntimeError("Connection to printer interrupted by closing")
                     if self.online_flag:
                         self.logger.info("Successful connection to printer %s:%i" % (self.profile['COM'], baudrate))
                         time.sleep(0.1)

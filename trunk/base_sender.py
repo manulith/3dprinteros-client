@@ -11,6 +11,7 @@ from app import App
 class BaseSender:
 
     def __init__(self, profile, usb_info):
+        self.logger = logging.getLogger('app.' + __name__)
         self.stop_flag = False
         self.profile = profile
         self.usb_info = usb_info
