@@ -295,6 +295,7 @@ class Sender(base_sender.BaseSender):
             self.percent = 0
             self.sent_gcodes = 0
             self.oks = 0
+            self.temp_request_counter = 0
             self.logger.info('Start sending!')
 
     def load_gcodes(self, gcodes):
