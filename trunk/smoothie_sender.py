@@ -86,7 +86,7 @@ class Sender(raw_usb_sender.Sender):
                 while not self.temps[0] or not self.target_temps[0]:
                     time.sleep(0.05)
                 self.logger.info('Waiting heating bed')
-                while self.temps[0] < self.target_temps[0]:
+                while self.temps[0] < self.target_temps[0] - 3:
                     time.sleep(0.05)
                 self.logger.info('Bed heated!')
             elif self.tool_heating_re.match(gcode):
@@ -94,7 +94,7 @@ class Sender(raw_usb_sender.Sender):
                 while not self.temps[1] or not self.target_temps[1]:
                     time.sleep(0.05)
                 self.logger.info('Waiting heating tool')
-                while self.temps[1] < self.target_temps[1]:
+                while self.temps[1] < self.target_temps[1] - 3:
                     time.sleep(0.05)
                 self.logger.info('Tool heated!')
             else:
