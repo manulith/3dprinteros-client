@@ -4,7 +4,10 @@ import time
 
 class Sender(raw_usb_sender.Sender):
     def __init__(self, profile, usb_info, app):
+        self.define_regexps()
         raw_usb_sender.Sender.__init__(self, profile, usb_info, app)
+
+    def define_regexps(self):
         self.temp_re = re.compile('.*ok T:([\d\.]+) /([\d\.]+) .* B:(-?[\d\.]+) /(-?[\d\.]+) .*')
         self.position_re = re.compile('Position X: ([\d\.]+), Y: ([\d\.]+), Z: ([\d\.]+)')
         self.get_temp_bed_re = re.compile('bed temp: ([\d\.]+)/([\d\.]+) @')
@@ -31,8 +34,7 @@ class Sender(raw_usb_sender.Sender):
             else:
                 self.logger.warning('Got position answer, but it does not match! Response: %s' % ret)
         else:
-            pass
-            #self.logger.warning('Got unpredictable answer from printer: %s' % ret.decode())
+            self.logger.debug('Got unpredictable answer from printer: %s' % ret.decode())
 
     # M105 based matching. Redefine if needed.
     def match_temps(self, request):
@@ -55,26 +57,6 @@ class Sender(raw_usb_sender.Sender):
             self.get_pos_counter += 1
             with self.write_lock:
                 self.write('get pos')
-
-    def temp_request(self):
-        self.temp_request_counter = 0
-        no_answer_counter = 0
-        no_answer_cap = 5
-        while not self.stop_flag:
-            time.sleep(1)
-            if self.heating_flag:
-                time.sleep(5)
-                #continue
-            if self.temp_request_counter:
-                time.sleep(1.5)
-                no_answer_counter += 1
-                if no_answer_counter >= no_answer_cap and self.temp_request_counter > 0:
-                    self.temp_request_counter -= 1
-            else:
-                no_answer_counter = 0
-                self.temp_request_counter += 1
-                with self.write_lock:
-                    self.write('M105')
 
     def prepare_heating(self):
         with self.buffer_lock:
