@@ -12,7 +12,7 @@ import traceback
 
 import http_client
 import user_login
-from config import Config
+import config
 
 FRAME_RETRY = 5
 FRAME_WIDTH = 640
@@ -120,9 +120,9 @@ class CameraMaster:
                 self.logger.info('Cannot get camera frame')
                 continue
             camera.resize_check()
-            encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), Config.instance().settings["camera"]["img_qual"]]
+            encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), config.get_settings()["camera"]["img_qual"]]
             try:
-                result, image_encode = cv2.imencode(Config.instance().settings["camera"]["img_ext"], camera.frame, encode_param)
+                result, image_encode = cv2.imencode(config.get_settings()["camera"]["img_ext"], camera.frame, encode_param)
             except Exception as e:
                 self.logger.warning('Error while encoding image : %s' % e.message)
                 result, image_encode = None, None
@@ -176,5 +176,5 @@ if __name__ == '__main__':
     except:
         trace = traceback.format_exc()
         print trace
-        with open(Config.instance().settings['error_file'], "a") as f:
+        with open(config.get_settings()['error_file'], "a") as f:
             f.write(time.ctime() + "\n" + trace + "\n")

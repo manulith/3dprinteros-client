@@ -10,7 +10,7 @@ import usb.backend.libusb1
 import serial.tools.list_ports
 
 import paths
-from config import Config
+import config
 
 class USBDetector:
     vid_pid_re = re.compile(
@@ -118,7 +118,7 @@ class USBDetector:
         return None
 
     def device_is_printer(self, device):
-        profiles = Config.instance().profiles
+        profiles = config.get_profiles()
         if not profiles: return True #for debug purposes
         for profile in profiles:
             if [ device['VID'], device['PID'] ] in profile[ u"vids_pids" ]:

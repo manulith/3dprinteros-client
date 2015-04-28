@@ -3,7 +3,7 @@ import sys
 import logging
 import subprocess
 
-from config import Config
+import config
 
 
 class CameraController:
@@ -17,7 +17,7 @@ class CameraController:
     def start_camera_process(self, camera_name=None):
         self.logger.info('Launching camera subprocess')
         if not camera_name:
-            camera_name = Config.instance().settings['camera']['default']
+            camera_name = config.get_settings()['camera']['default']
         module_name = self.CAMERA_MODULES[camera_name]
         if module_name:
             cam_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), module_name)

@@ -8,15 +8,15 @@ import tempfile
 import requests
 import time
 
-from config import Config
+import config
 import version
 
 CONNECTION_TIMEOUT = 6
 
 class HTTPClient:
 
-    URL = Config.instance().settings['URL']
-    HTTPS_MODE = Config.instance().settings['HTTPS']
+    URL = config.get_settings()['URL']
+    HTTPS_MODE = config.get_settings()['HTTPS']
     streamer_prefix = "/streamerapi"
     user_login_path = streamer_prefix + "/user_login"
     printer_login_path = streamer_prefix + "/printer_login"
@@ -164,7 +164,7 @@ class HTTPClient:
 
 class File_Downloader:
     def __init__(self, base_sender):
-        self.max_download_retry = Config.instance().settings["max_download_retry"]
+        self.max_download_retry = config.get_settings()["max_download_retry"]
         self.base_sender = base_sender
         self.percent = None
         self.logger = logging.getLogger('app.' + "file_downloader")

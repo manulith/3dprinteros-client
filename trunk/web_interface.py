@@ -11,7 +11,7 @@ import paths
 import rights
 import makerware_utils
 import version
-from config import Config
+import config
 
 
 class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
@@ -183,7 +183,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.write_message(message)
 
     def show_logs(self):
-        log_file = Config.instance().settings['log_file']
+        log_file = Config.get_settings()['log_file']
         logs = log.get_file_tail(log_file)
         content = ''
         if not content:

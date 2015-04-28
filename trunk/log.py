@@ -9,7 +9,7 @@ import logging
 import logging.handlers
 import platform
 
-from config import Config
+import config
 import paths
 import requests
 import http_client
@@ -36,7 +36,7 @@ def create_logger(logger_name, log_file_name):
 
 def make_log_snapshot():
     logger = logging.getLogger("app." + __name__)
-    with open(Config.instance().settings['log_file']) as log_file:
+    with open(config.get_settings()['log_file']) as log_file:
         log_text = "3DPrinterOS %s_%s_%s\n" % (version.version, version.build, version.commit)
         log_text += tail(log_file, LOG_SNAPSHOT_LINES)
     if not os.path.exists(paths.LOG_SNAPSHOTS_DIR):
@@ -67,7 +67,7 @@ def make_full_log_snapshot():
     for path in possible_paths:
         for log in os.listdir(path):
             try:
-                if log.startswith(Config.instance().settings['log_file']) or log.startswith(Config.instance().settings['error_file']):
+                if log.startswith(config.get_settings()['log_file']) or log.startswith(config.get_settings()['error_file']):
                     log_files.append(log)
             except Exception:
                 continue
@@ -98,7 +98,7 @@ def compress_and_send(user_token, log_file_name=None):
     logger = logging.getLogger('app.' + __name__)
     log_snapshots_dir = os.path.join(paths.get_paths_to_settings_folder()[0], paths.LOG_SNAPSHOTS_DIR)
     if not log_file_name:
-        log_file_name = Config.instance().settings['log_file']
+        log_file_name = config.get_settings()['log_file']
     zip_file_name = log_file_name + ".zip"
     log_file_name_path = os.path.abspath(os.path.join(log_snapshots_dir, log_file_name))
     zip_file_name_path = os.path.abspath(os.path.join(log_snapshots_dir, zip_file_name))

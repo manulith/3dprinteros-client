@@ -2,7 +2,7 @@ import sys
 import logging
 from subprocess import Popen, PIPE
 
-from config import Config
+import config
 
 
 def is_admin():
@@ -16,7 +16,7 @@ def is_admin():
 
 def is_user_groups():
     logger = logging.getLogger('app')
-    if sys.platform.startswith('linux') and Config.instance().settings['linux_rights_warning']:
+    if sys.platform.startswith('linux') and config.get_settings()['linux_rights_warning']:
         p = Popen('groups', stdout=PIPE, stderr=PIPE)
         stdout, stderr = p.communicate()
         groups = stdout

@@ -2,6 +2,12 @@ import json
 
 from singleton import Singleton
 
+def get_settings():
+    return Config.instance().settings
+
+def get_profiles():
+    return Config.instance().profiles
+
 class Config(Singleton):
 
     SETTINGS_FILE_NAME = 'settings.json'

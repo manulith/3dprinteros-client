@@ -18,7 +18,7 @@ import updater
 import version
 import printer_interface
 from singleton import Singleton
-from config import Config
+import config
 
 
 class App(Singleton):
@@ -26,7 +26,7 @@ class App(Singleton):
     LOG_FLUSH_TIME = 30
 
     def __init__(self):
-        log_file_name = Config.instance().settings["log_file"]
+        log_file_name = config.get_settings()["log_file"]
         self.logger = log.create_logger("app", log_file_name)
         self.logger.info("Welcome to 3DPrinterOS Client version %s_%s" % (version.version, version.build))
         self.time_stamp()
@@ -39,12 +39,12 @@ class App(Singleton):
         self.user_login = user_login.UserLogin(self)
         self.init_interface()
         if self.user_login.wait_for_login():
-            Config.instance().set_profiles(self.user_login.profiles)
-            if Config.instance().settings["camera"]["enabled"]:
+            config.Config.instance().set_profiles(self.user_login.profiles)
+            if config.get_settings()["camera"]["enabled"]:
                 self.camera_controller = camera_controller.CameraController()
 
     def init_interface(self):
-        if Config.instance().settings['web_interface']:
+        if config.get_settings()['web_interface']:
             import webbrowser
             from web_interface import WebInterface
             self.web_interface = WebInterface(self)
@@ -148,5 +148,7 @@ if __name__ == '__main__':
     except:
         trace = traceback.format_exc()
         print trace
-        with open(Config.instance().settings['error_file'], "a") as f:
+        settings = Config.instance()
+        with open(settings.settings['error_file'], "a") as f:
             f.write(time.ctime() + "\n" + trace + "\n")
+        del settings
