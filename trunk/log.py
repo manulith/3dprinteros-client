@@ -6,8 +6,7 @@ import sys
 import time
 import zipfile
 import logging
-import logging.handlers
-import platform
+import cloghandler
 
 import config
 import paths
@@ -21,12 +20,12 @@ def create_logger(logger_name, log_file_name):
     logger = logging.getLogger(logger_name)
     logger.propagate = False
     logger.setLevel(logging.DEBUG)
-    stderr_handler = logging.StreamHandler()
-    stderr_handler.setLevel(logging.DEBUG)
-    logger.addHandler(stderr_handler)
+    std_handler = logging.StreamHandler(stream=sys.stdout)
+    std_handler.setLevel(logging.DEBUG)
+    logger.addHandler(std_handler)
     if log_file_name:
         try:
-            file_handler = logging.handlers.RotatingFileHandler(log_file_name, maxBytes=1024*1024*10, backupCount=10)
+            file_handler = cloghandler.ConcurrentRotatingFileHandler(log_file_name, maxBytes=1024*1024*10, backupCount=10)
             file_handler.setFormatter(logging.Formatter('%(levelname)s\t%(asctime)s\t%(threadName)s/%(funcName)s\t%(message)s'))
             file_handler.setLevel(logging.DEBUG)
             logger.addHandler(file_handler)

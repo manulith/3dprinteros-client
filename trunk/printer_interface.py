@@ -107,6 +107,7 @@ class PrinterInterface(threading.Thread):
                     return ack
 
     def form_message(self):
+        self.report = self.state_report()
         return [self.printer_token, self.report, self.acknowledge, self.sender_error]
 
     def run(self):
@@ -114,9 +115,7 @@ class PrinterInterface(threading.Thread):
             self.connect_to_printer()
         time.sleep(0.1)
         while not self.stop_flag and self.printer:
-            self.report = self.state_report()
             message = self.form_message()
-            report = self.state_report()            
             if self.printer.error_code:
                 message[3] = {"code": self.printer.error_code, "message": self.printer.error_message}
             self.printer.error_code = None
@@ -129,25 +128,6 @@ class PrinterInterface(threading.Thread):
                 if answer:
                     self.acknowledge = self.process_command_request(answer)
             else:
-                self.logger.warning("Printer has become not operational:\n%s\n%s" % (str(self.usb_info), str(self.printer_profile)))
-                answer = None
-                while not answer and not self.stop_flag:
-                    self.logger.debug("Trying to report error to server...")
-                    answer = self.http_client.pack_and_send('command', *message)
-                    error = answer.get('error', None)
-                    if error:
-                        self.logger.error("Server had returned error: " + str(error))
-                        break
-                    command_number = answer.get("number", False)
-                    if command_number:
-                        self.acknowledge = {"number": command_number, "result": False}
-                    self.logger.debug("Could not execute command: " + str(answer))
-                    time.sleep(2)
-                self.sender_error = None
-                self.acknowledge = None
-                self.logger.debug("...done")
-                self.stop_flag = True
-            time.sleep(self.COMMAND_REQUEST_SLEEP)
                 self.report_error()
             time.sleep(1.5)
         self.close_printer_sender()

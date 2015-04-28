@@ -70,13 +70,13 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             login = self.server.app.user_login.login
             if login:
                 page = page.replace('!!!LOGIN!!!', login)
-            if utils.get_conveyor_pid():
+            if makerware_utils.get_conveyor_pid():
                 page = self.read_file('web_interface/conveyor_warning.html')
-            if not utils.is_user_groups():
+            if not rights.is_user_groups():
                 page = self.read_file('web_interface/groups_warning.html')
             if not self.server.app.updater.auto_update_flag and self.server.app.updater.update_flag:
                 page = page.replace('get_updates" style="display:none"', 'get_updates"')
-            if config.config['cloud_sync']['enabled']:
+            if config.get_settings()['cloud_sync']['enabled']:
                 page = page.replace('open_cloudsync_folder" style="display:none"', 'open_cloudsync_folder"')
         return page
 

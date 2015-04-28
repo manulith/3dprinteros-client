@@ -34,11 +34,11 @@ class Cloudsync:
     get_url = http_client.HTTPClient()
     URL = 'https://' + get_url.URL + get_url.cloudsync_path
     CHECK_URL = URL + '/check'
-    MAX_SEND_RETRY = config.config['cloud_sync']['max_send_retry']
+    MAX_SEND_RETRY = config.get_settings()['cloud_sync']['max_send_retry']
     CONNECTION_TIMEOUT = 6
 
     def __init__(self):
-        self.logger = utils.create_logger('cloud_sync', config.config['cloud_sync']['log_file'])
+        self.logger = utils.create_logger('cloud_sync', config.get_settings()['cloud_sync']['log_file'])
         signal.signal(signal.SIGINT, self.intercept_signal)
         signal.signal(signal.SIGTERM, self.intercept_signal)
         self.mswin = sys.platform.startswith('win')
@@ -81,7 +81,7 @@ class Cloudsync:
             Popen(['cscript', 'createLink.vbs',
                    os.path.abspath(path),
                    os.path.abspath(self.PATH),
-                   os.path.abspath(join(os.getcwd(),config.config['cloud_sync']['icon_file']))])
+                   os.path.abspath(join(os.getcwd(),config.get_settings()['cloud_sync']['icon_file']))])
 
     def remove_shortcuts_win(self):
         os.remove(self.sendto_link_path)
@@ -214,7 +214,7 @@ class Cloudsync:
         self.create_folders()
         if self.mswin:
             self.create_shortcuts_win()
-            if config.config['cloud_sync']['virtual_drive_enabled']:
+            if config.get_settings()['cloud_sync']['virtual_drive_enabled']:
                 self.enable_virtual_drive()
         self.main_loop()
 
@@ -231,7 +231,7 @@ class Cloudsync:
         self.stop_flag = True
 
     def quit(self):
-        if self.mswin and config.config['cloud_sync']['virtual_drive_enabled']:
+        if self.mswin and config.get_settings()['cloud_sync']['virtual_drive_enabled']:
             self.disable_virtual_drive()
         self.logger.info('Cloudsync stopped')
         os._exit(0)
@@ -244,5 +244,5 @@ if __name__ == '__main__':
     except:
         trace = traceback.format_exc()
         print trace
-        with open(config.config['error_file'], "a") as f:
+        with open(config.get_settings()['error_file'], "a") as f:
             f.write(time.ctime() + "\n" + trace + "\n")

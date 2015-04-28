@@ -4,7 +4,6 @@
 import sys
 import time
 import signal
-import logging
 import traceback
 import platform
 
@@ -24,7 +23,7 @@ import config
 
 class App(Singleton):
 
-    MAIN_LOOP_SLEEP = 2
+    MAIN_LOOP_SLEEP = 0
     LOG_FLUSH_TIME = 30
 
     def __init__(self):
@@ -42,14 +41,9 @@ class App(Singleton):
         self.user_login = user_login.UserLogin(self)
         self.init_interface()
         if self.user_login.wait_for_login():
-            self.start_cloud_sync()
             config.Config.instance().set_profiles(self.user_login.profiles)
             if config.get_settings()["camera"]["enabled"]:
                 self.camera_controller = camera_controller.CameraController()
-
-    def start_cloud_sync(self):
-        if config.config['cloud_sync']['enabled']:
-            self.cloud_sync = utils.launch_suprocess(config.config['cloud_sync']['module'])
 
     def init_interface(self):
         if config.get_settings()['web_interface']:
@@ -147,7 +141,6 @@ class App(Singleton):
         self.logger.info("...done.")
         self.time_stamp()
         self.logger.info("Goodbye ;-)")
-        logging.shutdown()
         sys.exit(0)
 
 if __name__ == '__main__':
@@ -159,7 +152,5 @@ if __name__ == '__main__':
     except:
         trace = traceback.format_exc()
         print trace
-        settings = Config.instance()
-        with open(settings.settings['error_file'], "a") as f:
+        with open(config.get_settings()['error_file'], "a") as f:
             f.write(time.ctime() + "\n" + trace + "\n")
-        del settings
