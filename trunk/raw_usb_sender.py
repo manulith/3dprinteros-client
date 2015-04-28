@@ -110,13 +110,16 @@ class Sender(base_sender.BaseSender):
         except Exception as e:
             self.logger.warning('Error while writing gcode "%s"\nError: %s' % (gcode, e.message))
         else:
-            print 'SENT: %s' % gcode
+            self.logger.info('SENT: %s' % gcode)
 
     def get_percent(self):
         return self.percent
 
     def is_printing(self):
         return self.printing_flag
+
+    def parse_response(self, resp):
+        raise NotImplementedError
 
     def reading(self):
         with self.read_lock:
