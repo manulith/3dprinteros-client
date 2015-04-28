@@ -55,6 +55,7 @@ class Sender(base_sender.BaseSender):
         connect = self.connect()
         time.sleep(2)  # Important!
         if connect:
+            self.handshake()
             self.read_thread = threading.Thread(target=self.reading)
             self.read_thread.start()
             self.temp_request_thread = threading.Thread(target=self.temp_request)
@@ -67,6 +68,9 @@ class Sender(base_sender.BaseSender):
     def set_total_gcodes(self, length):
         self.total_gcodes = len(self.buffer)
         self.current_line_number = 0
+
+    def handshake(self):
+        pass
 
     def connect(self):
         backend_from_our_directory = usb.backend.libusb1.get_backend(find_library=utils.get_libusb_path)
@@ -115,7 +119,7 @@ class Sender(base_sender.BaseSender):
 
     def write(self, gcode):
         try:
-            self.endpoint_out.write(gcode + '\n', 4000)
+            self.endpoint_out.write(gcode + '\n', 2000)
         #except usb.core.USBError:
         except Exception as e:
             self.logger.warning('Error while writing gcode "%s"\nError: %s' % (gcode, e.message))
@@ -151,13 +155,18 @@ class Sender(base_sender.BaseSender):
                         time.sleep(0.001)
                         continue
                 else:
+                    time.sleep(0.001)
                     continue
             time.sleep(0.001)
 
     def read(self):
         try:
-            data = self.dev.read(self.endpoint_in.bEndpointAddress, self.endpoint_in.wMaxPacketSize, 4000)
-        except Exception as e:
+            data = self.dev.read(self.endpoint_in.bEndpointAddress, self.endpoint_in.wMaxPacketSize, 2000)
+        except usb.core.USBError as e:
+            self.logger.info('USBError : %s' % str(e))
+            # TODO: parse ERRNO 110 here to separate timeout exceptions
+            return None
+        except Exception as e:  # TODO: make not operational
             self.logger.warning('Error while reading gcode: %s' % str(e))
             return None
         else:
@@ -170,7 +179,7 @@ class Sender(base_sender.BaseSender):
             return True
         return False
 
-    def parse_response1(self, ret):
+    def parse_response(self, ret):
         if ret == 'ok':
             self.oks += 1
         elif ret.startswith('ok T:'):
@@ -192,7 +201,7 @@ class Sender(base_sender.BaseSender):
             self.logger.warning('Got unpredictable answer from printer: %s' % ret.decode())
             pass
 
-    def parse_response(self, ret):
+    def parse_response1(self, ret):
         if ret == 'ok':
             self.oks += 1
         elif ret.startswith('bed temp:') or ret.startswith('hotend temp:'):
@@ -212,11 +221,12 @@ class Sender(base_sender.BaseSender):
             else:
                 self.logger.warning('Got position answer, but it does not match! Response: %s' % ret)
         else:
-            self.logger.warning('Got unpredictable answer from printer: %s' % ret.decode())
             pass
+            #self.logger.warning('Got unpredictable answer from printer: %s' % ret.decode())
+
 
     # M105 based matching. Redefine if needed.
-    def match_temps1(self, request):
+    def match_temps(self, request):
         match = self.temp_re.match(request)
         if match:
             tool_temp = float(match.group(1))
@@ -229,7 +239,7 @@ class Sender(base_sender.BaseSender):
             return True
         return False
 
-    def match_temps(self, request):
+    def match_temps1(self, request):
         match = self.get_temp_bed_re.match(request)
         if match:
             print 'MATCHED BED'
@@ -282,11 +292,12 @@ class Sender(base_sender.BaseSender):
             self.pause_flag = False
             self.logger.info("Unpaused successfully")
 
-    def temp_request1(self):
+    def temp_request(self):
         self.temp_request_counter = 0
         no_answer_counter = 0
         no_answer_cap = 5
         while not self.stop_flag:
+            time.sleep(1)
             if self.heating_flag:
                 time.sleep(5)
                 #continue
@@ -299,12 +310,10 @@ class Sender(base_sender.BaseSender):
                 no_answer_counter = 0
                 self.temp_request_counter += 1
                 with self.write_lock:
-                    if self.heating_flag:
-                        self.write('M105')
-                    else:
-                        self.write('get temp hotend')
+                    self.write('M105')
 
-    def temp_request(self):
+
+    def temp_request1(self):
         self.temp_request_counter = 0
         no_answer_counter = 0
         no_answer_cap = 5
