@@ -262,7 +262,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             return
         body = ''
         if self.path.find('get_login'):
-            self.pinshape_login = True
+            self.pinshape_login_flag = True
             body = str(self.path)
             body = body.replace('/?get_', '')
         content_length = self.headers.getheader('Content-Length')
@@ -280,9 +280,10 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         else:
             if self.pinshape_login_flag:
                 success_image_path = os.path.join(os.getcwd(), 'web_interface/success.jpg')
-                with open(success_image_path) as f:
+                with open(success_image_path, 'rb') as f:
                     message = f.read()
                 self.write_with_autoreplace(message, headers = { 'Content-Type': 'image/jpeg' })
+                return
             message = 'Login successful!<br><br>Processing...'
         self.write_message(message)
 
