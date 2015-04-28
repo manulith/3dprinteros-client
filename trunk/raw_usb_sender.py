@@ -14,6 +14,9 @@ TEMP_REQUEST_WAIT = 5
 PAUSE_LIFT_HEIGHT = 5
 
 class Sender(base_sender.BaseSender):
+
+    TEMP_REQUEST_GCODE = 'M105'
+
     def __init__(self, profile, usb_info, app):
         base_sender.BaseSender.__init__(self, profile, usb_info, app)
         self.logger = logging.getLogger('app.' + __name__)
@@ -104,7 +107,6 @@ class Sender(base_sender.BaseSender):
     def write(self, gcode):
         try:
             self.endpoint_out.write(gcode + '\n', 2000)
-        #except usb.core.USBError:
         except Exception as e:
             self.logger.warning('Error while writing gcode "%s"\nError: %s' % (gcode, e.message))
         else:
@@ -120,7 +122,7 @@ class Sender(base_sender.BaseSender):
         with self.read_lock:
             self.read()  # Clearing printer output buffer
         while not self.stop_flag:
-            data = 'some value'
+            data = True
             if not self.printing_flag:
                 time.sleep(0.1)
             while data:
@@ -157,23 +159,21 @@ class Sender(base_sender.BaseSender):
             return data
 
     def is_operational(self):
-        if self.printing_flag or self.pause_flag:
-            return True
-        if self.read_thread.is_alive() and self.temp_request_thread.is_alive():
-            return True
-        return False
+        return self.printing_flag or \
+                self.pause_flag or   \
+               (self.read_thread.is_alive() and self.temp_request_thread.is_alive())
 
     def cancel(self):
         if self.downloading_flag:
             self.cancel_download()
-            return
-        self.pause_flag = False
-        self.printing_flag = False
-        with self.write_lock:
-            for gcode in self.end_gcodes:
-                self.write(gcode)
-                time.sleep(0.1)
-        self.logger.info('Cancelled!')
+        else:
+            self.pause_flag = False
+            self.printing_flag = False
+            with self.write_lock:
+                for gcode in self.end_gcodes:
+                    self.write(gcode)
+                    time.sleep(0.1)
+            self.logger.info('Cancelled!')
 
     def lift_extruder(self):
         gcode = 'G1 Z' + str(float(self.pos_z) + PAUSE_LIFT_HEIGHT)
@@ -214,7 +214,7 @@ class Sender(base_sender.BaseSender):
                 no_answer_counter = 0
                 self.temp_request_counter += 1
                 with self.write_lock:
-                    self.write('M105')
+                    self.write(self.TEMP_REQUEST_GCODE)
 
     def get_current_line_number(self):
         return self.oks
