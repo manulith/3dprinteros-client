@@ -15,7 +15,7 @@ class Sender(raw_usb_sender.Sender):
     def parse_response(self, ret):
         if ret == 'ok':
             self.oks += 1
-        elif ret.startswith('bed temp:') or ret.startswith('hotend temp:'):
+        elif ret.startswith('ok T:'):
             self.temp_request_counter -= 1
             match = self.match_temps(ret)
             if match:
@@ -27,24 +27,24 @@ class Sender(raw_usb_sender.Sender):
                 self.pos_x = match.group(1)
                 self.pos_y = match.group(2)
                 self.pos_z = match.group(3)
-                self.lift_extruder()  # It's here cause this match used only for pause. No need to implement get pos waiting logic
+                self.lift_extruder()
             else:
                 self.logger.warning('Got position answer, but it does not match! Response: %s' % ret)
         else:
-            self.logger.warning('Got unpredictable answer from printer: %s' % ret.decode())
             pass
+            #self.logger.warning('Got unpredictable answer from printer: %s' % ret.decode())
 
-    # 'get pos' command based matching for smoothie.
+    # M105 based matching. Redefine if needed.
     def match_temps(self, request):
-        match = self.get_temp_bed_re.match(request)
+        match = self.temp_re.match(request)
         if match:
-            self.temps[0] = round(round(float(match.group(1)), 2))
-            self.target_temps[0] = round(round(float(match.group(1)), 2))
-            return True
-        match = self.get_temp_hotend_re.match(request)
-        if match:
-            self.temps[1] = round(round(float(match.group(1)), 2))
-            self.target_temps[1] = round(round(float(match.group(1)), 2))
+            tool_temp = float(match.group(1))
+            tool_target_temp = float(match.group(2))
+            platform_temp = float(match.group(3))
+            platform_target_temp = float(match.group(4))
+            self.temps = [platform_temp, tool_temp]
+            self.target_temps = [platform_target_temp, tool_target_temp]
+            #self.logger.info('Got temps: T %s/%s B %s/%s' % (tool_temp, tool_target_temp, platform_temp, platform_target_temp))
             return True
         return False
 
@@ -61,20 +61,59 @@ class Sender(raw_usb_sender.Sender):
         no_answer_counter = 0
         no_answer_cap = 5
         while not self.stop_flag:
+            time.sleep(1)
             if self.heating_flag:
-                time.sleep(1)
+                time.sleep(5)
                 #continue
             if self.temp_request_counter:
-                time.sleep(2)
+                time.sleep(1.5)
                 no_answer_counter += 1
                 if no_answer_counter >= no_answer_cap and self.temp_request_counter > 0:
                     self.temp_request_counter -= 1
             else:
                 no_answer_counter = 0
-                with self.write_lock:
-                    self.write('get temp hotend')
                 self.temp_request_counter += 1
-                time.sleep(1)
                 with self.write_lock:
-                    self.write('get temp bed')
-                self.temp_request_counter += 1
+                    self.write('M105')
+
+    def prepare_heating(self):
+        with self.buffer_lock:
+            for gcode in self.buffer:
+                if gcode.startswith('G0') or gcode.startswith('G1'):
+                    break
+                match = self.bed_heating_re.match(gcode)
+                if match:
+                    self.heating_gcodes.append(gcode)
+                    continue
+                match = self.tool_heating_re.match(gcode)
+                if match:
+                    self.heating_gcodes.append(gcode)
+            for gcode in self.heating_gcodes:
+                self.buffer.remove(gcode)
+
+    def heat_printer(self):
+        self.logger.info('Heating printer!')
+        self.heating_flag = True
+        for gcode in self.heating_gcodes:
+            self.logger.info('Writing heating gcode: %s' % gcode)
+            with self.write_lock:
+                self.write(gcode)
+            self.sent_gcodes += 1
+            if self.bed_heating_re.match(gcode):
+                self.logger.info('Heating bed')
+                while not self.temps[0] or not self.target_temps[0]:
+                    time.sleep(0.05)
+                self.logger.info('Waiting heating bed')
+                while self.temps[0] < self.target_temps[0]:
+                    time.sleep(0.05)
+                self.logger.info('Bed heated!')
+            if self.tool_heating_re.match(gcode):
+                self.logger.info('Heating tool')
+                while not self.temps[1] or not self.target_temps[1]:
+                    time.sleep(0.05)
+                self.logger.info('Waiting heating tool')
+                while self.temps[1] < self.target_temps[1]:
+                    time.sleep(0.05)
+                self.logger.info('Tool heated!')
+        self.logger.info('Finished heating!')
+        self.heating_flag = False
