@@ -1,6 +1,5 @@
 {
   "URL": "cli-cloud.3dprinteros.com",
-  "AUX_URL": "cli-cloud.3dprinteros.com",
   "HTTPS": true,
   "log_file": "3dprinteros_client.log",
   "error_file": "critical_error.log",
@@ -20,6 +19,14 @@
     "img_qual" : 90,
     "min_loop_time" : 1,
     "log_file" : "3dprinteros_camera.log",
-    "default": "Dual camera"
+    "default": "Dual camera"    
+  },
+  "cloud_sync": {
+    "enabled": true,
+    "module": "cloud_sync.py",
+    "max_send_retry": 10,
+    "icon_file": "cloudsync.ico",
+    "virtual_drive_enabled": true,
+    "log_file": "3dprinteros_cloudsync.log"
   }
 }

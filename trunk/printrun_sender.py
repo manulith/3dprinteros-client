@@ -74,14 +74,10 @@ class Sender(BaseSender):
         self.online_flag = True
 
     def endcb(self):
-        self.job_id = None
-        self.print_success_flag = True
+        self.logger.info("Printrun has called end callback.")
 
     def reset(self):
         if self.printcore:
-            #self.logger.debug("Sending M999...")
-            #self.printcore.send_now("M999")
-            #time.sleep(1)
             self.logger.debug("Resetting...")
             try:
                 self.printcore.reset()
@@ -90,7 +86,7 @@ class Sender(BaseSender):
             time.sleep(0.2)
             self.logger.debug("Disconnecting...")
             self.printcore.disconnect()
-            self.logger.debug("Successful reset and disconnect")
+            self.logger.info("Successful reset and disconnect")
         else:
             self.logger.warning("No printrun printcore to execute reset")
 
@@ -118,7 +114,7 @@ class Sender(BaseSender):
 
     def tempcb(self, line):
         self.logger.debug(line)
-        #self.logger.debug("Current line: " + str(self.last_line))
+        self.logger.debug("Last executed line: " + str(self.last_line))
         match = self.temp_re.match(line)
         if match:
             tool_temp = float(match.group(1))
@@ -141,7 +137,7 @@ class Sender(BaseSender):
 
     def sendcb(self, command, gline):
         #self.logger.debug("Executing command: " + command)
-        self.last_line = gline
+        self.last_line = command
         if 'M104' in command or 'M109' in command:
             tool = 0
             tool_match = re.match('.+T(\d+)', command)
@@ -173,7 +169,7 @@ class Sender(BaseSender):
 
     def set_total_gcodes(self, length):
         self.total_gcodes = length
-        self.print_success_flag = False
+        self.current_line_number = 0
 
     def startcb(self, resuming_flag):
         if resuming_flag:
@@ -184,7 +180,7 @@ class Sender(BaseSender):
     def load_gcodes(self, gcodes):
         gcodes = self.preprocess_gcodes(gcodes)
         length = len(gcodes)
-        self.logger.info('Loading %i gcodes...' % length)
+        self.logger.info('Loading %d gcodes...' % length)
         if length:
             self.buffer = LightGCode(gcodes)
             if self.printcore.startprint(self.buffer):
@@ -217,7 +213,6 @@ class Sender(BaseSender):
             return False
 
     def cancel(self):
-        self.job_id = None
         if self.downloading_flag:
             self.cancel_download()
             return
@@ -252,14 +247,24 @@ class Sender(BaseSender):
                    self.printcore.send_thread.is_alive()
         return False
 
+    def update_current_line_number(self):
+        if self.printcore:
+            if self.current_line_number < self.printcore.queueindex:
+                self.current_line_number = self.printcore.queueindex
+
     def get_percent(self):
         if self.downloading_flag:
             self.logger.info('Downloading flag is true. Getting percent from downloader')
             return self.downloader.get_percent()
         percent = 0
         if self.total_gcodes:
-            percent = int( self.printcore.queueindex / float(self.total_gcodes) * 100 )
+            self.update_current_line_number()
+            percent = int( self.current_line_number / float(self.total_gcodes) * 100 )
         return percent
+
+    def get_current_line_number(self):
+        self.update_current_line_number()
+        return self.current_line_number
 
     def close(self):
         self.recvcb = None

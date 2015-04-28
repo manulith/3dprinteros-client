@@ -22,6 +22,8 @@ class BaseSender:
         self.buffer = collections.deque()
         self.downloading_flag = False
         self.downloader = None
+        self.current_line_number = 0
+        #self._position = [0.00,0.00,0.00]
 
     def set_total_gcodes(self, length):
         raise NotImplementedError
@@ -36,12 +38,13 @@ class BaseSender:
 
     def preprocess_gcodes(self, gcodes):
         gcodes = gcodes.split("\n")
+        gcodes = filter(lambda item: item, gcodes)
         while gcodes[-1] in ("\n", "\r\n", "\t", " ", "", None):
             line = gcodes.pop()
             self.logger.info("Removing corrupted line '%s' from gcodes tail" % line)
         length = len(gcodes)
         self.set_total_gcodes(length)
-        self.logger.info('Got %i gcodes to print.')
+        self.logger.info('Got %d gcodes to print.' % length)
         return gcodes
 
     def gcodes(self, gcodes, is_link = False):

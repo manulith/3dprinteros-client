@@ -1,0 +1,30 @@
+3DPrinterOS release notes
+
+    Smoothie printers partial support
+    ZMorph support
+
+    Fixed opening Cloundsync folder with file managers other that Nautilus
+    Fixed rare bug of too many opened files
+
+4.6.2
+
+    Numerous bug fixes, small performance and code improvements
+    Code reorganized to improve memory usage and refuse some bugs (web interface)
+    Support for current line reporting was added(should fix false job completion bug)
+    Cloudsync
+
+4.5.1
+
+	HTTP with keep_alive - faster camera and status/command exchange between client and server
+	State reporting mechanism fix
+	Generic Reperier Firmware support
+	MassPortal support
+	Felix 3.0 support
+	Printbot slicing settings fix
+	Quit sequence was refactored and fixed
+	Ability to disable camera
+	New status message for printer waiting to type selection and link to manual how to do it
+	Reworked update mechanism to fix slow auto update.
+	Updated Printrun to fix very rare bug on gcode resend
+
+4.2.0 

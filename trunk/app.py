@@ -6,6 +6,7 @@ import time
 import signal
 import logging
 import traceback
+import platform
 
 import log
 import paths
@@ -23,11 +24,13 @@ import config
 
 class App(Singleton):
 
+    MAIN_LOOP_SLEEP = 2
     LOG_FLUSH_TIME = 30
 
     def __init__(self):
         log_file_name = config.get_settings()["log_file"]
-        self.logger = log.create_logger("app", log_file_name)
+        self.logger = log.create_logger("app", log_file_name)        
+        self.logger.info('Operating system: ' + platform.system() + ' ' + platform.release())
         self.logger.info("Welcome to 3DPrinterOS Client version %s_%s" % (version.version, version.build))
         self.time_stamp()
         signal.signal(signal.SIGINT, self.intercept_signal)
@@ -39,9 +42,14 @@ class App(Singleton):
         self.user_login = user_login.UserLogin(self)
         self.init_interface()
         if self.user_login.wait_for_login():
+            self.start_cloud_sync()
             config.Config.instance().set_profiles(self.user_login.profiles)
             if config.get_settings()["camera"]["enabled"]:
                 self.camera_controller = camera_controller.CameraController()
+
+    def start_cloud_sync(self):
+        if config.config['cloud_sync']['enabled']:
+            self.cloud_sync = utils.launch_suprocess(config.config['cloud_sync']['module'])
 
     def init_interface(self):
         if config.get_settings()['web_interface']:
@@ -71,7 +79,7 @@ class App(Singleton):
                 elif not pi.is_alive():
                     self.disconnect_printer(pi, 'error')
             if not self.stop_flag:
-                time.sleep(2)
+                time.sleep(self.MAIN_LOOP_SLEEP)
             now = time.time()
             if now - self.last_flush_time > self.LOG_FLUSH_TIME:
                 self.last_flush_time = now
@@ -107,6 +115,9 @@ class App(Singleton):
 
     def quit(self):
         self.logger.info("Starting exit sequence...")
+        clouds = getattr(self, 'cloud_sync', None)
+        if clouds:            
+            clouds.terminate()
         if hasattr(self, 'camera_controller'):
             self.camera_controller.close()
         for pi in self.printer_interfaces:
