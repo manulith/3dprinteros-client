@@ -14,6 +14,7 @@ import cloud_sync
 class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
     def setup(self):
+        self.pinshape_login_flag = False
         self.working_dir = os.path.dirname(os.path.abspath(__file__))
         self.logger = logging.getLogger('app.' + __name__)
         BaseHTTPServer.BaseHTTPRequestHandler.setup(self)
@@ -28,11 +29,13 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         with open(os.path.join(self.working_dir, path_in_cwd)) as f:
             return f.read()
 
-    def write_with_autoreplace(self, page, response=200):
+    def write_with_autoreplace(self, page, response=200, headers = {}):
         try:
             page = page.replace('!!!VERSION!!!', 'Client v.' + version.version + ', build ' + version.build + ', commit ' + version.commit)
             page = page.replace('3DPrinterOS', '3DPrinterOS Client v.' + version.version)
             self.send_response(response)
+            for keyword, value in headers.iteritems():
+                self.send_header(keyword, value)
             self.end_headers()
             self.wfile.write(page)
         except Exception as e:
@@ -166,7 +169,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             page = page.replace('!!!SHOW_TIME!!!', str(show_time))
         else:
             page = page.replace('<meta http-equiv="refresh" content="!!!SHOW_TIME!!!; url=/" />', '')
-        self.write_with_autoreplace(page, response)
+        self.write_with_autoreplace(page, response=response)
 
     def choose_cam(self):
         if self.server.app.cam:
@@ -259,6 +262,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             return
         body = ''
         if self.path.find('get_login'):
+            self.pinshape_login = True
             body = str(self.path)
             body = body.replace('/?get_', '')
         content_length = self.headers.getheader('Content-Length')
@@ -274,8 +278,12 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         if error:
             message = str(error[1])
         else:
-            success_image_path = os.path.join(os.getcwd(), 'web_interface/success.jpg')
-            message = 'Login successful!<br><br>Processing... <img src="' + success_image_path + '" style="display: none;"></img>'
+            if self.pinshape_login_flag:
+                success_image_path = os.path.join(os.getcwd(), 'web_interface/success.jpg')
+                with open(success_image_path) as f:
+                    message = f.read()
+                self.write_with_autoreplace(message, headers = { 'Content-Type': 'image/jpeg' })
+            message = 'Login successful!<br><br>Processing...'
         self.write_message(message)
 
     def process_logout(self):
