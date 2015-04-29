@@ -250,8 +250,9 @@ class Sender(base_sender.BaseSender):
         return False
 
     def update_current_line_number(self):
-        if self.current_line_number < self.printcore.queueindex:
-            self.current_line_number = self.printcore.queueindex
+        if self.printcore:
+            if self.current_line_number < self.printcore.queueindex:
+                self.current_line_number = self.printcore.queueindex
 
     def get_percent(self):
         if self.downloading_flag:

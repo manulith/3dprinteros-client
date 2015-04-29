@@ -1,9 +1,13 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 import sys
 import os
 import shutil
 import signal
 import traceback
 import time
+import string
 
 from os.path import join
 from subprocess import Popen, PIPE
@@ -37,15 +41,16 @@ class Cloudsync:
         self.logger = utils.create_logger('cloud_sync', config.config['cloud_sync']['log_file'])
         signal.signal(signal.SIGINT, self.intercept_signal)
         signal.signal(signal.SIGTERM, self.intercept_signal)
-        self.stop_flag = False
-        self.os = self.get_os()
+        self.mswin = sys.platform.startswith('win')
+        self.names_to_ignore = [os.path.basename(self.SENDED_PATH), os.path.basename(self.UNSENDABLE_PATH)]
         self.user_token = None
         self.error_code = None
         self.error_message = ''
+        self.start()
 
     def intercept_signal(self, signal_code, frame):
         self.logger.info("SIGINT or SIGTERM received. Closing Cloudsync Module...")
-        self.stop()
+        self.stop_flag = True
 
     def process_error(self, error_code, error_message):
         self.error_code = error_code
@@ -57,16 +62,6 @@ class Cloudsync:
         ul = user_login.UserLogin(self)
         ul.wait_for_login()
         self.user_token = ul.user_token
-
-    def get_os(self):
-        if sys.platform.startswith('win'):
-            return "windows"
-        elif sys.platform.startswith('linux'):
-            return "linux"
-        elif sys.platform.startswith('darwin'):
-            return "mac"
-        else:
-            raise EnvironmentError('Could not detect OS. Only GNU/LINUX, MAC OS X and MS WIN VISTA/7/8 are supported.')
 
     def create_folders(self):
         self.logger.info('Preparing Cloudsync folder: ' + self.PATH)
@@ -126,18 +121,31 @@ class Cloudsync:
         shutil.move(current_path, join(destination_folder_path, new_file_name))
         self.logger.debug('Moving ' + os.path.basename(current_path) + ' to ' + os.path.basename(destination_folder_path))
 
+    def is_sendable(self, file_path):
+        name = os.path.basename(file_path)
+        if self.mswin and '?' in name:
+            self.logger.warning('Wrong file name ' + name + '\n Windows is unable to operate with such names')
+            self.names_to_ignore.append(name)
+            return
+        if os.path.isdir(file_path):
+            self.logger.warning('Folders are not sendable!')
+            self.move_file(file_path, self.UNSENDABLE_PATH)
+            return
+        for char in name:
+            if not char in string.printable:
+                self.logger.warning('Warning! Filename containing unicode characters are not supported by 3DPrinterOS CloudSync')
+                self.move_file(file_path, self.UNSENDABLE_PATH)
+                return
+        return True
+
     def get_files_to_send(self):
-        names_to_ignore = [os.path.basename(self.SENDED_PATH), os.path.basename(self.UNSENDABLE_PATH)]
         files_to_send = os.listdir(self.PATH)
-        for name in names_to_ignore:
+        for name in self.names_to_ignore:
             files_to_send.remove(name)
-        for position in range(0, len(files_to_send)):
-            files_to_send[position] = join(self.PATH, files_to_send[position])
-            file = files_to_send[position]
-            if os.path.isdir(file):
-                self.logger.warning('Folders are not sendable!')
-                self.move_file(file, self.UNSENDABLE_PATH)
-                files_to_send.remove(file)
+        for index, name in enumerate(files_to_send):
+            name = files_to_send[index] = join(self.PATH, name)
+            if not self.is_sendable(name):
+                files_to_send.remove(name)
         return files_to_send
 
     def get_file_size(self, file_path):
@@ -150,28 +158,37 @@ class Cloudsync:
         return file_size
 
     def get_permission_to_send(self, file_path):
-        file_ext = file_path.split('.')[-1]
-        file_size = self.get_file_size(file_path)
-        result = requests.post(self.CHECK_URL, data = {'user_token': self.user_token, 'file_ext': file_ext, 'file_size': file_size}, timeout = self.CONNECTION_TIMEOUT)
-        if not '"result":true' in result.text:
-            return result.text
+        try:
+            file_ext = file_path.split('.')[-1]
+            file_size = self.get_file_size(file_path)
+            data = {'user_token': self.user_token, 'file_ext': file_ext, 'file_size': file_size}
+            result = requests.post(self.CHECK_URL, data = data, timeout = self.CONNECTION_TIMEOUT)
+            if not '"result":true' in result.text:
+                return result.text
+        except Exception as e:
+            return str(e)
 
     def send_file(self, file_path):
+        error = self.get_permission_to_send(file_path)
+        if error:
+            return 'Permission to send denied: ' + error
         result = ''
         count = 1
-        while count <= self.MAX_SEND_RETRY:
+        file = open(file_path, 'rb')
+        file_name = os.path.basename(file_path)
+        data = { 'user_token': self.user_token, 'file_name': file_name }
+        files = { 'file': file }
+        while count <= self.MAX_SEND_RETRY and not self.stop_flag:
             try:
-                error = self.get_permission_to_send(file_path)
-                if error:
-                    return 'Permission to send denied: ' + error
-                result = requests.post(self.URL, data={'user_token': self.user_token}, files={'file': open(file_path, 'rb')}, timeout = self.CONNECTION_TIMEOUT)
+                result = requests.post(self.URL, data = data, files = files, timeout = self.CONNECTION_TIMEOUT)
                 result = str(result.text)
                 if '"result":true' in result:
                     return
             except Exception as e:
-                result = str(e.message)
+                result = str(e)
             self.logger.info('Retrying to send ' + os.path.basename(file_path))
             count += 1
+        file.close()
         return result
 
     def upload(self):
@@ -195,7 +212,7 @@ class Cloudsync:
         self.stop_flag = False
         self.login()
         self.create_folders()
-        if self.os == 'windows':
+        if self.mswin:
             self.create_shortcuts_win()
             if config.config['cloud_sync']['virtual_drive_enabled']:
                 self.enable_virtual_drive()
@@ -203,20 +220,25 @@ class Cloudsync:
 
     def main_loop(self):
         while not self.stop_flag:
-            self.upload()
-            time.sleep(3)
+            try:
+                self.upload()
+                time.sleep(3)
+            except IOError:
+                break
+        self.quit()
 
     def stop(self):
-        if self.os == 'windows' and config.config['cloud_sync']['virtual_drive_enabled']:
-            self.disable_virtual_drive()
         self.stop_flag = True
-        self.logger.info('Cloudsync is stopped')
+
+    def quit(self):
+        if self.mswin and config.config['cloud_sync']['virtual_drive_enabled']:
+            self.disable_virtual_drive()
+        self.logger.info('Cloudsync stopped')
         os._exit(0)
 
 if __name__ == '__main__':
     try:
         cs = Cloudsync()
-        cs.start()
     except SystemExit:
         pass
     except:

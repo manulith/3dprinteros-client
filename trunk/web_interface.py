@@ -14,6 +14,7 @@ import cloud_sync
 class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
     def setup(self):
+        self.pinshape_login_flag = False
         self.working_dir = os.path.dirname(os.path.abspath(__file__))
         self.logger = logging.getLogger('app.' + __name__)
         BaseHTTPServer.BaseHTTPRequestHandler.setup(self)
@@ -24,11 +25,17 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.logger.debug("Incoming connection from %s:%i" % (host, port))
         return host
 
-    def write_with_autoreplace(self, page, response=200):
+    def read_file(self, path_in_cwd):
+        with open(os.path.join(self.working_dir, path_in_cwd)) as f:
+            return f.read()
+
+    def write_with_autoreplace(self, page, response=200, headers = {}):
         try:
             page = page.replace('!!!VERSION!!!', 'Client v.' + version.version + ', build ' + version.build + ', commit ' + version.commit)
             page = page.replace('3DPrinterOS', '3DPrinterOS Client v.' + version.version)
             self.send_response(response)
+            for keyword, value in headers.iteritems():
+                self.send_header(keyword, value)
             self.end_headers()
             self.wfile.write(page)
         except Exception as e:
@@ -36,9 +43,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
     def do_GET(self):
         self.logger.info("Server GET")
-        if self.server.token_was_reset_flag:
-            self.write_with_autoreplace("Token was reset\nPlease restart 3DPrinterOS and re-login")
-        elif self.path.find('get_login') >= 0:
+        if self.path.find('get_login') >= 0:
             self.process_login()
         elif self.path.find('quit') >= 0:
             self.quit_main_app()
@@ -54,20 +59,19 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         page = ''
         if self.server.app:
             if self.server.app.user_login.user_token:
-                name = os.path.join(self.working_dir, 'web_interface/main_loop_form.html')
+                name = 'web_interface/main_loop_form.html'
             else:
-                name = os.path.join(self.working_dir, 'web_interface/login.html')
-            with open(name) as f:
-                page = f.read()
+                name = 'web_interface/login.html'
+            page = self.read_file(name)
             printers = self.get_printers_payload()
             page = page.replace('!!!PRINTERS!!!', printers)
             login = self.server.app.user_login.login
             if login:
                 page = page.replace('!!!LOGIN!!!', login)
             if utils.get_conveyor_pid():
-                page = open(os.path.join(self.working_dir, 'web_interface/conveyor_warning.html')).read()
+                page = self.read_file('web_interface/conveyor_warning.html')
             if not utils.is_user_groups():
-                page = open(os.path.join(self.working_dir, 'web_interface/groups_warning.html')).read()
+                page = self.read_file('web_interface/groups_warning.html')
             if not self.server.app.updater.auto_update_flag and self.server.app.updater.update_flag:
                 page = page.replace('get_updates" style="display:none"', 'get_updates"')
             if config.config['cloud_sync']['enabled']:
@@ -153,19 +157,19 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         if sys.platform.startswith('darwin'):
             subprocess.Popen(['open', path])
         elif sys.platform.startswith('linux'):
-            subprocess.Popen(['nautilus', path])
+            subprocess.Popen(['xdg-open', path])
         elif sys.platform.startswith('win32'):
             subprocess.Popen(['explorer', path])
         self.do_GET()
 
     def write_message(self, message, show_time=2, response=200):
-        page = open(os.path.join(self.working_dir, 'web_interface/message.html')).read()
+        page = self.read_file('web_interface/message.html')
         page = page.replace('!!!MESSAGE!!!', message)
         if show_time:
             page = page.replace('!!!SHOW_TIME!!!', str(show_time))
         else:
             page = page.replace('<meta http-equiv="refresh" content="!!!SHOW_TIME!!!; url=/" />', '')
-        self.write_with_autoreplace(page, response)
+        self.write_with_autoreplace(page, response=response)
 
     def choose_cam(self):
         if self.server.app.cam:
@@ -176,7 +180,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                     modules_select = modules_select + '<p><input type="radio" disabled> ' + module + '</p>'
                 else:
                     modules_select = modules_select + '<p><input type="radio" name="module" value="' + module + '"> ' + module + '</p>'
-            page = open(os.path.join(self.working_dir, 'web_interface/choose_cam.html')).read()
+            page = self.read_file('web_interface/choose_cam.html')
             page = page.replace('!!!MODULES_SELECT!!!', modules_select)
             self.write_with_autoreplace(page)
         else:
@@ -196,7 +200,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.write_message(message)
 
     def get_updates(self):
-        page = open(os.path.join(self.working_dir, 'web_interface/update_software.html')).read()
+        page = self.read_file('web_interface/update_software.html')
         self.write_with_autoreplace(page)
 
     def update_software(self):
@@ -215,7 +219,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             content = 'No logs'
         for line in logs:
             content = content + line + '<br>'
-        page = open(os.path.join(self.working_dir, 'web_interface/show_logs.html')).read()
+        page = self.read_file('web_interface/show_logs.html')
         page = page.replace('!!!LOGS!!!', content)
         self.write_with_autoreplace(page)
 
@@ -236,7 +240,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.write_message(message)
 
     def download_logs(self):
-        page = open(os.path.join(self.working_dir, 'web_interface/download_logs.html')).read()
+        page = self.read_file('web_interface/download_logs.html')
         self.write_with_autoreplace(page)
 
     def send_logs(self):
@@ -258,6 +262,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             return
         body = ''
         if self.path.find('get_login'):
+            self.pinshape_login_flag = True
             body = str(self.path)
             body = body.replace('/?get_', '')
         content_length = self.headers.getheader('Content-Length')
@@ -273,6 +278,12 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         if error:
             message = str(error[1])
         else:
+            if self.pinshape_login_flag:
+                success_image_path = os.path.join(os.getcwd(), 'web_interface/success.jpg')
+                with open(success_image_path, 'rb') as f:
+                    message = f.read()
+                self.write_with_autoreplace(message, headers = { 'Content-Type': 'image/jpeg' })
+                return
             message = 'Login successful!<br><br>Processing...'
         self.write_message(message)
 
@@ -285,7 +296,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                     os.remove(login_info_path)
                 except Exception as e:
                     self.logger.error('Failed to logout: ' + e.message)
-        page = open(os.path.join(self.working_dir, 'web_interface/logout.html')).read()
+        page = self.read_file('web_interface/logout.html')
         self.write_with_autoreplace(page)
 
 class ThreadedHTTPServer(ThreadingMixIn, BaseHTTPServer.HTTPServer):
