@@ -8,13 +8,16 @@ import zipfile
 import logging
 import cloghandler
 
-import config
+import errors
 import paths
 import requests
 import http_client
 import version
 
 LOG_SNAPSHOT_LINES = 200
+
+LOG_FILE = "3dprinteros_client.log"
+LOG_SNAPSHOTS_DIR = 'log_snapshots'
 
 def create_logger(logger_name, log_file_name):
     logger = logging.getLogger(logger_name)
@@ -35,18 +38,18 @@ def create_logger(logger_name, log_file_name):
 
 def make_log_snapshot():
     logger = logging.getLogger("app." + __name__)
-    with open(config.get_settings()['log_file']) as log_file:
+    with open(LOG_FILE) as log_file:
         log_text = "3DPrinterOS %s_%s_%s\n" % (version.version, version.build, version.commit)
         log_text += tail(log_file, LOG_SNAPSHOT_LINES)
-    if not os.path.exists(paths.LOG_SNAPSHOTS_DIR):
+    if not os.path.exists(LOG_SNAPSHOTS_DIR):
         try:
-            os.mkdir(paths.LOG_SNAPSHOTS_DIR)
+            os.mkdir(LOG_SNAPSHOTS_DIR)
         except IOError:
-            logger.warning("Can't create directory %s" % paths.LOG_SNAPSHOTS_DIR)
+            logger.warning("Can't create directory %s" % LOG_SNAPSHOTS_DIR)
             return
     while True:
         filename = time.strftime("%Y_%m_%d___%H_%M_%S", time.localtime()) + ".log"
-        path = os.path.join(paths.LOG_SNAPSHOTS_DIR, filename)
+        path = os.path.join(LOG_SNAPSHOTS_DIR, filename)
         if os.path.exists(path):
             time.sleep(1)
         else:
@@ -66,7 +69,7 @@ def make_full_log_snapshot():
     for path in possible_paths:
         for log in os.listdir(path):
             try:
-                if log.startswith(config.get_settings()['log_file']) or log.startswith(config.get_settings()['error_file']):
+                if log.startswith(LOG_FILE) or log.startswith(errors.EXCEPTIONS_LOG):
                     log_files.append(log)
             except Exception:
                 continue
@@ -74,7 +77,7 @@ def make_full_log_snapshot():
     if not log_files:
         logger.info('Log files was not created for some reason. Nothing to send')
         return
-    log_snapshots_dir = os.path.join(paths.get_paths_to_settings_folder()[0], paths.LOG_SNAPSHOTS_DIR)
+    log_snapshots_dir = os.path.join(paths.get_paths_to_settings_folder()[0], LOG_SNAPSHOTS_DIR)
     if not os.path.exists(log_snapshots_dir):
         try:
             os.mkdir(log_snapshots_dir)
@@ -95,9 +98,9 @@ def make_full_log_snapshot():
 
 def compress_and_send(user_token, log_file_name=None):
     logger = logging.getLogger('app.' + __name__)
-    log_snapshots_dir = os.path.join(paths.get_paths_to_settings_folder()[0], paths.LOG_SNAPSHOTS_DIR)
+    log_snapshots_dir = os.path.join(paths.get_paths_to_settings_folder()[0], LOG_SNAPSHOTS_DIR)
     if not log_file_name:
-        log_file_name = config.get_settings()['log_file']
+        log_file_name = LOG_FILE
     zip_file_name = log_file_name + ".zip"
     log_file_name_path = os.path.abspath(os.path.join(log_snapshots_dir, log_file_name))
     zip_file_name_path = os.path.abspath(os.path.join(log_snapshots_dir, zip_file_name))
@@ -129,7 +132,7 @@ def compress_and_send(user_token, log_file_name=None):
             return result
 
 def send_all_snapshots(user_token):
-    log_snapshots_dir = os.path.join(paths.get_paths_to_settings_folder()[0], paths.LOG_SNAPSHOTS_DIR)
+    log_snapshots_dir = os.path.join(paths.get_paths_to_settings_folder()[0], LOG_SNAPSHOTS_DIR)
     try:
         snapshot_dir = os.listdir(log_snapshots_dir)
     except OSError:

@@ -4,9 +4,9 @@
 import sys
 import time
 import signal
-import traceback
 import platform
 
+import error
 import log
 import paths
 paths.init_path_to_libs()
@@ -144,13 +144,6 @@ class App(Singleton):
         sys.exit(0)
 
 if __name__ == '__main__':
-    try:
-        app = App.instance()
-        app.start_main_loop()
-    except SystemExit:
-        pass
-    except:
-        trace = traceback.format_exc()
-        print trace
-        with open(config.get_settings()['error_file'], "a") as f:
-            f.write(time.ctime() + "\n" + trace + "\n")
+    app = error.log_exception(App.instance())
+    error.log_exception(app.start_main_loop())
+

@@ -56,7 +56,7 @@ class BaseSender:
             else:
                 self.download_gcodes_and_print(gcodes)
         else:
-            gcodes = base64.decode(gcodes)
+            gcodes = base64.b64decode(gcodes)
             self.load_gcodes(gcodes)
 
     def download_thread(self, link):

@@ -8,7 +8,6 @@ import platform
 
 LIBRARIES_FOLDER = 'libraries'
 LIBRARIES = ['opencv', 'numpy', 'printrun']
-LOG_SNAPSHOTS_DIR = 'log_snapshots'
 
 def init_path_to_libs():
     logger = logging.getLogger(__name__)
