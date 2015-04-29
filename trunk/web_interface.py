@@ -281,7 +281,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         paths = utils.get_paths_to_settings_folder()
         for path in paths:
             login_info_path = os.path.join(path, 'login_info.bin')
-            if os.path.isfile(login_info_path) == True:
+            if os.path.isfile(login_info_path):
                 try:
                     os.remove(login_info_path)
                 except Exception as e:
