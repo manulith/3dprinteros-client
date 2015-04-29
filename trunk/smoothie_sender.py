@@ -89,7 +89,7 @@ class Sender(raw_usb_sender.Sender):
                 while self.temps[0] < self.target_temps[0]:
                     time.sleep(0.05)
                 self.logger.info('Bed heated!')
-            if self.tool_heating_re.match(gcode):
+            elif self.tool_heating_re.match(gcode):
                 self.logger.info('Heating tool')
                 while not self.temps[1] or not self.target_temps[1]:
                     time.sleep(0.05)
@@ -97,5 +97,7 @@ class Sender(raw_usb_sender.Sender):
                 while self.temps[1] < self.target_temps[1]:
                     time.sleep(0.05)
                 self.logger.info('Tool heated!')
+            else:
+                self.logger.warning('Heating gcode cannot be matched! Printer most likely will hang on heating.\nGcode: %s' % gcode)
         self.logger.info('Finished heating!')
         self.heating_flag = False
