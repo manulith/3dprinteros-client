@@ -200,7 +200,7 @@ def write_login(login, password):
     except Exception as e:
         logger.warning('Login info writing error! ' + e.message)
     else:
-        if result == True:
+        if result:
             logger.debug('Login info was written and packed.')
         else:
             logger.warning("Login info wasn't written.")
