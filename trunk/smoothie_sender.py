@@ -59,6 +59,7 @@ class Sender(raw_usb_sender.Sender):
                 self.write('get pos')
 
     def prepare_heating(self):
+        self.logger.info('Preparing heating...')
         with self.buffer_lock:
             for gcode in self.buffer:
                 if gcode.startswith('G0') or gcode.startswith('G1'):
@@ -70,6 +71,7 @@ class Sender(raw_usb_sender.Sender):
                 match = self.tool_heating_re.match(gcode)
                 if match:
                     self.heating_gcodes.append(gcode)
+            self.logger.info('Got heating gcodes:\n%s' % str(self.heating_gcodes))
             for gcode in self.heating_gcodes:
                 self.buffer.remove(gcode)
 
