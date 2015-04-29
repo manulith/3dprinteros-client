@@ -200,7 +200,7 @@ def write_login(login, password):
     except Exception as e:
         logger.warning('Login info writing error! ' + e.message)
     else:
-        if result == True:
+        if result:
             logger.debug('Login info was written and packed.')
         else:
             logger.warning("Login info wasn't written.")
@@ -448,7 +448,7 @@ def create_logger(logger_name, log_file_name):
     logger = logging.getLogger(logger_name)
     logger.propagate = False
     logger.setLevel(logging.DEBUG)
-    stderr_handler = logging.StreamHandler()
+    stderr_handler = logging.StreamHandler(stream=sys.stdout)
     stderr_handler.setLevel(logging.DEBUG)
     logger.addHandler(stderr_handler)
     if log_file_name:
