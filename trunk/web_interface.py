@@ -225,15 +225,11 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.quit_main_app()
 
     def kill_conveyor(self):
-        fail_message = '3DPrinterOS was unable to stop conveyor.'
-        if utils.get_conveyor_pid():
-            result = utils.kill_existing_conveyor()
-            if result:
-                message = 'Conveyor was successfully stopped.<br><br>Returning...'
-            else:
-                message = fail_message
+        result = utils.kill_existing_conveyor()
+        if result:
+            message = 'Conveyor was successfully stopped.<br><br>Returning...'
         else:
-            message = fail_message
+            message = '3DPrinterOS was unable to stop conveyor.'
         self.write_message(message)
 
     def download_logs(self):
