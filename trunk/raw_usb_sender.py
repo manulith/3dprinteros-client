@@ -1,5 +1,4 @@
 import logging
-import re
 import threading
 import usb.core
 import usb.util
@@ -7,8 +6,11 @@ import usb.backend.libusb1
 import utils
 import collections
 import time
+
+import log
+import log
 import base_sender
-utils.init_path_to_libs()
+
 
 TEMP_REQUEST_WAIT = 5
 PAUSE_LIFT_HEIGHT = 5
@@ -196,6 +198,7 @@ class Sender(base_sender.BaseSender):
             self.pause_flag = False
             self.logger.info("Unpaused successfully")
 
+    @log.log_exception
     def temp_request(self):
         self.temp_request_counter = 0
         no_answer_counter = 0
@@ -219,6 +222,7 @@ class Sender(base_sender.BaseSender):
     def get_current_line_number(self):
         return self.oks
 
+    @log.log_exception
     def sending(self):
         self.logger.info('Sending thread started!')
         while not self.stop_flag:

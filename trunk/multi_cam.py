@@ -63,7 +63,7 @@ class Camera:
 
 class CameraMaster:
     def __init__(self):
-        self.logger = logging.getLogger('app.' + __name__)
+        self.logger = logging.getLogger('app.' + 'multi_cam')
         self.logger.info('Launched camera module: %s' % os.path.basename(__file__))
         signal.signal(signal.SIGINT, self.intercept_signal)  # init signals
         signal.signal(signal.SIGTERM, self.intercept_signal)

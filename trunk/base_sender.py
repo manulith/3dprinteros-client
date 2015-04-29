@@ -59,6 +59,7 @@ class BaseSender:
             gcodes = base64.b64decode(gcodes)
             self.load_gcodes(gcodes)
 
+    @log.log_exception
     def download_thread(self, link):
         if not self.stop_flag:
             self.logger.info('Starting download thread')

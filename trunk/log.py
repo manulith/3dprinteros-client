@@ -6,9 +6,9 @@ import sys
 import time
 import zipfile
 import logging
+import traceback
 import cloghandler
 
-import errors
 import paths
 import requests
 import http_client
@@ -17,6 +17,7 @@ import version
 LOG_SNAPSHOT_LINES = 200
 
 LOG_FILE = "3dprinteros_client.log"
+EXCEPTIONS_LOG_FILE = 'critical_errors.log'
 LOG_SNAPSHOTS_DIR = 'log_snapshots'
 
 def create_logger(logger_name, log_file_name):
@@ -35,6 +36,22 @@ def create_logger(logger_name, log_file_name):
         except Exception as e:
             logger.debug('Could not create log file because' + e.message + '\n.No log mode.')
     return logger
+
+def log_exception(func_or_methon):
+    def decorator(*args, **kwargs):
+        try:
+            result = func_or_methon(*args, **kwargs)
+        except SystemExit:
+            pass
+        except:
+            trace = traceback.format_exc()
+            print trace
+            with open(EXCEPTIONS_LOG_FILE, "a") as f:
+                f.write(time.ctime() + "\n" + trace + "\n")
+            sys.exit(0)
+        else:
+            return result
+    return decorator
 
 def make_log_snapshot():
     logger = logging.getLogger("app." + __name__)

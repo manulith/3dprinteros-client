@@ -6,6 +6,7 @@ import makerbot_driver
 import makerbot_serial as serial
 import serial.serialutil
 
+import log
 from base_sender import BaseSender
 
 class Sender(BaseSender):
@@ -20,7 +21,6 @@ class Sender(BaseSender):
 
     def __init__(self, profile, usb_info):
         BaseSender.__init__(self, profile, usb_info)
-        #self.mb = {'preheat': False, 'heat_shutdown': False}
         self.logger = logging.getLogger('app.' + __name__)
         #self.logger.setLevel('INFO')
         self.logger.info('Makerbot printer created')
@@ -68,7 +68,7 @@ class Sender(BaseSender):
             self.execute('G1  Z' + str(z) + ' A' + str(a) + ' B' + str(b))
 
     # length argument is used for unification with Printrun. DON'T REMOVE IT!
-    def set_total_gcodes(self, length=0):
+    def set_total_gcodes(self, length):
         self.execute(lambda: self.parser.s3g.abort_immediately())
         self.parser.state.values["build_name"] = '3DPrinterOS'
         self.parser.state.percentage = 0
@@ -195,9 +195,9 @@ class Sender(BaseSender):
         head_temp2 = self.execute(lambda: self.parser.s3g.get_toolhead_temperature(1))
         head_ttemp1 = self.execute(lambda: self.parser.s3g.get_toolhead_target_temperature(0))
         head_ttemp2 = self.execute(lambda: self.parser.s3g.get_toolhead_target_temperature(1))
-        #self.mb            = self.execute(lambda: self.parser.s3g.get_motherboard_status())
         self.temps = [platform_temp, head_temp1, head_temp2]
         self.target_temps = [platform_ttemp, head_ttemp1, head_ttemp2]
+        # self.mb            = self.execute(lambda: self.parser.s3g.get_motherboard_status())
         #self.position      = self.execute(lambda: self.parser.s3g.get_extended_position())
 
     def reset(self):
@@ -225,6 +225,8 @@ class Sender(BaseSender):
             self.target_temps[extruder_number] = int(result.group(1))
             self.logger.info('Heating toolhead ' + str(extruder_number) + ' to ' + str(result.group(1)))
 
+
+    @log.log_exception
     def send_gcodes(self):
         last_time = time.time()
         counter = 0

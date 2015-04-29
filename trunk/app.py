@@ -6,7 +6,6 @@ import time
 import signal
 import platform
 
-import errors
 import log
 import paths
 paths.init_path_to_libs()
@@ -17,20 +16,20 @@ import user_login
 import updater
 import version
 import printer_interface
-from singleton import Singleton
+from singleton import InitSingleton
 import config
 
 
-class App(Singleton):
+class App(InitSingleton):
 
-    MAIN_LOOP_SLEEP = 0
+    MAIN_LOOP_SLEEP = 2
     LOG_FLUSH_TIME = 30
 
+    @log.log_exception
     def __init__(self):
-        log_file_name = config.get_settings()["log_file"]
-        self.logger = log.create_logger("app", log_file_name)        
+        self.logger = log.create_logger("app", log.LOG_FILE)
+        self.logger.info("Starting 3DPrinterOS client. Version %s_%s" % (version.version, version.build))
         self.logger.info('Operating system: ' + platform.system() + ' ' + platform.release())
-        self.logger.info("Welcome to 3DPrinterOS Client version %s_%s" % (version.version, version.build))
         self.time_stamp()
         signal.signal(signal.SIGINT, self.intercept_signal)
         signal.signal(signal.SIGTERM, self.intercept_signal)
@@ -58,6 +57,7 @@ class App(Singleton):
             webbrowser.open("http://127.0.0.1:8008", 2, True)
             self.logger.debug("...done")
 
+    @log.log_exception
     def start_main_loop(self):
         self.last_flush_time = 0
         self.detector = usb_detect.USBDetector()
@@ -77,10 +77,13 @@ class App(Singleton):
             now = time.time()
             if now - self.last_flush_time > self.LOG_FLUSH_TIME:
                 self.last_flush_time = now
-                self.logger.info('Flushing logger handlers')
-                for handler in self.logger.handlers:
-                    handler.flush()
+                self.flush_log()
         self.quit()
+
+    def flush_log(self):
+        self.logger.info('Flushing logger handlers')
+        for handler in self.logger.handlers:
+            handler.flush()
 
     def time_stamp(self):
         self.logger.debug("Time stamp: " + time.strftime("%d %b %Y %H:%M:%S", time.localtime()))
@@ -116,13 +119,14 @@ class App(Singleton):
             self.camera_controller.close()
         for pi in self.printer_interfaces:
             pi.close()
-        time.sleep(0.1) #to reduce logging spam in next
+        time.sleep(0.2) #to reduce logging spam in next
         self.time_stamp()
         self.logger.info("Waiting for gcode sending modules to close...")
         while True:
             ready_flag = True
             for pi in self.printer_interfaces:
                 if pi.isAlive():
+                    pi.close()
                     ready_flag = False
                     self.logger.debug("Waiting for %s" % str(pi.usb_info))
                 else:
@@ -141,9 +145,10 @@ class App(Singleton):
         self.logger.info("...done.")
         self.time_stamp()
         self.logger.info("Goodbye ;-)")
+        self.flush_log()
         sys.exit(0)
 
 if __name__ == '__main__':
-    app = errors.log_exception(App.instance)
-    errors.log_exception(app.start_main_loop)
+    app = App.init()
+    app.start_main_loop()
 
