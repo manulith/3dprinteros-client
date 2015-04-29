@@ -1,5 +1,7 @@
 3DPrinterOS release notes
 
+    Refactoring of almost all code
+    New printer detection algorithm
     Smoothie printers partial support
     ZMorph support
 

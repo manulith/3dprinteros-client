@@ -71,7 +71,9 @@ def kill_existing_conveyor():
             os.kill(int(pid), signal.SIGTERM)
         elif sys.platform.startswith('darwin'):
             makerware_path = detect_makerware_paths()
-            os.popen(os.path.join(makerware_path, 'stop_conveyor_service'))
+            command = os.path.join(makerware_path, 'stop_conveyor_service')
+            command_to_stop = "osascript -e '" + 'do shell script "sudo ' + command + '" with administrator privileges' + "'"
+            os.popen(command_to_stop)
         for i in range(wait_count):
             if get_conveyor_pid():
                 logger.info('Conveyor still alive, awaiting %s time' % str(i + 1))

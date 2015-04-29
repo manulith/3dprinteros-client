@@ -6,7 +6,7 @@ import time
 import signal
 import platform
 
-import error
+import errors
 import log
 import paths
 paths.init_path_to_libs()
@@ -144,6 +144,6 @@ class App(Singleton):
         sys.exit(0)
 
 if __name__ == '__main__':
-    app = error.log_exception(App.instance())
-    error.log_exception(app.start_main_loop())
+    app = errors.log_exception(App.instance)
+    errors.log_exception(app.start_main_loop)
 

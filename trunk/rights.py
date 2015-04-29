@@ -1,3 +1,4 @@
+import os
 import sys
 import logging
 from subprocess import Popen, PIPE
@@ -34,4 +35,16 @@ def add_user_groups():
         p = Popen('xterm -e "sudo usermod -a -G dialout,tty,usbusers $USER"', shell=True, stdout=PIPE, stderr=PIPE)
         stdout, stderr = p.communicate()
         if stdout:
-            logger.info('Adding to Linux groups result: ' + stdout)
+            logger.info('Adding to Linux groups result: ' + stdout)\
+
+def launch_suprocess(file_name):
+    logger = logging.getLogger('app')
+    logger.info('Launching subprocess ' + file_name)
+    client_dir = os.path.dirname(os.path.abspath(__file__))
+    path = os.path.join(client_dir, file_name)
+    try:
+        process = Popen([sys.executable, path])
+    except Exception as e:
+        logger.warning('Could not launch ' + file_name + ' as subprocess due to error:\n' + e.message)
+    else:
+        return process

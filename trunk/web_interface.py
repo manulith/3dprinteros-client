@@ -214,7 +214,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.write_message(message)
 
     def show_logs(self):
-        log_file = Config.get_settings()['log_file']
+        log_file = config.get_settings()['log_file']
         logs = log.get_file_tail(log_file)
         content = ''
         if not content:
