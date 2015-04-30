@@ -8,6 +8,7 @@ import utils
 import collections
 import time
 import base_sender
+import sys
 utils.init_path_to_libs()
 
 TEMP_REQUEST_WAIT = 5
@@ -70,39 +71,42 @@ class Sender(base_sender.BaseSender):
         pass
 
     def connect(self):
-        backend_from_our_directory = usb.backend.libusb1.get_backend(find_library=utils.get_libusb_path)
-        self.dev = usb.core.find(idVendor=self.int_vid, idProduct=self.int_pid, backend=backend_from_our_directory)
-        # Checking and claiming interface 0 - interrupt interface for command sending
-        # Zmorph also has interface 1 - bulk interface, assuming for file upload.
-        if self.dev.is_kernel_driver_active(0) is True:
-            self.logger.info('Interface is kernel active. Detaching...')
-            claim_attempts = 5
-            for _ in range(claim_attempts):
-                try:
-                    self.dev.detach_kernel_driver(0)
-                    #time.sleep(0.1)
-                    self.dev.set_configuration()
-                    usb.util.claim_interface(self.dev, 0)
-                    #time.sleep(0.1)
-                except Exception as e:
-                    logging.warning('Exception while detaching : %s' % e.message)
-                else:
-                    if self.dev.is_kernel_driver_active(0) is True:
-                        self.logger.info('Can\'t detach USB device. Attempting once more...')
+        if sys.platform.startswith('linux'):  # TODO: test at mac this too
+            backend_from_our_directory = usb.backend.libusb1.get_backend(find_library=utils.get_libusb_path)
+            self.dev = usb.core.find(idVendor=self.int_vid, idProduct=self.int_pid, backend=backend_from_our_directory)
+            # Checking and claiming interface 0 - interrupt interface for command sending
+            # Zmorph also has interface 1 - bulk interface, assuming for file upload.
+            if self.dev.is_kernel_driver_active(0) is True:
+                self.logger.info('Interface is kernel active. Detaching...')
+                claim_attempts = 5
+                for _ in range(claim_attempts):
+                    try:
+                        self.dev.detach_kernel_driver(0)
+                        #time.sleep(0.1)
+                        self.dev.set_configuration()
+                        usb.util.claim_interface(self.dev, 0)
+                        #time.sleep(0.1)
+                    except Exception as e:
+                        logging.warning('Exception while detaching : %s' % e.message)
                     else:
-                        self.logger.info('Detached and claimed!')
-                        break
-        else:
-            self.logger.info('Interface is free. Connecting...')
-        if self.dev.is_kernel_driver_active(0) is True:
-            self.logger.warning('Cannot claim USB device. Aborting.')
-            return False
-        else:
-            #self.dev.set_configuration()
-            cfg = self.dev.get_active_configuration()
-            self.endpoint_in = cfg[(0, 0)][0]
-            self.endpoint_out = cfg[(0, 0)][1]
-            return True
+                        if self.dev.is_kernel_driver_active(0) is True:
+                            self.logger.info('Can\'t detach USB device. Attempting once more...')
+                        else:
+                            self.logger.info('Detached and claimed!')
+                            break
+            else:
+                self.logger.info('Interface is free. Connecting...')
+            if self.dev.is_kernel_driver_active(0) is True:
+                self.logger.warning('Cannot claim USB device. Aborting.')
+                return False
+            else:
+                #self.dev.set_configuration()
+                cfg = self.dev.get_active_configuration()
+                if not self.endpoint_in and not self.endpoint_out:
+                    # TODO: endpoint sequence can vary in different printer. Ensure IN endpoint is actually IN etc.
+                    self.endpoint_in = cfg[(0, 0)][0]
+                    self.endpoint_out = cfg[(0, 0)][1]
+                return True
 
     def write(self, gcode):
         try:
@@ -247,11 +251,13 @@ class Sender(base_sender.BaseSender):
 
     # Might have firmware-dependable logic
     def prepare_heating(self):
-        raise NotImplementedError
+        pass
+        #raise NotImplementedError  # Not always needed
 
     # Might have firmware-dependable logic
     def heat_printer(self):
-        raise NotImplementedError
+        pass
+        #raise NotImplementedError  # Not always needed
 
     def wait_for_sending_end(self):
         wait_cap = 30
