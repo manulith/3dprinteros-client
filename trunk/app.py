@@ -16,11 +16,10 @@ import user_login
 import updater
 import version
 import printer_interface
-from singleton import InitSingleton
 import config
 
 
-class App(InitSingleton):
+class App(object):
 
     MAIN_LOOP_SLEEP = 2
     LOG_FLUSH_TIME = 30
@@ -116,7 +115,7 @@ class App(InitSingleton):
         if clouds:            
             clouds.terminate()
         if hasattr(self, 'camera_controller'):
-            self.camera_controller.close()
+            self.camera_controller.stop_camera_process()
         for pi in self.printer_interfaces:
             pi.close()
         time.sleep(0.2) #to reduce logging spam in next
@@ -145,10 +144,11 @@ class App(InitSingleton):
         self.logger.info("...done.")
         self.time_stamp()
         self.logger.info("Goodbye ;-)")
+        time.sleep(0.1)
         self.flush_log()
         sys.exit(0)
 
 if __name__ == '__main__':
-    app = App.init()
+    app = App()
+    config.Config.instance().set_app_pointer(app)
     app.start_main_loop()
-

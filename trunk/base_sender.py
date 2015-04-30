@@ -5,8 +5,9 @@ import logging
 import collections
 
 import log
+import config
 import http_client
-from app import App
+
 
 class BaseSender:
 
@@ -121,17 +122,17 @@ class BaseSender:
     def upload_logs(self):
         log.make_full_log_snapshot()
         self.logger.info("Sending logs")
-        log.send_all_snapshots(App.instance().user_login.user_token)
+        log.send_all_snapshots(config.get_app().user_login.user_token)
         self.logger.info("Done")
 
     def switch_camera(self, module):
         self.logger.info('Changing camera module to %s due to server request' % module)
-        App.instance().switch_camera(module)
+        config.get_app().switch_camera(module)
 
     def update_software(self):
         self.logger.info('Executing update command from server')
-        App.instance().updater.update()
+        config.get_app().updater.update()
 
     def quit_application(self):
         self.logger.info('Received quit command from server!')
-        App.instance().stop_flag = True
+        config.get_app().stop_flag = True
