@@ -109,6 +109,5 @@ class Sender(raw_usb_sender.Sender):
             time.sleep(2)
             if self.heating_flag:
                 time.sleep(5)  # For not bothering ZMorph printer too much while heating, otherwise it could hang up.
-            else:
-                with self.write_lock:
-                    self.write(self.TEMP_REQUEST_GCODE)
+            with self.write_lock:
+                self.write(self.TEMP_REQUEST_GCODE)
