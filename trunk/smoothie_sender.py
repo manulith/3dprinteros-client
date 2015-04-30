@@ -71,7 +71,7 @@ class Sender(raw_usb_sender.Sender):
                 match = self.tool_heating_re.match(gcode)
                 if match:
                     self.heating_gcodes.append(gcode)
-            self.logger.info('Got heating gcodes:\n%s' % str(self.heating_gcodes))
+            self.logger.info('Got heating gcodes: %s' % str(self.heating_gcodes))
             for gcode in self.heating_gcodes:
                 self.buffer.remove(gcode)
 
@@ -103,3 +103,12 @@ class Sender(raw_usb_sender.Sender):
                 self.logger.warning('Heating gcode cannot be matched! Printer most likely will hang on heating.\nGcode: %s' % gcode)
         self.logger.info('Finished heating!')
         self.heating_flag = False
+
+    def temp_request(self):
+        while not self.stop_flag:
+            time.sleep(2)
+            if self.heating_flag:
+                time.sleep(5)  # For not bothering ZMorph printer too much while heating, otherwise it could hang up.
+            else:
+                with self.write_lock:
+                    self.write(self.TEMP_REQUEST_GCODE)

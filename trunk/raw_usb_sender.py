@@ -291,6 +291,11 @@ class Sender(base_sender.BaseSender):
     def init_sending_values(self):
             self.gcode_lines = len(self.buffer)
             self.percent_step = self.gcode_lines / 100
+            self.heating_gcodes = []
+            self.temps[0] = 0
+            self.temps[1] = 0
+            self.target_temps[0] = 0
+            self.target_temps[1] = 0
             self.printing_flag = True
             self.percent = 0
             self.sent_gcodes = 0
