@@ -16,8 +16,7 @@ import config
 
 class CameraMaster:
     def __init__(self):
-        self.logger = logging.getLogger('app.' + 'dual_cam')
-        self.logger.info('Launched camera module: %s' % os.path.basename(__file__))
+        self.init_logging()
         signal.signal(signal.SIGINT, self.intercept_signal)
         signal.signal(signal.SIGTERM, self.intercept_signal)
         self.stop_flag = False
@@ -96,7 +95,7 @@ class CameraMaster:
 
 class CameraImageSender(threading.Thread):
     def __init__(self, camera_number, camera_name, cap, user_token):
-        self.logger = logging.getLogger("app." + __name__)
+        self.logger = logging.getLogger("camera." + camera_name)
         self.http_client = http_client.HTTPClient(keep_connection_flag=True)
         self.stop_flag = False
         self.camera_number = camera_number
