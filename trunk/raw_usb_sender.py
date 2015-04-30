@@ -176,6 +176,8 @@ class Sender(base_sender.BaseSender):
                 for gcode in self.end_gcodes:
                     self.write(gcode)
                     time.sleep(0.1)
+            with self.write_lock:
+                self.buffer.clear()
             self.logger.info('Cancelled!')
 
     def lift_extruder(self):
@@ -238,6 +240,8 @@ class Sender(base_sender.BaseSender):
             self.logger.info('All gcodes are sent to printer. Waiting for finish')
             self.wait_for_sending_end()
             self.logger.info('Printer has finished printing!')
+            with self.write_lock:
+                self.buffer.clear()
             self.percent = 100
             self.printing_flag = False
 
