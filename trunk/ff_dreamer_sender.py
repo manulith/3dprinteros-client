@@ -1,6 +1,7 @@
 import re
 import raw_usb_sender
 import time
+import usb.core
 
 class Sender(raw_usb_sender.Sender):
 
@@ -9,6 +10,8 @@ class Sender(raw_usb_sender.Sender):
     M602_LOGOUT = "~M602\r\n"
 
     def __init__(self, profile, usb_info, app):
+        self.endpoint_out = 0x1
+        self.endpoint_in = 0x81
         self.define_regexps()
         raw_usb_sender.Sender.__init__(self, profile, usb_info, app)
 
@@ -57,10 +60,27 @@ class Sender(raw_usb_sender.Sender):
             with self.write_lock:
                 self.write(self.TEMP_REQUEST_GCODE)
 
+    def read(self):
+        try:
+            print 'Reading...'
+            #data = self.dev.read(self.endpoint_in.bEndpointAddress, self.endpoint_in.wMaxPacketSize, 2000)
+            data = self.dev.read(self.endpoint_in, 64, 2000)
+        except usb.core.USBError as e:
+            self.logger.info('USBError : %s' % str(e))
+            # TODO: parse ERRNO 110 here to separate timeout exceptions | [Errno 110] Operation timed out
+            return None
+        except Exception as e:  # TODO: make not operational
+            self.logger.warning('Error while reading gcode: %s' % str(e))
+            return None
+        else:
+            return data
+
     def write(self, gcode):
         try:
-            self.endpoint_out.write('~' + gcode + '\r\n', 2000)
+            print 'Writing...'
+            self.dev.write(self.endpoint_out, '~' + gcode + '\r\n', 2000)
+        #except usb.core.USBError:
         except Exception as e:
             self.logger.warning('Error while writing gcode "%s"\nError: %s' % (gcode, e.message))
         else:
-            self.logger.info('SENT: %s' % gcode)
+            print 'SENT: %s' % gcode
