@@ -2,6 +2,7 @@ import re
 import raw_usb_sender
 import time
 
+
 class Sender(raw_usb_sender.Sender):
     def __init__(self, profile, usb_info, app):
         self.define_regexps()
