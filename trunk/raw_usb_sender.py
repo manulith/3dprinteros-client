@@ -99,14 +99,13 @@ class Sender(base_sender.BaseSender):
             if self.dev.is_kernel_driver_active(0) is True:
                 self.logger.warning('Cannot claim USB device. Aborting.')
                 return False
-            else:
-                #self.dev.set_configuration()
-                cfg = self.dev.get_active_configuration()
-                if not self.endpoint_in and not self.endpoint_out:
-                    # TODO: endpoint sequence can vary in different printer. Ensure IN endpoint is actually IN etc.
-                    self.endpoint_in = cfg[(0, 0)][0]
-                    self.endpoint_out = cfg[(0, 0)][1]
-                return True
+        #self.dev.set_configuration()
+        cfg = self.dev.get_active_configuration()
+        if not self.endpoint_in and not self.endpoint_out:
+            # TODO: endpoint sequence can vary in different printer. Ensure IN endpoint is actually IN etc.
+            self.endpoint_in = cfg[(0, 0)][0]
+            self.endpoint_out = cfg[(0, 0)][1]
+        return True
 
     def write(self, gcode):
         try:
