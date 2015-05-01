@@ -174,7 +174,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             modules_select = ''
             for module in modules.keys():
                 if modules[module] == self.server.app.cam_current_module:
-                    modules_select = modules_select + '<p><input type="radio" disabled> ' + module + '</p>'
+                    modules_select = modules_select + '<p><input type="radio" disabled> <font color="lightgrey">' + module + '</font></p>'
                 else:
                     modules_select = modules_select + '<p><input type="radio" name="module" value="' + module + '"> ' + module + '</p>'
             page = self.read_file('web_interface/choose_cam.html')
