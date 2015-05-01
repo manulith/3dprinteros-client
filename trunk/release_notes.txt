@@ -5,6 +5,8 @@
 
     Fixed opening Cloundsync folder with file managers other that Nautilus
     Fixed rare bug of too many opened files
+    Camera selection page was updated
+    Changed names of folders for CloudSync - Successful and Failed
 
 4.6.2
 
