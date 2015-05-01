@@ -71,9 +71,9 @@ class Sender(base_sender.BaseSender):
         pass
 
     def connect(self):
+        backend_from_our_directory = usb.backend.libusb1.get_backend(find_library=utils.get_libusb_path)
+        self.dev = usb.core.find(idVendor=self.int_vid, idProduct=self.int_pid, backend=backend_from_our_directory)
         if sys.platform.startswith('linux'):  # TODO: test at mac this too
-            backend_from_our_directory = usb.backend.libusb1.get_backend(find_library=utils.get_libusb_path)
-            self.dev = usb.core.find(idVendor=self.int_vid, idProduct=self.int_pid, backend=backend_from_our_directory)
             # Checking and claiming interface 0 - interrupt interface for command sending
             # Zmorph also has interface 1 - bulk interface, assuming for file upload.
             if self.dev.is_kernel_driver_active(0) is True:
