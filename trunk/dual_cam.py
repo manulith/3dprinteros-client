@@ -48,7 +48,7 @@ class DualCameraMaster:
         for index in range(0, self.MAX_CAMERA_INDEX):
             if self.stop_flag:
                 break
-            self.logger.info("Probing for camera N%d..." % len(self.captures))
+            self.logger.debug("Probing for camera N%d..." % index)
             capture = self.cv2.VideoCapture(index)
             if capture.isOpened():
                 self.captures.append(capture)
@@ -60,7 +60,7 @@ class DualCameraMaster:
 
     def make_shot(self, capture):
         self.logger.debug("Capturing frame from " + str(capture))
-        state, frame = capture.QueryFrame()
+        state, frame = capture.read()
         if not state:
             print self.fails
             self.fails[self.captures.index(capture)] += 1
@@ -99,6 +99,7 @@ class DualCameraMaster:
                     self.send_frame(number, frame)
                 else:
                     time.sleep(1)
+            time.sleep(0.1) #to reduce cpu usage when no cameras are available
         self.close_captures()
         sys.exit(0)
 
