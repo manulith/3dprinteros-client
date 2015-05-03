@@ -27,7 +27,8 @@ class Sender(BaseSender):
             self.extruder_count = self.profile['extruder_count']
             self.total_gcodes = 0
             self.temp_request_thread = threading.Thread(target=self.temp_request)
-            self.temp_request_thread.start()
+            if not self.stop_flag:
+                self.temp_request_thread.start()
 
     def select_baudrate_and_connect(self):
         baudrates = self.profile['baudrate']

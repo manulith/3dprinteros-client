@@ -13,7 +13,7 @@ import rights
 import makerware_utils
 import version
 import config
-import cloud_sync
+#import cloud_sync
 
 
 class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):

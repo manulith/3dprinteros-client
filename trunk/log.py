@@ -20,10 +20,10 @@ LOG_FILE = "3dprinteros_client.log"
 EXCEPTIONS_LOG_FILE = 'critical_errors.log'
 LOG_SNAPSHOTS_DIR = 'log_snapshots'
 
-def create_logger(logger_name, log_file_name):
+def create_logger(logger_name, log_file_name=None):
     logger = logging.getLogger(logger_name)
     logger.propagate = False
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.INFO)
     std_handler = logging.StreamHandler(stream=sys.stdout)
     std_handler.setLevel(logging.DEBUG)
     logger.addHandler(std_handler)

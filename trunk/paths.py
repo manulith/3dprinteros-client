@@ -10,8 +10,7 @@ LIBRARIES_FOLDER = 'libraries'
 LIBRARIES = ['opencv', 'numpy', 'printrun']
 
 def init_path_to_libs():
-    logger = logging.getLogger(__name__)
-
+    #logger = logging.getLogger(__name__)
     if sys.platform.startswith('win'):
         folder_name = "win"
         LIBRARIES.append('pywin')
@@ -25,7 +24,8 @@ def init_path_to_libs():
     platform_dir = os.path.join(our_dir, LIBRARIES_FOLDER, folder_name)
     for lib in LIBRARIES:
         lib_path = os.path.join(platform_dir, lib)
-        logger.info('Using library: ' + lib_path)
+        #logger.info('Using library: ' + lib_path)
+        print 'Using library: ' + lib_path
         sys.path.append(lib_path)
 
 def get_libusb_path(lib):

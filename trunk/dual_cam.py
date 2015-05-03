@@ -1,56 +1,39 @@
-import paths
-paths.init_path_to_libs()
-import numpy as np
-import cv2
+import sys
 import time
-import base64
-import threading
-import logging
 import signal
-import os
-import traceback
+import base64
 
-import http_client
-import user_login
+import log
+import paths
 import config
+import user_login
+import http_client
 
-class CameraMaster:
+
+class DualCameraMaster:
+
+    MAX_CAMERA_INDEX = 99
+    FAILS_BEFORE_REINIT = 10
+
+    #@log.log_exception
     def __init__(self):
-        self.init_logging()
+        self.logger = log.create_logger("app.camera")
+        self.stop_flag = False
+        paths.init_path_to_libs()
+        import numpy as np
+        import cv2 as cv2
+        self.np = np
+        self.cv2 = cv2
         signal.signal(signal.SIGINT, self.intercept_signal)
         signal.signal(signal.SIGTERM, self.intercept_signal)
-        self.stop_flag = False
-        self.cameras = []
-        self.logger.info('Camera module login...')
         ul = user_login.UserLogin(self)
         ul.wait_for_login()
+        self.http_client = http_client.HTTPClient(keep_connection_flag=True)
         self.user_token = ul.user_token
-        self.cameras_count = self.get_number_of_cameras()
-        self.camera_names = self.get_camera_names()
-        if len(self.camera_names) != self.cameras_count:
-            message = "Malfunction in get_camera_names. Number of cameras doesn't equal to number of camera names"
-            self.logger.error(message)
-            raise RuntimeError(message)
-        else:
-            self.init_cameras()
-
-    def init_logging(self):
-        self.logger = logging.getLogger("camera")
-        self.logger.propagate = False
-        self.logger.setLevel(logging.DEBUG)
-        log_name = config.get_settings()["camera"]["log_file"]
-        file_handler = logging.handlers.RotatingFileHandler(log_name, maxBytes=1024 * 1024, backupCount=1)
-        file_handler.setFormatter(
-            logging.Formatter('%(levelname)s\t%(asctime)s\t%(threadName)s/%(funcName)s\t%(message)s'))
-        file_handler.setLevel(logging.DEBUG)
-        self.logger.addHandler(file_handler)
-
-    def init_cameras(self):
-        for num in self.camera_names:
-            cap = cv2.VideoCapture(num)
-            cam = CameraImageSender(num+1, self.camera_names[num], cap, self.user_token)
-            cam.start()
-            self.cameras.append(cam)
+        self.image_extension =  config.get_settings()["camera"]["img_ext"]
+        self.image_quality = config.get_settings()["camera"]["img_qual"]
+        self.init_captures()
+        self.main_loop()
 
     def intercept_signal(self, signal_code, frame):
         self.logger.info("SIGINT or SIGTERM received. Closing Camera Module...")
@@ -58,110 +41,71 @@ class CameraMaster:
 
     def close(self):
         self.stop_flag = True
-        start_time = time.time()
-        for sender in self.cameras:
-            sender.close()
-        if time.time() - start_time < config.get_settings()["camera"]["min_loop_time"]:
-            time.sleep(1)
-        for sender in self.cameras:
-            sender.join(1)
-            if sender.isAlive():
-                self.logger.warning("Failed to close camera %s" % sender.name)
-        os._exit(0)
 
-    def get_camera_names(self):
-        cameras_names = {}
-        if self.cameras_count > 0:
-            for camera_id in range(0, self.cameras_count):
-                cameras_names[camera_id] = 'Camera ' + str(camera_id + 1)
-
-        self.logger.info('Found ' + str(len(cameras_names)) + ' camera(s):')
-        if len(cameras_names) > 0:
-            for number in range(0,len(cameras_names)):
-                self.logger.info(cameras_names[number])
-        return  cameras_names
-
-    def get_number_of_cameras(self):
-        cameras_count = 0
-        while True:
-            cam = cv2.VideoCapture(cameras_count)
-            is_opened = cam.isOpened()
-            cam.release()
-            if not is_opened:
+    def init_captures(self):
+        self.captures = []
+        self.fails = []
+        for index in range(0, self.MAX_CAMERA_INDEX):
+            if self.stop_flag:
                 break
-            cameras_count += 1
-        return cameras_count
-
-
-class CameraImageSender(threading.Thread):
-    def __init__(self, camera_number, camera_name, cap, user_token):
-        self.logger = logging.getLogger("camera." + camera_name)
-        self.http_client = http_client.HTTPClient(keep_connection_flag=True)
-        self.stop_flag = False
-        self.camera_number = camera_number
-        self.camera_name = camera_name
-        self.cap = cap
-        self.token = user_token
-        if not self.token:
-            self.stop_flag = True
-            self.error = 'No_Token'
-        super(CameraImageSender, self).__init__()
-
-    def take_a_picture(self):
-        cap_ret, frame = self.cap.read()
-        encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), config.get_settings()["camera"]["img_qual"]]
-        try:
-            result, image_encode = cv2.imencode(config.get_settings()["camera"]["img_ext"], frame, encode_param)
-        except Exception as e:
-            self.logger.warning(self.camera_name + ' warning: ' + e.message)
-            result, image_encode = None, None
-        if cap_ret and result:
-            data = np.array(image_encode)
-            string_data = data.tostring()
-            return string_data
-        else:
-            time.sleep(1)
-
-    def send_picture(self, picture):
-        picture = base64.b64encode(str(picture))
-        data = (self.token, self.camera_number, self.camera_name, picture)
-        answer = self.http_client.pack_and_send('camera', *data)
-        #self.logger.info(self.camera_name + ' streaming response: %s' % answer)
-
-    def close(self):
-        self.stop_flag = True
-        self.http_client.close()
-
-    def run(self):
-        while not self.stop_flag and self.cap:
-            if self.cap.isOpened():
-                picture = self.take_a_picture()
-                if picture:
-                    self.send_picture(picture)
+            self.logger.info("Probing for camera N%d..." % len(self.captures))
+            capture = self.cv2.VideoCapture(index)
+            if capture.isOpened():
+                self.captures.append(capture)
+                self.fails.append(0)
+                self.logger.info("...got camera at index %d" % index)
             else:
-                if self.cap:
-                    self.cap.release()
-                self.cap = None
-                time.sleep(1)
-        if self.cap:
-            self.cap.release()
-        self.logger.info("Closing camera %s" % self.camera_name)
+                del(capture)
+        self.logger.info("Got %d cameras" % len(self.captures))
 
+    def make_shot(self, capture):
+        self.logger.debug("Capturing frame from " + str(capture))
+        state, frame = capture.QueryFrame()
+        if not state:
+            print self.fails
+            self.fails[self.captures.index(capture)] += 1
+        encode_param = [int(self.cv2.IMWRITE_JPEG_QUALITY), self.image_quality]
+        try:
+            result, encoded_frame = self.cv2.imencode(self.image_extension, frame, encode_param)
+        except Exception as e:
+            self.logger.warning('Failed to encode camera frame: ' + e.message)
+            result, encoded_frame = None, None
+        if state and result:
+            data = self.np.array(encoded_frame)
+            string_data = data.tostring()
+            self.logger.debug("Successfully captured and encoded from" + str(capture))
+            return string_data
+
+    def send_frame(self, number, frame):
+        frame = base64.b64encode(str(frame))
+        number = number + 1
+        message = self.user_token, number, "Camera" + str(number), frame
+        self.logger.debug("Camera %d sending frame to server..." % number)
+        answer = self.http_client.pack_and_send('camera', *message)
+        if answer:
+            self.logger.debug("...success")
+        else:
+            self.logger.debug("...fail")
+
+    def main_loop(self):
+        while not self.stop_flag:
+            for number, capture in enumerate(self.captures):
+                if self.fails[number] > self.FAILS_BEFORE_REINIT:
+                    self.close_captures()
+                    self.init_captures()
+                    break
+                frame = self.make_shot(capture)
+                if frame:
+                    self.send_frame(number, frame)
+                else:
+                    time.sleep(1)
+        self.close_captures()
+        sys.exit(0)
+
+    def close_captures(self):
+        for capture in self.captures:
+            capture.release()
+            del (capture)
 
 if __name__ == '__main__':
-    logging.basicConfig(level='INFO')
-    try:
-        CM = CameraMaster()
-        while True:
-            try:
-                time.sleep(0.1)
-            except KeyboardInterrupt:
-                CM.close()
-                break
-    except SystemExit:
-        pass
-    except:
-        trace = traceback.format_exc()
-        print trace
-        with open(config.get_settings()['error_file'], "a") as f:
-            f.write(time.ctime() + "\n" + trace + "\n")
+    DualCameraMaster()

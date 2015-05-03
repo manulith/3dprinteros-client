@@ -1,6 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
 import sys
 import time
 import signal
@@ -8,7 +5,6 @@ import platform
 
 import log
 import paths
-paths.init_path_to_libs()
 import usb_detect
 import http_client
 import camera_controller
@@ -30,6 +26,7 @@ class App(object):
         self.logger.info("Starting 3DPrinterOS client. Version %s_%s" % (version.version, version.build))
         self.logger.info('Operating system: ' + platform.system() + ' ' + platform.release())
         self.time_stamp()
+        paths.init_path_to_libs()
         signal.signal(signal.SIGINT, self.intercept_signal)
         signal.signal(signal.SIGTERM, self.intercept_signal)
         self.detected_printers = []
@@ -95,14 +92,13 @@ class App(object):
                 pi.start()
                 self.printer_interfaces.append(pi)
 
+
     def disconnect_printer(self, pi, reason):
         self.logger.info('Disconnecting because of %s %s' % (reason , str(pi.usb_info)))
-        if self.http_client.pack_and_send('command', pi.printer_token, pi.state_report(reason), pi.acknowledge, None, None):
-            pi.close()
-            self.printer_interfaces.remove(pi)
-            self.logger.info("Successful disconnection of " + str(pi.usb_info))
-        else:
-            self.logger.warning("Cant report printer interface closing to server. Not closed.")
+        pi.report_error()
+        pi.close()
+        self.printer_interfaces.remove(pi)
+        self.logger.info("Successful disconnection of " + str(pi.usb_info))
 
     def intercept_signal(self, signal_code, frame):
         self.logger.warning("SIGINT or SIGTERM received. Closing 3DPrinterOS Client version %s_%s" % \
@@ -111,9 +107,8 @@ class App(object):
 
     def quit(self):
         self.logger.info("Starting exit sequence...")
-        clouds = getattr(self, 'cloud_sync', None)
-        if clouds:            
-            clouds.terminate()
+        if hasattr(self, 'cloud_sync'):
+            self.cloud_sync.terminate()
         if hasattr(self, 'camera_controller'):
             self.camera_controller.stop_camera_process()
         for pi in self.printer_interfaces:
