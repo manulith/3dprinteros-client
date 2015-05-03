@@ -30,11 +30,11 @@ class DualCameraMaster:
         signal.signal(signal.SIGTERM, self.intercept_signal)
         ul = user_login.UserLogin(self)
         ul.wait_for_login()
-        self.http_client = http_client.HTTPClient(keep_connection_flag=True)
         self.user_token = ul.user_token
-        self.image_extension =  config.get_settings()["camera"]["img_ext"]
+        self.image_extension = config.get_settings()["camera"]["img_ext"]
         self.image_quality = config.get_settings()["camera"]["img_qual"]
         self.init_captures()
+        self.http_client = http_client.HTTPClient(keep_connection_flag=True)
         self.main_loop()
 
     def intercept_signal(self, signal_code, frame):
@@ -63,14 +63,15 @@ class DualCameraMaster:
         self.logger.info("Got %d cameras" % len(self.captures))
 
     def set_resolution(self, cap):
-        x = cap.get(3)
-        y = cap.get(4)
+        x = cap.get(self.cv2.cv.CV_CAP_PROP_FRAME_WIDTH)
+        y = cap.get(self.cv2.cv.CV_CAP_PROP_FRAME_HEIGHT)
         if x == self.X_RESOLUTION and y == self.Y_RESOLUTION:
             return True
         # protection against setting wrong parameters(some cameras have different params on this indexes)
         elif x > 100 and y > 100:
             try:
-                result = cap.set(3, self.X_RESOLUTION) and cap.set(4, self.Y_RESOLUTION)
+                result = cap.set(self.cv2.cv.CV_CAP_PROP_FRAME_WIDTH, self.X_RESOLUTION) and \
+                         cap.set(self.cv2.cv.CV_CAP_PROP_FRAME_HEIGHT, self.Y_RESOLUTION)
             except:
                 result = False
             return result
@@ -120,6 +121,7 @@ class DualCameraMaster:
                     time.sleep(1)
             time.sleep(0.1) #to reduce cpu usage when no cameras are available
         self.close_captures()
+        self.http_client.close()
         sys.exit(0)
 
     def close_captures(self):
