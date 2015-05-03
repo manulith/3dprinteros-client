@@ -14,6 +14,8 @@ class DualCameraMaster:
 
     MAX_CAMERA_INDEX = 99
     FAILS_BEFORE_REINIT = 10
+    X_RESOLUTION = 640.0
+    Y_RESOLUTION = 480.0
 
     #@log.log_exception
     def __init__(self):
@@ -45,12 +47,14 @@ class DualCameraMaster:
     def init_captures(self):
         self.captures = []
         self.fails = []
+        self.resized = []
         for index in range(0, self.MAX_CAMERA_INDEX):
             if self.stop_flag:
                 break
             self.logger.debug("Probing for camera N%d..." % index)
             capture = self.cv2.VideoCapture(index)
             if capture.isOpened():
+                self.resized.append(self.set_resolution(capture))
                 self.captures.append(capture)
                 self.fails.append(0)
                 self.logger.info("...got camera at index %d" % index)
@@ -58,12 +62,27 @@ class DualCameraMaster:
                 del(capture)
         self.logger.info("Got %d cameras" % len(self.captures))
 
-    def make_shot(self, capture):
+    def set_resolution(self, cap):
+        x = cap.get(3)
+        y = cap.get(4)
+        if x == self.X_RESOLUTION and y == self.Y_RESOLUTION:
+            return True
+        # protection against setting wrong parameters(some cameras have different params on this indexes)
+        elif x > 100 and y > 100:
+            try:
+                result = cap.set(3, self.X_RESOLUTION) and cap.set(4, self.Y_RESOLUTION)
+            except:
+                result = False
+            return result
+
+    def make_shot(self, capture, resize_flag = False):
         self.logger.debug("Capturing frame from " + str(capture))
         state, frame = capture.read()
         if not state:
             print self.fails
             self.fails[self.captures.index(capture)] += 1
+        if resize_flag:
+            frame = self.cv2.resize(frame, (self.X_RESOLUTION, self.Y_RESOLUTION))
         encode_param = [int(self.cv2.IMWRITE_JPEG_QUALITY), self.image_quality]
         try:
             result, encoded_frame = self.cv2.imencode(self.image_extension, frame, encode_param)
@@ -106,7 +125,8 @@ class DualCameraMaster:
     def close_captures(self):
         for capture in self.captures:
             capture.release()
-            del (capture)
+            del(capture)
+            self.logger.info("Closing camera")
 
 if __name__ == '__main__':
     DualCameraMaster()
