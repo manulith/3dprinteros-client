@@ -275,7 +275,6 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         if self.path.find('get_login') and self.localhost_commands:
             body = str(self.path)
             body = body.replace('/?get_', '')
-            body = body.split('&nocache=')[0]
         content_length = self.headers.getheader('Content-Length')
         if content_length:
             length = int(content_length)
