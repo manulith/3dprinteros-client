@@ -147,7 +147,7 @@ class App:
             if ready_flag:
                 break
             time.sleep(0.1)
-            self.logger.info("...all gcode sending modules closed.")
+        self.logger.info("...all gcode sending modules closed.")
         self.logger.debug("Waiting web interface server to shutdown")
         try:
             self.web_interface.server.shutdown()

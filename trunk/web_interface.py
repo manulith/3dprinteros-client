@@ -13,6 +13,8 @@ import cloud_sync
 
 class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
+    URL = config.config['URL']
+
     def setup(self):
         self.localhost_commands = config.config['localhost_commands']
         self.working_dir = os.path.dirname(os.path.abspath(__file__))
@@ -33,6 +35,8 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         try:
             page = page.replace('!!!VERSION!!!', 'Client v.' + version.version + ', build ' + version.build + ', commit ' + version.commit)
             page = page.replace('3DPrinterOS', '3DPrinterOS Client v.' + version.version)
+            url = self.URL.replace('cli-', '')
+            page = page.replace('!!!URL!!!', url)
             self.send_response(response)
             for keyword, value in headers.iteritems():
                 self.send_header(keyword, value)
@@ -177,7 +181,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             modules_select = ''
             for module in modules.keys():
                 if modules[module] == self.server.app.cam_current_module:
-                    modules_select = modules_select + '<p><input type="radio" disabled> ' + module + '</p>'
+                    modules_select = modules_select + '<p><input type="radio" disabled> <font color="lightgrey">' + module + '</font></p>'
                 else:
                     modules_select = modules_select + '<p><input type="radio" name="module" value="' + module + '"> ' + module + '</p>'
             page = self.read_file('web_interface/choose_cam.html')
@@ -228,15 +232,11 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.quit_main_app()
 
     def kill_conveyor(self):
-        fail_message = '3DPrinterOS was unable to stop conveyor.'
-        if utils.get_conveyor_pid():
-            result = utils.kill_existing_conveyor()
-            if result:
-                message = 'Conveyor was successfully stopped.<br><br>Returning...'
-            else:
-                message = fail_message
+        result = utils.kill_existing_conveyor()
+        if result:
+            message = 'Conveyor was successfully stopped.<br><br>Returning...'
         else:
-            message = fail_message
+            message = '3DPrinterOS was unable to stop conveyor.'
         self.write_message(message)
 
     def download_logs(self):
