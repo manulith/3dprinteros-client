@@ -77,7 +77,7 @@ class App:
             while not self.web_interface.server:
                 time.sleep(0.01)
             self.logger.debug("...server is up and running. Connecting browser...")
-            time.sleep(0.5)
+            time.sleep(3)
             webbrowser.open("http://127.0.0.1:8008", 2, True)
             self.logger.debug("...done")
 
