@@ -65,10 +65,9 @@ class CameraMaster:
         if time.time() - start_time < config.config["camera"]["camera_min_loop_time"]:
             time.sleep(1)
         for sender in self.cameras:
-            sender.join(1)
+            sender.join(3)
             if sender.isAlive():
                 self.logger.warning("Failed to close camera %s" % sender.name)
-        os._exit(0)
 
     def get_camera_names(self):
         cameras_names = {}
