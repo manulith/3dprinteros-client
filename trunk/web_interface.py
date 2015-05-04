@@ -257,14 +257,17 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.server.app.stop_flag = True
 
     def answer_with_image(self, img_path_in_cwd):
-        success_image_path = os.path.join(os.getcwd(), img_path_in_cwd)
-        with open(success_image_path, 'rb') as f:
+        image_path = os.path.join(os.getcwd(), img_path_in_cwd)
+        with open(image_path, 'rb') as f:
             message = f.read()
         self.write_with_autoreplace(message, headers = { 'Content-Type': 'image/jpeg' })
 
     def process_login(self):
         if self.server.app.user_login.user_token:
-            self.write_message('Please logout first before re-login')
+            if self.localhost_commands:
+                self.answer_with_image('web_interface/fail.jpg')
+            else:
+                self.write_message('Please logout first before re-login')
             return
         body = ''
         if self.path.find('get_login') and self.localhost_commands:
