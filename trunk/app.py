@@ -196,3 +196,4 @@ if __name__ == '__main__':
             print trace
             with open(config.config['error_file'], "a") as f:
                 f.write(time.ctime() + "\n" + trace + "\n")
+
