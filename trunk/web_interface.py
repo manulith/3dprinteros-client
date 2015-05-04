@@ -275,6 +275,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         if self.path.find('get_login') and self.localhost_commands:
             body = str(self.path)
             body = body.replace('/?get_', '')
+            body = body.split('&nocache=')[0]
         content_length = self.headers.getheader('Content-Length')
         if content_length:
             length = int(content_length)
@@ -303,11 +304,9 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                     os.remove(login_info_path)
                 except Exception as e:
                     self.logger.error('Failed to logout: ' + e.message)
-        #page = self.read_file('web_interface/logout.html')
-        #self.write_with_autoreplace(page)
         self.server.app.set_reboot_flag(True)
         self.server.app.stop_flag = True
-        self.write_message('Logout. Please wait...')
+        self.write_message('Logout. Please wait...', show_time=4)
 
 
 class ThreadedHTTPServer(ThreadingMixIn, BaseHTTPServer.HTTPServer):
