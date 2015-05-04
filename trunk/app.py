@@ -153,16 +153,10 @@ class App:
                 break
             time.sleep(0.1)
         self.logger.info("...all gcode sending modules closed.")
-        self.logger.debug("Waiting web interface server to shutdown")
-        try:
-            self.web_interface.server.shutdown()
-            self.web_interface.join()
-        except:
-            pass
-        self.time_stamp()
-        del (self.web_interface)
         self.logger.info("...all modules were closed correctly.")
         self.logger.info("Goodbye ;-)")
+        self.time_stamp()
+        self.shutdown_web_interface()
         self.shutdown_logging()
 
     #logging is a most awful module in python. it must die!!!1111
@@ -172,9 +166,20 @@ class App:
             handlers.append(handler)
         self.logger.handlers = []
         logging.shutdown()
-        del (self.logger)
+        #del (self.logger)
         for handler in handlers:
             del(handler)
+
+    def shutdown_web_interface(self):
+        self.logger.debug("Waiting web interface server to shutdown")
+        try:
+            self.web_interface.server.shutdown()
+            self.web_interface.join()
+        except:
+            pass
+        time.sleep(0.1)
+        if hasattr(self, 'web_interface'):
+            del self.web_interface
 
 
 if __name__ == '__main__':
