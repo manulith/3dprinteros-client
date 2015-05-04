@@ -49,6 +49,8 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.logger.info("Server GET")
         if self.path.find('get_login') >= 0:
             self.process_login()
+        elif self.path.find('logout') >= 0:
+            self.process_logout()
         elif self.path.find('quit') >= 0:
             self.quit_main_app()
         elif self.path.find('show_logs') >=0:
