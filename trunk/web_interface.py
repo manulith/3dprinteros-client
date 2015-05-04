@@ -34,7 +34,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         try:
             page = page.replace('!!!VERSION!!!', 'Client v.' + version.version + ', build ' + version.build + ', commit ' + version.commit)
             page = page.replace('3DPrinterOS', '3DPrinterOS Client v.' + version.version)
-            url = self.URL.replace('cli-', '')
+            url = str(self.URL).replace('cli-', '')
             page = page.replace('!!!URL!!!', url)
             self.send_response(response)
             self.end_headers()
