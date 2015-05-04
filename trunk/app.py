@@ -41,7 +41,7 @@ class App:
         self.cloud_sync = None
         self.cam_modules = config.config['camera']['modules']
         self.cam_current_module = self.cam_modules[config.config['camera']['default_module_name']]
-        if config.config['update']['enable']:
+        if config.config['update']['enabled']:
             self.updater = updater.Updater()
         self.user_login = user_login.UserLogin(self)
         self.init_interface()
