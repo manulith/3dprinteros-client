@@ -154,11 +154,11 @@ class App:
             if ready_flag:
                 break
             time.sleep(0.1)
+        self.shutdown_web_interface()
         self.logger.info("...all gcode sending modules closed.")
         self.logger.info("...all modules were closed correctly.")
-        self.logger.info("Goodbye ;-)")
         self.time_stamp()
-        self.shutdown_web_interface()
+        self.logger.info("Goodbye ;-)")
         self.shutdown_logging()
 
     #logging is a most awful module in python. it must die!!!1111
