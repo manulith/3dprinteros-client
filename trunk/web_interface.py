@@ -289,6 +289,9 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         login = raw_login.replace("login=", "")
         password = utils.sha256_hash(password)
         while not hasattr(self.server.app, 'user_login'):
+            if not self.server.app or self.server.app.stop_flag:
+                self.answer_with_image('web_interface/fail.jpg')
+                return
             time.sleep(0.01)
         error = self.server.app.user_login.login_as_user(login, password)
         if error:

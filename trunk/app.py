@@ -154,8 +154,8 @@ class App:
             if ready_flag:
                 break
             time.sleep(0.1)
-        self.shutdown_web_interface()
         self.logger.info("...all gcode sending modules closed.")
+        self.shutdown_web_interface()
         self.logger.info("...all modules were closed correctly.")
         self.time_stamp()
         self.logger.info("Goodbye ;-)")
