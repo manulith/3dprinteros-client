@@ -13,7 +13,7 @@ import cloud_sync
 
 class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
-    URL = config.config['URL']
+    URL = str(config.config['URL'])
 
     def setup(self):
         self.working_dir = os.path.dirname(os.path.abspath(__file__))
@@ -34,7 +34,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         try:
             page = page.replace('!!!VERSION!!!', 'Client v.' + version.version + ', build ' + version.build + ', commit ' + version.commit)
             page = page.replace('3DPrinterOS', '3DPrinterOS Client v.' + version.version)
-            url = str(self.URL).replace('cli-', '')
+            url = self.URL.replace('cli-', '')
             page = page.replace('!!!URL!!!', url)
             self.send_response(response)
             self.end_headers()
