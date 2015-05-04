@@ -301,8 +301,6 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 self.answer_with_image('web_interface/success.jpg')
                 return
             message = 'Login successful!<br><br>Processing...'
-            import webbrowser
-            webbrowser.open("http://127.0.0.1:8008", 2, True)
         self.write_message(message)
 
     def process_logout(self):
