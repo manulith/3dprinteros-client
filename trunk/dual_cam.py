@@ -62,12 +62,11 @@ class CameraMaster:
         start_time = time.time()
         for sender in self.cameras:
             sender.close()
-        if time.time() - start_time < config.config["camera"]["camera_min_loop_time"]:
-            time.sleep(1)
         for sender in self.cameras:
             sender.join(3)
             if sender.isAlive():
                 self.logger.warning("Failed to close camera %s" % sender.name)
+        os._exit(0)
 
     def get_camera_names(self):
         cameras_names = {}
@@ -130,7 +129,6 @@ class CameraImageSender(threading.Thread):
 
     def close(self):
         self.stop_flag = True
-        self.http_client.close()
 
     def run(self):
         while not self.stop_flag and self.cap:
@@ -145,6 +143,7 @@ class CameraImageSender(threading.Thread):
                 time.sleep(1)
         if self.cap:
             self.cap.release()
+        self.http_client.close()
         self.logger.info("Closing camera %s" % self.camera_name)
 
 
