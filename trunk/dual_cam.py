@@ -79,7 +79,7 @@ class DualCameraMaster:
     def make_shot(self, capture, resize_flag = False):
         self.logger.debug("Capturing frame from " + str(capture))
         state, frame = capture.read()
-        if not state:
+        if not state or frame.any():
             print self.fails
             self.fails[self.captures.index(capture)] += 1
         if resize_flag:
