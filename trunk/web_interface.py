@@ -78,7 +78,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 page = self.read_file('web_interface/conveyor_warning.html')
             if not utils.is_user_groups():
                 page = self.read_file('web_interface/groups_warning.html')
-            if not self.server.app.updater.auto_update_flag and self.server.app.updater.update_flag:
+            if self.server.app.updater and self.server.app.updater.update_flag:
                 page = page.replace('get_updates" style="display:none"', 'get_updates"')
             if config.config['cloud_sync']['enabled']:
                 page = page.replace('open_cloudsync_folder" style="display:none"', 'open_cloudsync_folder"')
@@ -303,8 +303,12 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                     os.remove(login_info_path)
                 except Exception as e:
                     self.logger.error('Failed to logout: ' + e.message)
-        page = self.read_file('web_interface/logout.html')
-        self.write_with_autoreplace(page)
+        #page = self.read_file('web_interface/logout.html')
+        #self.write_with_autoreplace(page)
+        self.server.app.set_reboot_flag(True)
+        self.server.app.stop_flag = True
+        self.write_message('Logout. Please wait...')
+
 
 class ThreadedHTTPServer(ThreadingMixIn, BaseHTTPServer.HTTPServer):
     """ This class allows to handle requests in separated threads.
