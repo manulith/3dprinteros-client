@@ -1,4 +1,6 @@
-import os, sys
+import os
+import sys
+import time
 import urllib
 import logging
 import threading
@@ -265,12 +267,13 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.write_with_autoreplace(message, headers = { 'Content-Type': 'image/jpeg' })
 
     def process_login(self):
-        if self.server.app.user_login.user_token:
-            if self.localhost_commands:
-                self.answer_with_image('web_interface/fail.jpg')
-            else:
-                self.write_message('Please logout first before re-login')
-            return
+        if hasattr(self.server.app, "user_login"):
+            if self.server.app.user_login.user_token:
+                if self.localhost_commands:
+                    self.answer_with_image('web_interface/fail.jpg')
+                else:
+                    self.write_message('Please logout first before re-login')
+                return
         body = ''
         if self.path.find('get_login') and self.localhost_commands:
             body = str(self.path)
@@ -285,6 +288,8 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         raw_login, password = body.split("&password=")
         login = raw_login.replace("login=", "")
         password = utils.sha256_hash(password)
+        while not hasattr(self.server.app, 'user_login'):
+            time.sleep(0.01)
         error = self.server.app.user_login.login_as_user(login, password)
         if error:
             message = str(error[1])
