@@ -14,7 +14,7 @@ import cloud_sync
 class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
     def setup(self):
-        self.pinshape_login_flag = False
+        self.localhost_commands = config.config['localhost_commands']
         self.working_dir = os.path.dirname(os.path.abspath(__file__))
         self.logger = logging.getLogger('app.' + __name__)
         BaseHTTPServer.BaseHTTPRequestHandler.setup(self)
@@ -256,13 +256,18 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.write_message('Goodbye :-)', 0)
         self.server.app.stop_flag = True
 
+    def answer_with_image(self, img_path_in_cwd):
+        success_image_path = os.path.join(os.getcwd(), img_path_in_cwd)
+        with open(success_image_path, 'rb') as f:
+            message = f.read()
+        self.write_with_autoreplace(message, headers = { 'Content-Type': 'image/jpeg' })
+
     def process_login(self):
         if self.server.app.user_login.user_token:
             self.write_message('Please logout first before re-login')
             return
         body = ''
-        if self.path.find('get_login'):
-            self.pinshape_login_flag = True
+        if self.path.find('get_login') and self.localhost_commands:
             body = str(self.path)
             body = body.replace('/?get_', '')
         content_length = self.headers.getheader('Content-Length')
@@ -278,11 +283,8 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         if error:
             message = str(error[1])
         else:
-            if self.pinshape_login_flag:
-                success_image_path = os.path.join(os.getcwd(), 'web_interface/success.jpg')
-                with open(success_image_path, 'rb') as f:
-                    message = f.read()
-                self.write_with_autoreplace(message, headers = { 'Content-Type': 'image/jpeg' })
+            if self.localhost_commands:
+                self.answer_with_image('web_interface/success.jpg')
                 return
             message = 'Login successful!<br><br>Processing...'
         self.write_message(message)

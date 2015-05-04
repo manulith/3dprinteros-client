@@ -6,6 +6,7 @@
   "web_interface": true,
   "linux_rights_warning": false,
   "max_download_retry" : 3,
+  "localhost_commands": true,
   "update": {
     "enabled": false,
     "auto_update_enabled": false,
