@@ -13,7 +13,7 @@ import cloud_sync
 
 class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
-    URL = config.config['URL']
+    URL = str(config.config['URL'])
 
     def setup(self):
         self.localhost_commands = config.config['localhost_commands']
