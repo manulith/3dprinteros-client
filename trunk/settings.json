@@ -7,7 +7,7 @@
   "linux_rights_warning": false,
   "max_download_retry" : 3,
   "update": {
-    "enabled": true,
+    "enabled": false,
     "auto_update_enabled": false,
     "update_file_url": "http://s3.amazonaws.com/3dprinteros-files/",
     "update_file_name": "3dprinteros_client_update.zip",
