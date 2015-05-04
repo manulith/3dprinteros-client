@@ -157,10 +157,10 @@ class App:
         try:
             self.web_interface.server.shutdown()
             self.web_interface.join()
-            del(self.web_interface)
         except:
             pass
         self.time_stamp()
+        del (self.web_interface)
         self.logger.info("...all modules were closed correctly.")
         self.logger.info("Goodbye ;-)")
         self.shutdown_logging()
