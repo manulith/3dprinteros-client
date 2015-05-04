@@ -182,7 +182,7 @@ class App:
             pass
         time.sleep(0.1)
         if hasattr(self, 'web_interface'):
-            del self.web_interface
+            del(self.web_interface)
 
 
 if __name__ == '__main__':

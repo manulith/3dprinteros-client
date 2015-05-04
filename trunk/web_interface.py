@@ -267,7 +267,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.write_with_autoreplace(message, headers = { 'Content-Type': 'image/jpeg' })
 
     def process_login(self):
-        if hasattr(self.server.app, "user_login"):
+        if self.server.app and hasattr(self.server.app, "user_login"):
             if self.server.app.user_login.user_token:
                 if self.localhost_commands:
                     self.answer_with_image('web_interface/fail.jpg')
@@ -298,6 +298,8 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 self.answer_with_image('web_interface/success.jpg')
                 return
             message = 'Login successful!<br><br>Processing...'
+            import webbrowser
+            webbrowser.open("http://127.0.0.1:8008", 2, True)
         self.write_message(message)
 
     def process_logout(self):
