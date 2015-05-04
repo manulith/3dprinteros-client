@@ -172,14 +172,14 @@ class PrinterInterface(threading.Thread):
     def state_report(self, outer_state=None):
         if self.printer:
             report = {}
-            report["temps"] = self.printer.get_temps()
-            report["target_temps"] = self.printer.get_target_temps()
-            report["percent"] = self.printer.get_percent()
-            report["line_number"] = self.printer.get_current_line_number()
             if outer_state:
                 report["state"] = outer_state
             else:
                 report["state"] = self.get_printer_state()
+            report["percent"] = self.printer.get_percent()
+            report["temps"] = self.printer.get_temps()
+            report["target_temps"] = self.printer.get_target_temps()
+            report["line_number"] = self.printer.get_current_line_number()
             return report
 
     def close_printer_sender(self):

@@ -215,6 +215,7 @@ class File_Downloader:
         for chunk in request.iter_content(percent_length):
             if not self.base_sender.downloading_flag or self.base_sender.stop_flag:
                 self.logger.info('Stopping downloading process')
+                self.percent = 0
                 return None
             self.percent += 1
             total_size += len(chunk)

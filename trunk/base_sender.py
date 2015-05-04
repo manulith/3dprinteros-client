@@ -72,7 +72,6 @@ class BaseSender:
                 except Exception as e:
                     self.error_code = 37
                     self.error_message = "Exception occured when printrun was parsing gcodes. Corrupted gcodes? " + str(e)
-                self.downloading_flag = False  # TODO: For now it should be after gcodes() due to status error on site
                 self.logger.info('Gcodes loaded to memory, deleting temp file')
             try:
                 os.remove(gcode_file_name)
@@ -80,6 +79,7 @@ class BaseSender:
                 self.logger.warning("Error while removing temporary gcodes file: " + gcode_file_name)
             self.downloader = None
             self.logger.info('Download thread has been closed')
+            self.downloading_flag = False
 
     def is_downloading(self):
         return self.downloading_flag
