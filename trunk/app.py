@@ -166,6 +166,7 @@ class App:
         handlers = []
         for handler in self.logger.handlers:
             handlers.append(handler)
+            handler.flush()
         self.logger.handlers = []
         logging.shutdown()
         #del (self.logger)
