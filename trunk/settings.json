@@ -16,6 +16,7 @@
     "img_ext" : ".jpg",
     "img_qual" : 90,
     "min_loop_time" : 1,
+    "hardware_resize": true,
     "log_file" : "3dprinteros_camera.log",
     "default": "Dual camera"
   },

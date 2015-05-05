@@ -12,12 +12,12 @@ import http_client
 
 class DualCameraMaster:
 
-    MAX_CAMERA_INDEX = 99
+    MAX_CAMERA_INDEX = 20
     FAILS_BEFORE_REINIT = 10
     X_RESOLUTION = 640.0
     Y_RESOLUTION = 480.0
 
-    #@log.log_exception
+    @log.log_exception
     def __init__(self):
         self.logger = log.create_logger("app.camera")
         self.stop_flag = False
@@ -33,7 +33,9 @@ class DualCameraMaster:
         self.user_token = ul.user_token
         self.image_extension = config.get_settings()["camera"]["img_ext"]
         self.image_quality = config.get_settings()["camera"]["img_qual"]
-        self.init_captures()
+        self.hardware_resize = config.get_settings()["camera"]["hardware_resize"]
+        self.min_loop_time = config.get_settings()["camera"]["min_loop_time"]
+        self.search_cameras()
         self.http_client = http_client.HTTPClient(keep_connection_flag=True)
         self.main_loop()
 
@@ -44,7 +46,7 @@ class DualCameraMaster:
     def close(self):
         self.stop_flag = True
 
-    def init_captures(self):
+    def search_cameras(self):
         self.captures = []
         self.fails = []
         self.resized = []
@@ -54,36 +56,47 @@ class DualCameraMaster:
             self.logger.debug("Probing for camera N%d..." % index)
             capture = self.cv2.VideoCapture(index)
             if capture.isOpened():
-                self.resized.append(self.set_resolution(capture))
-                self.captures.append(capture)
-                self.fails.append(0)
+                self.init_capture(capture)
                 self.logger.info("...got camera at index %d" % index)
             else:
                 del(capture)
-        self.logger.info("Got %d cameras" % len(self.captures))
+        self.logger.info("Got %d operational cameras" % len(self.captures))
+
+    def init_capture(self, capture):
+        self.resized.append(self.set_resolution(capture))
+        self.captures.append(capture)
+        self.fails.append(0)
 
     def set_resolution(self, cap):
-        x = cap.get(self.cv2.cv.CV_CAP_PROP_FRAME_WIDTH)
-        y = cap.get(self.cv2.cv.CV_CAP_PROP_FRAME_HEIGHT)
-        if x == self.X_RESOLUTION and y == self.Y_RESOLUTION:
-            return True
-        # protection against setting wrong parameters(some cameras have different params on this indexes)
-        elif x > 100 and y > 100:
-            try:
-                result = cap.set(self.cv2.cv.CV_CAP_PROP_FRAME_WIDTH, self.X_RESOLUTION) and \
-                         cap.set(self.cv2.cv.CV_CAP_PROP_FRAME_HEIGHT, self.Y_RESOLUTION)
-            except:
-                result = False
-            return result
+        if self.hardware_resize:
+            x = cap.get(self.cv2.cv.CV_CAP_PROP_FRAME_WIDTH)
+            y = cap.get(self.cv2.cv.CV_CAP_PROP_FRAME_HEIGHT)
+            if x == self.X_RESOLUTION and y == self.Y_RESOLUTION:
+                return True
+            # protection against setting wrong parameters(some cameras have different params on this indexes)
+            elif x > 100 and y > 100:
+                try:
+                    result = cap.set(self.cv2.cv.CV_CAP_PROP_FRAME_WIDTH, self.X_RESOLUTION) and \
+                             cap.set(self.cv2.cv.CV_CAP_PROP_FRAME_HEIGHT, self.Y_RESOLUTION)
+                except:
+                    result = False
+                return result
 
-    def make_shot(self, capture, resize_flag = False):
+    def make_shot(self, capture):
         self.logger.debug("Capturing frame from " + str(capture))
+        index = self.captures.index(capture)
         state, frame = capture.read()
-        if not state or frame.any():
-            print self.fails
-            self.fails[self.captures.index(capture)] += 1
-        if resize_flag:
-            frame = self.cv2.resize(frame, (self.X_RESOLUTION, self.Y_RESOLUTION))
+        if state and frame.any():
+            self.fails[index] = 0
+        else:
+            self.fails[index] += 1
+            return
+        if not self.resized[index]:
+            try:
+                frame = self.cv2.resize(frame, (self.X_RESOLUTION, self.Y_RESOLUTION))
+            except Exception as e:
+                self.resized[index] = True
+                self.logger.warning("Error while software resize of frame: " + str(e))
         encode_param = [int(self.cv2.IMWRITE_JPEG_QUALITY), self.image_quality]
         try:
             result, encoded_frame = self.cv2.imencode(self.image_extension, frame, encode_param)
@@ -109,17 +122,19 @@ class DualCameraMaster:
 
     def main_loop(self):
         while not self.stop_flag:
+            frame_start_time = time.time()
             for number, capture in enumerate(self.captures):
                 if self.fails[number] > self.FAILS_BEFORE_REINIT:
                     self.close_captures()
-                    self.init_captures()
+                    self.search_cameras()
                     break
                 frame = self.make_shot(capture)
                 if frame:
                     self.send_frame(number, frame)
                 else:
                     time.sleep(1)
-            time.sleep(0.1) #to reduce cpu usage when no cameras are available
+            while time.time() < frame_start_time + self.min_loop_time * len(self.captures):
+                time.sleep(0.01)
         self.close_captures()
         self.http_client.close()
         sys.exit(0)
@@ -129,6 +144,7 @@ class DualCameraMaster:
             capture.release()
             del(capture)
             self.logger.info("Closing camera")
+
 
 if __name__ == '__main__':
     DualCameraMaster()
