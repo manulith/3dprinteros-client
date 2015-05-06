@@ -16,9 +16,10 @@ class MultiCameraMaster(DualCameraMaster):
         index = self.indexes[self.captures.index(capture)]
         del(capture)
         try:
+            print index
             capture = self.cv2.VideoCapture(index)
-        except:
-            pass
+        except Exception as e:
+            self.logger.warning("Error while opening video capture: " + str(e))
         else:
             if capture.isOpened():
                 self.captures[index] = capture

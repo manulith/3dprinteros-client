@@ -142,8 +142,10 @@ class DualCameraMaster:
     def close_captures(self):
         for capture in self.captures:
             capture.release()
-            del(capture)
-            self.logger.info("Closing camera")
+            self.logger.info("Closed camera capture " + str(capture))
+            #del(capture)
+            print 1
+
 
 
 if __name__ == '__main__':
