@@ -57,7 +57,8 @@ class PrinterInterface(threading.Thread):
     def connect_to_printer(self):
         printer_sender = __import__(self.printer_profile['sender'])
         self.logger.info("Connecting with profile: " + str(self.printer_profile))
-        if "baudrate" in self.printer_profile and not self.printer_profile.get("COM"): # indication of serial printer, but no serial port
+        if "baudrate" in self.printer_profile and self.printer_profile.get("baudrate") and not self.printer_profile.get("COM"): # indication of serial printer, but no serial port
+            self.logger.warning('No serial port for serial printer')
             self.sender_error = {"code": 11, "message": "No serial port for serial printer. No senders or printer firmware hanged."}
             return
         try:
