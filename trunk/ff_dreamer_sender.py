@@ -5,18 +5,33 @@ import usb.core
 
 class Sender(raw_usb_sender.Sender):
 
-    M601_HANDSHAKE = "~M601 S0\r"
-    TEMP_REQUEST_GCODE = '~M105\r\n'
+    #M601_HANDSHAKE = "~M601 S0\r\n"
+    #TEMP_REQUEST_GCODE = '~M105\r\n'
+    #M602_LOGOUT = "~M602\r\n"
+
+    M601_HANDSHAKE = "M601 S0\r"
+    TEMP_REQUEST_GCODE = 'M105'
     M602_LOGOUT = "~M602\r\n"
 
     def __init__(self, profile, usb_info, app):
-        self.endpoint_out = 0x1
-        self.endpoint_in = 0x81
-        self.define_regexps()
         raw_usb_sender.Sender.__init__(self, profile, usb_info, app)
+        #self.endpoint_out = 0x1
+        #self.endpoint_in = 0x81
+        self.define_regexps()
+        self.logger.info('FlashForge Dreamer Sender started!')
 
     def define_regexps(self):
         self.temp_re = re.compile('T0:([\d\.]+) /([\d\.]+) T1:([\d\.]+) /([\d\.]+) B:([\d\.]+) /([\d\.]+)')
+
+    def handshake(self):
+        self.logger.info('Handshaking to printer')
+        self.write('M601 S0')  # TODO: get and parse answer string, for now printer does not return anything.
+        #time.sleep(0.01)
+        #self.read()
+
+    def define_endpoints(self):
+        self.endpoint_in = 0x81
+        self.endpoint_out = 0x1
 
     def parse_response(self, ret):
         self.logger.info('Parsing %s' % ret)
@@ -36,7 +51,7 @@ class Sender(raw_usb_sender.Sender):
         if match:
             tool_temp = float(match.group(1))
             tool_target_temp = float(match.group(2))
-            # TODO: add 2nd extruder
+            # TODO: add 2nd extruder(3 and 4 pos)
             platform_temp = float(match.group(5))
             platform_target_temp = float(match.group(6))
             self.temps = [platform_temp, tool_temp]
@@ -78,7 +93,7 @@ class Sender(raw_usb_sender.Sender):
     def write(self, gcode):
         try:
             print 'Writing...'
-            self.dev.write(self.endpoint_out, '~' + gcode + '\r\n', 2000)
+            self.dev.write(self.endpoint_out, '~' + gcode + '\n', 2000)
         #except usb.core.USBError:
         except Exception as e:
             self.logger.warning('Error while writing gcode "%s"\nError: %s' % (gcode, e.message))
