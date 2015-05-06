@@ -52,6 +52,7 @@ class Sender(base_sender.BaseSender):
         connect = self.connect()
         time.sleep(2)  # Important!
         if connect:
+            self.prepare_printer()
             self.handshake()
             self.read_thread = threading.Thread(target=self.reading)
             self.read_thread.start()
@@ -223,7 +224,6 @@ class Sender(base_sender.BaseSender):
             time.sleep(1)
             if self.heating_flag:
                 time.sleep(5)
-                #continue
             if self.temp_request_counter:
                 time.sleep(1.5)
                 no_answer_counter += 1
@@ -237,6 +237,10 @@ class Sender(base_sender.BaseSender):
 
     def get_current_line_number(self):
         return self.oks
+
+    # For printer dependable functionality like beevery firmware flushing
+    def prepare_printer(self):
+        pass
 
     def sending(self):
         self.logger.info('Sending thread started!')
