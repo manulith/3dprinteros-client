@@ -47,8 +47,7 @@ class Sender(base_sender.BaseSender):
         self.get_pos_counter = 0
 
         self.dev = None
-        self.endpoint_in = None
-        self.endpoint_out = None
+        self.define_endpoints()
 
         connect = self.connect()
         time.sleep(2)  # Important!
@@ -63,6 +62,11 @@ class Sender(base_sender.BaseSender):
         else:
             raise Exception('Cannot connect to USB device.')
 
+    # Override if needed
+    def define_endpoints(self):
+        self.endpoint_in = None
+        self.endpoint_out = None
+
     def set_total_gcodes(self, length):
         self.total_gcodes = len(self.buffer)
         self.current_line_number = 0
@@ -71,9 +75,9 @@ class Sender(base_sender.BaseSender):
         pass
 
     def connect(self):
+        backend_from_our_directory = usb.backend.libusb1.get_backend(find_library=utils.get_libusb_path)
+        self.dev = usb.core.find(idVendor=self.int_vid, idProduct=self.int_pid, backend=backend_from_our_directory)
         if sys.platform.startswith('linux'):  # TODO: test at mac this too
-            backend_from_our_directory = usb.backend.libusb1.get_backend(find_library=utils.get_libusb_path)
-            self.dev = usb.core.find(idVendor=self.int_vid, idProduct=self.int_pid, backend=backend_from_our_directory)
             # Checking and claiming interface 0 - interrupt interface for command sending
             # Zmorph also has interface 1 - bulk interface, assuming for file upload.
             if self.dev.is_kernel_driver_active(0) is True:
@@ -99,14 +103,20 @@ class Sender(base_sender.BaseSender):
             if self.dev.is_kernel_driver_active(0) is True:
                 self.logger.warning('Cannot claim USB device. Aborting.')
                 return False
-            else:
-                #self.dev.set_configuration()
-                cfg = self.dev.get_active_configuration()
-                if not self.endpoint_in and not self.endpoint_out:
-                    # TODO: endpoint sequence can vary in different printer. Ensure IN endpoint is actually IN etc.
-                    self.endpoint_in = cfg[(0, 0)][0]
-                    self.endpoint_out = cfg[(0, 0)][1]
-                return True
+        elif sys.platform.startswith('win'):
+            self.dev.set_configuration()
+        #self.dev.set_configuration()
+        #cfg = self.dev.get_active_configuration()
+        if not self.endpoint_in and not self.endpoint_out:
+            cfg = self.dev.get_active_configuration()
+            # TODO: endpoint sequence can vary in different printer. Ensure IN endpoint is actually IN etc.
+            self.endpoint_in = cfg[(0, 0)][0]
+            self.endpoint_out = cfg[(0, 0)][1]
+            self.logger.info('Setting endpoints from device config')
+            # casting endpoints to str may cause exception if cfg is actually wrong
+            #self.logger.info('IN endpoint:\n' % str(self.endpoint_in))
+            #self.logger.info('OUT endpoint:\n' % str(self.endpoint_out))
+        return True
 
     def write(self, gcode):
         try:
@@ -230,6 +240,7 @@ class Sender(base_sender.BaseSender):
 
     def sending(self):
         self.logger.info('Sending thread started!')
+        #self.handshake()
         while not self.stop_flag:
             if not self.printing_flag:
                 time.sleep(0.1)

@@ -1,10 +1,12 @@
 3DPrinterOS release notes
 
-    Smoothie printers partial support
-    ZMorph support
+4.7.0
 
-    Fixed opening Cloundsync folder with file managers other that Nautilus
+    Smoothie printers partial support
+    ZMorph support(dont work on MAC OS X)
     Fixed rare bug of too many opened files
+    Camera selection page was updated
+    Changed names of folders for CloudSync - Successful and Failed
 
 4.6.2
 
