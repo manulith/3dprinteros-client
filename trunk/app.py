@@ -41,7 +41,8 @@ class App:
         self.cloud_sync = None
         self.cam_modules = config.config['camera']['modules']
         self.cam_current_module = self.cam_modules[config.config['camera']['default_module_name']]
-        self.updater = updater.Updater()
+        if config.config['update']['enabled']:
+            self.updater = updater.Updater()
         self.user_login = user_login.UserLogin(self)
         self.init_interface()
         self.user_login.wait_for_login()
@@ -76,13 +77,16 @@ class App:
             while not self.web_interface.server:
                 time.sleep(0.01)
             self.logger.debug("...server is up and running. Connecting browser...")
-            webbrowser.open("http://127.0.0.1:8008", 2, True)
+            time.sleep(3)
+            if config.config['browser_opening_on_start']:
+                webbrowser.open("http://127.0.0.1:8008", 2, True)
             self.logger.debug("...done")
 
     def main_loop(self):
         self.last_flush_time = 0
         while not self.stop_flag:
-            self.updater.timer_check_for_updates()
+            if hasattr(self, 'updater'):
+                self.updater.timer_check_for_updates()
             self.time_stamp()
             self.detected_printers = usb_detect.get_printers()
             self.check_and_connect()
@@ -153,15 +157,9 @@ class App:
                 break
             time.sleep(0.1)
         self.logger.info("...all gcode sending modules closed.")
-        self.logger.debug("Waiting web interface server to shutdown")
-        try:
-            self.web_interface.server.shutdown()
-            self.web_interface.join()
-            del(self.web_interface)
-        except:
-            pass
-        self.time_stamp()
+        self.shutdown_web_interface()
         self.logger.info("...all modules were closed correctly.")
+        self.time_stamp()
         self.logger.info("Goodbye ;-)")
         self.shutdown_logging()
 
@@ -170,11 +168,23 @@ class App:
         handlers = []
         for handler in self.logger.handlers:
             handlers.append(handler)
+            handler.flush()
         self.logger.handlers = []
-        logging.shutdown()
-        del (self.logger)
+        #logging.shutdown()
+        #del (self.logger)
         for handler in handlers:
             del(handler)
+
+    def shutdown_web_interface(self):
+        self.logger.debug("Waiting web interface server to shutdown")
+        try:
+            self.web_interface.server.shutdown()
+            self.web_interface.join()
+        except:
+            pass
+        time.sleep(0.1)
+        if hasattr(self, 'web_interface'):
+            del(self.web_interface)
 
 
 if __name__ == '__main__':
@@ -189,3 +199,4 @@ if __name__ == '__main__':
             print trace
             with open(config.config['error_file'], "a") as f:
                 f.write(time.ctime() + "\n" + trace + "\n")
+
