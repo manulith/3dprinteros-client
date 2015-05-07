@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import sys
 import time
 import signal
 import logging
@@ -18,6 +17,7 @@ import printer_interface
 import user_login
 import updater
 
+reboot_flag = True
 
 class App:
 
@@ -25,6 +25,7 @@ class App:
     LOG_FLUSH_TIME = 30
 
     def __init__(self):
+        self.set_reboot_flag(False)
         self.logger = utils.create_logger('app', config.config['log_file'])
         self.logger.info('Operating system: ' + platform.system() + ' ' + platform.release())
         self.logger.info("Welcome to 3DPrinterOS Client version %s_%s" % (version.version, version.build))
@@ -100,6 +101,10 @@ class App:
                     handler.flush()
         self.quit()
 
+    def set_reboot_flag(self, value):
+        global reboot_flag
+        reboot_flag = value
+
     def time_stamp(self):
         self.logger.debug("Time stamp: " + time.strftime("%d %b %Y %H:%M:%S", time.localtime()))
 
@@ -152,21 +157,35 @@ class App:
         try:
             self.web_interface.server.shutdown()
             self.web_interface.join()
+            del(self.web_interface)
         except:
             pass
         self.time_stamp()
         self.logger.info("...all modules were closed correctly.")
         self.logger.info("Goodbye ;-)")
+        self.shutdown_logging()
+
+    #logging is a most awful module in python. it must die!!!1111
+    def shutdown_logging(self):
+        handlers = []
+        for handler in self.logger.handlers:
+            handlers.append(handler)
+        self.logger.handlers = []
         logging.shutdown()
-        sys.exit(0)
+        del (self.logger)
+        for handler in handlers:
+            del(handler)
+
 
 if __name__ == '__main__':
-    try:
-        app = App()
-    except SystemExit:
-        pass
-    except:
-        trace = traceback.format_exc()
-        print trace
-        with open(config.config['error_file'], "a") as f:
-            f.write(time.ctime() + "\n" + trace + "\n")
+    while reboot_flag:
+        try:
+            app = App()
+            del(app)
+        except SystemExit:
+            pass
+        except:
+            trace = traceback.format_exc()
+            print trace
+            with open(config.config['error_file'], "a") as f:
+                f.write(time.ctime() + "\n" + trace + "\n")
