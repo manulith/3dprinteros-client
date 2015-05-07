@@ -6,6 +6,20 @@ import os
 import sys
 import utils
 
+#vid: FFFF
+#pid: 014E
+#T:13.1999 B:0.0000 ok Q:0
+#E: Bad code ok Q:1
+
+# SENT: M140 S0
+# Parsing ok - E: Bad M-code 140
+
+#SENT: M84
+#Parsing ok - E: Bad M-code 84
+
+#SENT: M29
+#Parsing ok - E: Bad M-code 29
+
 class Sender(raw_usb_sender.Sender):
 
     TEMP_REQUEST_GCODE = 'M105'
@@ -52,7 +66,7 @@ class Sender(raw_usb_sender.Sender):
         return True
 
     def define_regexps(self):
-        self.temp_re = re.compile('.*T:([\d\.]+) /([\d\.]+) B:(-?[\d\.]+) /(-?[\d\.]+)')
+        self.temp_re = re.compile('T:([\d\.]+) B:([\d\.]+) ok Q:([\d\.]+)')
 
     def define_endpoints(self):
         self.endpoint_in = 0x81
@@ -60,9 +74,9 @@ class Sender(raw_usb_sender.Sender):
 
     def parse_response(self, ret):
         self.logger.info('Parsing %s' % ret)
-        if ret == 'ok':
+        if ret.startswith('ok'):
             self.oks += 1
-        elif ret.startswith('T0:'):
+        elif ret.startswith('T:'):
             self.temp_request_counter -= 1
             match = self.match_temps(ret)
             if match:
@@ -75,11 +89,11 @@ class Sender(raw_usb_sender.Sender):
         match = self.temp_re.match(request)
         if match:
             tool_temp = float(match.group(1))
-            tool_target_temp = float(match.group(2))
-            platform_temp = float(match.group(3))
-            platform_target_temp = float(match.group(4))
+            #tool_target_temp = float(match.group(2))
+            platform_temp = float(match.group(2))
+            #platform_target_temp = float(match.group(4))
             self.temps = [platform_temp, tool_temp]
-            self.target_temps = [platform_target_temp, tool_target_temp]
+            #self.target_temps = [platform_target_temp, tool_target_temp]
             #self.logger.info('Got temps: T %s/%s B %s/%s' % (tool_temp, tool_target_temp, platform_temp, platform_target_temp))
             return True
         return False
@@ -88,12 +102,11 @@ class Sender(raw_usb_sender.Sender):
         self.logger.info('Checking if beetf firmware working')
         self.write('M105')
         time.sleep(0.1)
-        check = self.read()
-        if 'ok' in check:
+        if self.read():
             self.logger.info('Firmware is working!')
-            return
-        self.logger.info('Firmware is not working')
-        self.flash_firmware()
+        else:
+            self.logger.info('Firmware is not working')
+            self.flash_firmware()
 
     def find_firmware_file(self):
         firmware_dir = os.path.join(os.getcwd(), "firmware")
@@ -115,7 +128,7 @@ class Sender(raw_usb_sender.Sender):
             self.write(message)
             time.sleep(0.1)
             ret2 = self.read()
-            if 'ok' in ret1 and 'ok' in ret2:
+            if ret1 and ret2 and 'ok' in ret1 and 'ok' in ret2:
                 with open(firmware, 'rb') as f:
                     while True:
                         buf = f.read(64)
@@ -163,7 +176,6 @@ class Sender(raw_usb_sender.Sender):
             self.logger.warning('Error while reading gcode: %s' % str(e))
             return None
         else:
-            print 'Received: %s' % data
             return data
 
     def write(self, gcode):
