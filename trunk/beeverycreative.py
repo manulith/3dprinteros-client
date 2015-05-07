@@ -20,6 +20,10 @@ import utils
 #SENT: M29
 #Parsing ok - E: Bad M-code 29
 
+#SENT: M105
+#Parsing Bad M-code 105
+
+
 class Sender(raw_usb_sender.Sender):
 
     TEMP_REQUEST_GCODE = 'M105'
@@ -100,6 +104,8 @@ class Sender(raw_usb_sender.Sender):
 
     def prepare_printer(self):
         self.logger.info('Checking if beetf firmware working')
+        self.flash_firmware()
+        return
         self.write('M105')
         time.sleep(0.1)
         if self.read():
