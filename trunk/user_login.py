@@ -44,5 +44,5 @@ class UserLogin:
         while not self.user_token:
             time.sleep(0.1)
             if getattr(self.parent, "stop_flag", False):
-                self.parent.quit()
+                break
         self.logger.debug("...end waiting for user login.")
