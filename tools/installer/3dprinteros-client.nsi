@@ -41,7 +41,7 @@ Icon "pictures\icon.ico"
 !define MUI_FINISHPAGE_RUN "$INSTDIR\3dprinteros_client.exe"
 
 !insertmacro MUI_PAGE_WELCOME
-!insertmacro MUI_PAGE_LICENSE "C:\installer\license.txt"
+!insertmacro MUI_PAGE_LICENSE "license.txt"
 ;!insertmacro MUI_PAGE_COMPONENTS
 !insertmacro MUI_PAGE_DIRECTORY
 !insertmacro MUI_PAGE_INSTFILES
