@@ -17,7 +17,7 @@ import printer_interface
 import user_login
 import updater
 
-reboot_flag = True
+reboot_flag = True # should be True for first boot, even if it isn't re boot
 
 class App:
 
@@ -163,7 +163,7 @@ class App:
         self.logger.info("Goodbye ;-)")
         self.shutdown_logging()
 
-    #logging is a most awful module in python. it must die!!!1111
+    #logging is a most awful module in python, it's an one way to prevent multiply of handlers on reboot
     def shutdown_logging(self):
         handlers = []
         for handler in self.logger.handlers:
