@@ -74,7 +74,7 @@ def get_port_by_vid_pid_snr(vid, pid, snr=None):
             vid_of_comport = vid_of_comport.zfill(4).upper()
             pid_of_comport = pid_of_comport.zfill(4).upper()
             if vid == vid_of_comport and pid == pid_of_comport:
-                if snr and not 'SNR=' + snr in port_dct[2].upper():
+                if snr and not 'SNR=' + snr.upper() in port_dct[2].upper():
                     continue
                 return port_dct[0]
     return None

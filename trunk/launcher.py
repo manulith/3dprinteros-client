@@ -13,6 +13,7 @@ tmp_path = tempfile.gettempdir()
 pid_file_path = os.path.join(tmp_path, pid_file_name)
 
 def get_process_list():
+    print "Getting process list"
     if sys.platform.startswith('win'):
         tasks = os.popen('tasklist /svc').readlines()
         task_pids = map(lambda x: x.split()[1], tasks)
@@ -22,8 +23,8 @@ def get_process_list():
     else: raise RuntimeError("Your OS is not supported by 3DPrinterOS")
     return task_pids
 
-
 def run():
+    print "Launching 3DPrinterOS"
     with open(pid_file_path, "w") as f:
         f.write(str(os.getpid()))
     while app.reboot_flag:
@@ -46,6 +47,7 @@ else:
     pid_in_file = f.read()
     f.close()
     if pid_in_file in get_process_list():
+        print "3DPrinterOS is already running - opening browser window"
         webbrowser.open("http://127.0.0.1:8008", 2, True)
     else:
         run()
