@@ -1,5 +1,12 @@
 3DPrinterOS release notes
 
+    Add reboot ability
+    Fixed bug of exit in printrun sender
+    Fixed exit bug during login
+    Fixed hanging bugs in ZMorph
+    Fixed ZMorph in Windows
+    Launcher preventing multiple launches of 3DPrinterOS
+
 4.7.0
 
     Smoothie printers partial support
