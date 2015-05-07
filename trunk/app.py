@@ -68,7 +68,7 @@ class App:
             self.start_camera(module)
 
     def init_interface(self):
-        if config.config['web_interface']:
+        if config.config['web_interface']['enabled']:
             import webbrowser
             from web_interface import WebInterface
             self.web_interface = WebInterface(self)
@@ -78,7 +78,7 @@ class App:
                 time.sleep(0.01)
             self.logger.debug("...server is up and running. Connecting browser...")
             time.sleep(3)
-            if config.config['browser_opening_on_start']:
+            if config.config['web_interface']['browser_opening_on_start']:
                 webbrowser.open("http://127.0.0.1:8008", 2, True)
             self.logger.debug("...done")
 

@@ -15,10 +15,12 @@ import cloud_sync
 
 class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
+    YOUR_ACCOUNT_BUTTON = config.config['web_interface']['your_account_button']
+    LOCALHOST_COMMANDS = config.config['web_interface']['localhost_commands']
     URL = str(config.config['URL'])
 
     def setup(self):
-        self.localhost_commands = config.config['localhost_commands']
+        self.get_login_flag = False
         self.working_dir = os.path.dirname(os.path.abspath(__file__))
         self.logger = logging.getLogger('app.' + __name__)
         BaseHTTPServer.BaseHTTPRequestHandler.setup(self)
@@ -49,11 +51,12 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
     def do_GET(self):
         self.logger.info("Server GET")
-        if self.path.find('get_login') >= 0:
+        if self.LOCALHOST_COMMANDS and self.path.find('get_login') >= 0:
+            self.get_login_flag = True
             self.process_login()
-        elif self.path.find('logout') >= 0:
+        elif self.LOCALHOST_COMMANDS and self.path.find('logout') >= 0:
             self.process_logout()
-        elif self.path.find('quit') >= 0:
+        elif self.LOCALHOST_COMMANDS and self.path.find('quit') >= 0:
             self.quit_main_app()
         elif self.path.find('show_logs') >=0:
             self.show_logs()
@@ -66,8 +69,10 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     def form_main_page(self):
         page = ''
         if self.server.app:
-            if self.server.app.user_login.user_token:
+            if self.server.app.user_login.user_token and self.YOUR_ACCOUNT_BUTTON:
                 name = 'web_interface/main_loop_form.html'
+            elif self.server.app.user_login.user_token and not self.YOUR_ACCOUNT_BUTTON:
+                name = 'web_interface/main_loop_form_button_off.html'
             else:
                 name = 'web_interface/login.html'
             page = self.read_file(name)
@@ -269,13 +274,13 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     def process_login(self):
         if self.server.app and hasattr(self.server.app, "user_login"):
             if self.server.app.user_login.user_token:
-                if self.localhost_commands:
+                if self.get_login_flag:
                     self.answer_with_image('web_interface/fail.jpg')
                 else:
                     self.write_message('Please logout first before re-login')
                 return
         body = ''
-        if self.path.find('get_login') and self.localhost_commands:
+        if self.get_login_flag:
             body = str(self.path)
             body = body.replace('/?get_', '')
             body = body.split('&nocache=')[0]
@@ -297,7 +302,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         if error:
             message = str(error[1])
         else:
-            if self.localhost_commands:
+            if self.get_login_flag:
                 self.answer_with_image('web_interface/success.jpg')
                 return
             message = 'Login successful!<br><br>Processing...'

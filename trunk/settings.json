@@ -3,11 +3,14 @@
   "HTTPS": true,
   "log_file": "3dprinteros_client.log",
   "error_file": "critical_error.log",
-  "web_interface": true,
   "linux_rights_warning": false,
-  "max_download_retry" : 3,
-  "localhost_commands": true,
-  "browser_opening_on_start": false,
+  "max_download_retry": 3,
+  "web_interface": {
+    "enabled": true,
+    "localhost_commands": true,
+    "browser_opening_on_start": false,
+    "your_account_button": false
+  },
   "update": {
     "enabled": true,
     "auto_update_enabled": false,
