@@ -1,4 +1,4 @@
 echo
 python get_version.py
-set /p VERSION=<version.txt
-makensis /DVERSION="%VERSION%" /DBUILD="%1" 3dprinteros-client.nsi
+set /p version= < version.txt
+makensis /DVERSION="%version%" /DBUILD="%1" 3dprinteros-client.nsi
