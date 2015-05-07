@@ -49,6 +49,7 @@ class Sender(raw_usb_sender.Sender):
         self.dev = dev
         self.endpoint_in = ep_in
         self.endpoint_out = ep_out
+        return True
 
     def define_regexps(self):
         self.temp_re = re.compile('.*T:([\d\.]+) /([\d\.]+) B:(-?[\d\.]+) /(-?[\d\.]+)')
