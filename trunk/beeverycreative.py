@@ -4,6 +4,7 @@ import time
 import usb.core
 import os
 import sys
+import utils
 
 class Sender(raw_usb_sender.Sender):
 
