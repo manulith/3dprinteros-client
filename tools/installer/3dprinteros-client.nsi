@@ -25,13 +25,13 @@ Icon "pictures\icon.ico"
 ; MUI Settings / Icons
 !define MUI_ICON "pictures\icon.ico"
 !define MUI_UNICON "${NSISDIR}\Contrib\Graphics\Icons\orange-uninstall-nsis.ico"
- 
+
 ; MUI Settings / Header
 !define MUI_HEADERIMAGE
 !define MUI_HEADERIMAGE_RIGHT
 !define MUI_HEADERIMAGE_BITMAP "pictures\header.bmp"
 !define MUI_HEADERIMAGE_UNBITMAP "pictures\header.bmp"
- 
+
 ; MUI Settings / Wizard
 !define MUI_WELCOMEFINISHPAGE_BITMAP "pictures\side_banner.bmp"
 !define MUI_UNWELCOMEFINISHPAGE_BITMAP "pictures\side_banner.bmp"
@@ -41,7 +41,7 @@ Icon "pictures\icon.ico"
 !define MUI_FINISHPAGE_RUN "$INSTDIR\3dprinteros_client.exe"
 
 !insertmacro MUI_PAGE_WELCOME
-!insertmacro MUI_PAGE_LICENSE "license.txt"
+!insertmacro MUI_PAGE_LICENSE "C:\installer\license.txt"
 ;!insertmacro MUI_PAGE_COMPONENTS
 !insertmacro MUI_PAGE_DIRECTORY
 !insertmacro MUI_PAGE_INSTFILES
@@ -77,10 +77,10 @@ Section "Drivers" Section2
     ExecWait "$INSTDIR\drivers\dpinst64.exe"
 	${Else}
 		ExecWait "$INSTDIR\drivers\dpinst32.exe"
-	${EndIf}	
+	${EndIf}
   ExecWait "$INSTDIR\drivers\CDM v2.08.30 WHQL Certified.exe"
 	ExecWait "$INSTDIR\drivers\RUMBA_DRIVER.exe"
-  
+
 SectionEnd
 
 Section -FinishSection
@@ -98,13 +98,17 @@ SectionEnd
 !insertmacro MUI_FUNCTION_DESCRIPTION_END
 
 ;Uninstall section
-Section Uninstall	
-	
-  SetShellVarContext all
-	
+Section Uninstall
+
+	FindProcDLL::FindProc "python.exe"
+	IntCmp $R0 1 0 notRunning
+			MessageBox MB_OK|MB_ICONEXCLAMATION "${APPNAMEANDVERSION} or another Python application is running. Please close it first" /SD IDOK
+			Abort
+	notRunning:
+
 	; Delete self
 	Delete "$INSTDIR\uninstall.exe"
-	
+
 	; Clean up 3DPrinteros Client
 	RMDir /r "$INSTDIR\"
 
@@ -112,9 +116,11 @@ Section Uninstall
 	DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}"
 	DeleteRegKey HKLM "SOFTWARE\${APPNAME}"
 
+
 	; Delete Shortcuts
+	SetShellVarContext all
 	Delete "$DESKTOP\3DPrinterOS Client.lnk"
-	RMDir /r "$SMPROGRAMS\3DPrinterOS Client\"
+	RMDir /r "$SMPROGRAMS\3DPrinterOS Client"
 
 SectionEnd
 
