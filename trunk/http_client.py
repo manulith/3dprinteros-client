@@ -8,6 +8,7 @@ import logging
 import tempfile
 import requests
 import time
+import threading
 
 import config
 import version
@@ -161,13 +162,15 @@ class HTTPClient:
 
 class File_Downloader:
     def __init__(self, base_sender):
+        self.percent_lock = threading.Lock()
         self.max_download_retry = config.config["max_download_retry"]
         self.base_sender = base_sender
         self.percent = None
         self.logger = logging.getLogger('app.' + "file_downloader")
 
     def get_percent(self):
-        return self.percent
+        with self.percent_lock:
+            return self.percent
 
     def async_download(self, url):
         self.logger.info("Downloading payload from " + url)
@@ -189,7 +192,8 @@ class File_Downloader:
                 self.logger.info('Downloading: %d bytes' % download_length)
                 if download_length:
                     if not self.percent:
-                        self.percent = 0 # percent will be still None if request return an error
+                        with self.percent_lock:
+                            self.percent = 0 # percent will be still None if request return an error
                     downloaded_size = self.chunk_by_chunk(r, tmp_file, download_length)
                     r.close()
                     if downloaded_size:
@@ -215,9 +219,11 @@ class File_Downloader:
         for chunk in request.iter_content(percent_length):
             if not self.base_sender.downloading_flag or self.base_sender.stop_flag:
                 self.logger.info('Stopping downloading process')
-                self.percent = 0
+                with self.percent_lock:
+                    self.percent = 0
                 return None
-            self.percent += 1
+            with self.percent_lock:
+                self.percent += 1
             total_size += len(chunk)
             self.logger.info('File downloading : %d%%' % self.percent)
             try:
