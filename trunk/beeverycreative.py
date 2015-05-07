@@ -14,6 +14,41 @@ class Sender(raw_usb_sender.Sender):
         self.define_regexps()
         self.logger.info('Beeverycreative Sender started!')
 
+    def connect(self):
+        print "Beetf connecting!"
+        # find our device
+        int_vid = int(self.usb_info['VID'], 16)
+        int_pid = int(self.usb_info['PID'], 16)
+        backend_from_our_directory = usb.backend.libusb1.get_backend(find_library=utils.get_libusb_path)
+        dev = usb.core.find(idVendor=int_vid, idProduct=int_pid, backend=backend_from_our_directory)
+        # set the active configuration. With no arguments, the first
+        # configuration will be the active one
+        if dev.is_kernel_driver_active(0) is True:
+            print 'Detach!'
+            dev.detach_kernel_driver(0)
+        dev.set_configuration()
+        # get an endpoint instance
+        cfg = dev.get_active_configuration()
+        intf = cfg[(0,0)]
+        ep_out = usb.util.find_descriptor(
+            intf,
+            # match the first OUT endpoint
+            custom_match = \
+            lambda e: \
+                usb.util.endpoint_direction(e.bEndpointAddress) == \
+                usb.util.ENDPOINT_OUT)
+        ep_in = usb.util.find_descriptor(
+            intf,
+            # match the first in endpoint
+            custom_match = \
+            lambda e: \
+                usb.util.endpoint_direction(e.bEndpointAddress) == \
+                usb.util.ENDPOINT_IN)
+        # Verify that the end points exist
+        self.dev = dev
+        self.endpoint_in = ep_in
+        self.endpoint_out = ep_out
+
     def define_regexps(self):
         self.temp_re = re.compile('.*T:([\d\.]+) /([\d\.]+) B:(-?[\d\.]+) /(-?[\d\.]+)')
 
@@ -117,7 +152,7 @@ class Sender(raw_usb_sender.Sender):
         try:
             print 'Reading...'
             #data = self.dev.read(self.endpoint_in.bEndpointAddress, self.endpoint_in.wMaxPacketSize, 2000)
-            data = self.dev.read(self.endpoint_in, 64, 2000)
+            data = self.endpoint_in.read(64, 2000)
         except usb.core.USBError as e:
             self.logger.info('USBError : %s' % str(e))
             # TODO: parse ERRNO 110 here to separate timeout exceptions | [Errno 110] Operation timed out
@@ -126,12 +161,13 @@ class Sender(raw_usb_sender.Sender):
             self.logger.warning('Error while reading gcode: %s' % str(e))
             return None
         else:
+            print 'Received: %s' % data
             return data
 
     def write(self, gcode):
         try:
             print 'Writing...'
-            self.dev.write(self.endpoint_out, gcode + '\n', 2000)
+            self.endpoint_out.write(gcode + '\n')
         #except usb.core.USBError:
         except Exception as e:
             self.logger.warning('Error while writing gcode "%s"\nError: %s' % (gcode, e.message))
