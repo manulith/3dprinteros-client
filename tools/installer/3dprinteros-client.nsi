@@ -25,13 +25,13 @@ Icon "pictures\icon.ico"
 ; MUI Settings / Icons
 !define MUI_ICON "pictures\icon.ico"
 !define MUI_UNICON "pictures\uninstall.ico"
-
+ 
 ; MUI Settings / Header
 !define MUI_HEADERIMAGE
 !define MUI_HEADERIMAGE_RIGHT
 !define MUI_HEADERIMAGE_BITMAP "pictures\header.bmp"
 !define MUI_HEADERIMAGE_UNBITMAP "pictures\header.bmp"
-
+ 
 ; MUI Settings / Wizard
 !define MUI_WELCOMEFINISHPAGE_BITMAP "pictures\side_banner.bmp"
 !define MUI_UNWELCOMEFINISHPAGE_BITMAP "pictures\side_banner.bmp"
@@ -65,14 +65,17 @@ Section "3DPrinterOS Client" Section1
 	SetOverwrite on
 
 	; Set Section Files and Shortcuts
-	SetOutPath "$INSTDIR\"
 	File /r "3dprinteros-client\"
-
+		
+	SetOutPath "$INSTDIR\client"
+	
 	CreateShortCut "$DESKTOP\${APPNAME}.lnk" "$INSTDIR\python27\pythonw.exe" '"$INSTDIR\client\launcher.py"' "$INSTDIR\icon.ico"
+	ShellLink::SetRunAsAdministrator "$DESKTOP\${APPNAME}.lnk"
 	CreateDirectory "$SMPROGRAMS\${APPNAME}"
 	CreateShortCut "$SMPROGRAMS\${APPNAME}\${APPNAME}.lnk" "$INSTDIR\python27\pythonw.exe" '"$INSTDIR\client\launcher.py"' "$INSTDIR\icon.ico"
+	ShellLink::SetRunAsAdministrator "$SMPROGRAMS\${APPNAME}\${APPNAME}.lnk"
 	CreateShortCut "$SMPROGRAMS\${APPNAME}\Uninstall.lnk" "$INSTDIR\uninstall.exe"
-
+	
 	SetShellVarContext all
 
 SectionEnd
@@ -84,10 +87,10 @@ Section "Drivers" Section2
     ExecWait "$INSTDIR\drivers\dpinst64.exe"
 	${Else}
 		ExecWait "$INSTDIR\drivers\dpinst32.exe"
-	${EndIf}
+	${EndIf}	
   ExecWait "$INSTDIR\drivers\CDM v2.08.30 WHQL Certified.exe"
 	ExecWait "$INSTDIR\drivers\RUMBA_DRIVER.exe"
-
+  
 SectionEnd
 
 Section -FinishSection
@@ -105,29 +108,29 @@ SectionEnd
 !insertmacro MUI_FUNCTION_DESCRIPTION_END
 
 ;Uninstall section
-Section Uninstall
-
+Section Uninstall	
+	
 	FindProcDLL::FindProc "python.exe"
 	IntCmp $R0 1 0 notRunning
 			MessageBox MB_OK|MB_ICONEXCLAMATION "${APPNAME} or another Python application is running. Please close it first" /SD IDOK
 			Abort
 	notRunning:
-
+		
 	; Delete self
 	Delete "$INSTDIR\uninstall.exe"
-
+	
 	; Clean up 3DPrinteros Client
 	RMDir /r "$INSTDIR\"
 
 	;Remove from registry...
 	DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}"
 	DeleteRegKey HKLM "SOFTWARE\${APPNAME}"
-
-
+	
+	
 	; Delete Shortcuts
 	SetShellVarContext all
 	Delete "$DESKTOP\${APPNAME}.lnk"
-	RMDir /r "$SMPROGRAMS\${APPNAME}"
+	RMDir /r "$SMPROGRAMS\${APPNAME}"	
 
 SectionEnd
 
