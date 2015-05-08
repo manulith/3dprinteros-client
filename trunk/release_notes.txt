@@ -1,5 +1,16 @@
 3DPrinterOS release notes
 
+4.8.2
+
+    Reboot under Mac OS X disabled
+    Additional protection against hanging on restart implemented
+
+4.8.1
+
+    Bug in exit message handler of web interface was Fixed
+    App gain more protection for cleaner restart
+    Build scripts fixed
+
 4.8.0
 
     Add client reboot ability
