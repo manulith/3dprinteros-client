@@ -106,6 +106,9 @@ class Sender(base_sender.BaseSender):
                 return False
         elif sys.platform.startswith('win'):
             self.dev.set_configuration()
+        elif sys.platform.startswith('darwin'):
+            self.logger.info('Mac os is not currently supported')
+            return False
         #self.dev.set_configuration()
         #cfg = self.dev.get_active_configuration()
         if not self.endpoint_in and not self.endpoint_out:
