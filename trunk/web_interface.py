@@ -85,7 +85,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 page = self.read_file('web_interface/conveyor_warning.html')
             if not utils.is_user_groups():
                 page = self.read_file('web_interface/groups_warning.html')
-            if self.server.app.updater and self.server.app.updater.update_flag:
+            if self.server and self.server.app and self.server.app.updater and self.server.app.updater.update_flag:
                 page = page.replace('get_updates" style="display:none"', 'get_updates"')
             if config.config['cloud_sync']['enabled']:
                 page = page.replace('open_cloudsync_folder" style="display:none"', 'open_cloudsync_folder"')
