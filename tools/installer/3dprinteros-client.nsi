@@ -8,11 +8,11 @@
 
 ; Define your application name
 !define APPNAME "3DPrinterOS Client"
-!define APPNAMEANDVERSION "3DPrinterOS Client ${VERSION}"
+!define APPNAMEANDVERSION "${APPNAME} ${VERSION}"
 
 ; Main Install settings
 Name "${APPNAMEANDVERSION}"
-InstallDir "$PROGRAMFILES\3DPrinterOS Client"
+InstallDir "$PROGRAMFILES\${APPNAME}"
 InstallDirRegKey HKLM "Software\${APPNAME}" ""
 OutFile "${BUILD}.exe"
 Icon "pictures\icon.ico"
@@ -24,7 +24,7 @@ Icon "pictures\icon.ico"
 
 ; MUI Settings / Icons
 !define MUI_ICON "pictures\icon.ico"
-!define MUI_UNICON "${NSISDIR}\Contrib\Graphics\Icons\orange-uninstall-nsis.ico"
+!define MUI_UNICON "pictures\uninstall.ico"
 
 ; MUI Settings / Header
 !define MUI_HEADERIMAGE
@@ -36,12 +36,16 @@ Icon "pictures\icon.ico"
 !define MUI_WELCOMEFINISHPAGE_BITMAP "pictures\side_banner.bmp"
 !define MUI_UNWELCOMEFINISHPAGE_BITMAP "pictures\side_banner.bmp"
 
-
 !define MUI_ABORTWARNING
-!define MUI_FINISHPAGE_RUN "$INSTDIR\3dprinteros_client.exe"
+!define MUI_FINISHPAGE_RUN
+!define MUI_FINISHPAGE_RUN_FUNCTION "LaunchLink"
+
+Function LaunchLink
+	ExecShell "" "$SMPROGRAMS\${APPNAME}\${APPNAME}.lnk"
+FunctionEnd
 
 !insertmacro MUI_PAGE_WELCOME
-!insertmacro MUI_PAGE_LICENSE "C:\installer\license.txt"
+!insertmacro MUI_PAGE_LICENSE "license.txt"
 ;!insertmacro MUI_PAGE_COMPONENTS
 !insertmacro MUI_PAGE_DIRECTORY
 !insertmacro MUI_PAGE_INSTFILES
@@ -63,10 +67,13 @@ Section "3DPrinterOS Client" Section1
 	; Set Section Files and Shortcuts
 	SetOutPath "$INSTDIR\"
 	File /r "3dprinteros-client\"
-	CreateShortCut "$DESKTOP\3DPrinterOS Client.lnk" "$INSTDIR\3dprinteros_client.exe"
-	CreateDirectory "$SMPROGRAMS\3DPrinterOS Client"
-	CreateShortCut "$SMPROGRAMS\3DPrinterOS Client\3DPrinteros Client.lnk" "$INSTDIR\3dprinteros_client.exe"
-	CreateShortCut "$SMPROGRAMS\3DPrinterOS Client\Uninstall.lnk" "$INSTDIR\uninstall.exe"
+
+	CreateShortCut "$DESKTOP\${APPNAME}.lnk" "$INSTDIR\python27\pythonw.exe" '"$INSTDIR\client\launcher.py"' "$INSTDIR\icon.ico"
+	CreateDirectory "$SMPROGRAMS\${APPNAME}"
+	CreateShortCut "$SMPROGRAMS\${APPNAME}\${APPNAME}.lnk" "$INSTDIR\python27\pythonw.exe" '"$INSTDIR\client\launcher.py"' "$INSTDIR\icon.ico"
+	CreateShortCut "$SMPROGRAMS\${APPNAME}\Uninstall.lnk" "$INSTDIR\uninstall.exe"
+
+	SetShellVarContext all
 
 SectionEnd
 
@@ -102,7 +109,7 @@ Section Uninstall
 
 	FindProcDLL::FindProc "python.exe"
 	IntCmp $R0 1 0 notRunning
-			MessageBox MB_OK|MB_ICONEXCLAMATION "${APPNAMEANDVERSION} or another Python application is running. Please close it first" /SD IDOK
+			MessageBox MB_OK|MB_ICONEXCLAMATION "${APPNAME} or another Python application is running. Please close it first" /SD IDOK
 			Abort
 	notRunning:
 
@@ -119,8 +126,8 @@ Section Uninstall
 
 	; Delete Shortcuts
 	SetShellVarContext all
-	Delete "$DESKTOP\3DPrinterOS Client.lnk"
-	RMDir /r "$SMPROGRAMS\3DPrinterOS Client"
+	Delete "$DESKTOP\${APPNAME}.lnk"
+	RMDir /r "$SMPROGRAMS\${APPNAME}"
 
 SectionEnd
 
@@ -130,5 +137,6 @@ Function .onInit
 	!insertmacro MUI_LANGDLL_DISPLAY
 
 FunctionEnd
+
 
 ; eof
