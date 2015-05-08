@@ -345,5 +345,31 @@ class Sender(base_sender.BaseSender):
             self.printing_flag = True
             return True
 
+    def close(self):
+        self.stop_flag = True
+        self.logger.info('Raw USB sender is closing')
+        if self.temp_request_thread:
+            self.logger.debug('(Joining temp request thread...')
+            self.temp_request_thread.join(10)
+            if self.temp_request_thread.isAlive():
+                self.logger.error("Error stopping temperature request thread!")
+            else:
+                self.logger.debug('...done)')
+        if self.read_thread:
+            self.logger.debug('(Joining read thread...')
+            self.read_thread.join(10)
+            if self.read_thread.isAlive():
+                self.logger.error("Error stopping read thread!")
+            else:
+                self.logger.debug('...done)')
+        if self.sending_thread:
+            self.logger.debug('(Joining sending thread...')
+            self.read_thread.join(10)
+            if self.read_thread.isAlive():
+                self.logger.error("Error stopping sending thread!")
+            else:
+                self.logger.debug('...done)')
+        self.logger.info('...closed')
+
 if __name__ == '__main__':
     pass
