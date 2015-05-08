@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import sys
 import time
 import signal
 import platform
@@ -27,10 +26,10 @@ class App(object):
     @log.log_exception
     def __init__(self):
         self.set_reboot_flag(False)
-        self.logger = utils.create_logger('app', config.config['log_file'])
         self.logger = log.create_logger("app", log.LOG_FILE)
         self.logger.info("Starting 3DPrinterOS client. Version %s_%s" % (version.version, version.build))
-        self.logger.info('Operating system: ' + platform.system() + ' ' + platform.release())        self.time_stamp()
+        self.logger.info('Operating system: ' + platform.system() + ' ' + platform.release())
+        self.time_stamp()
         paths.init_path_to_libs()
         signal.signal(signal.SIGINT, self.intercept_signal)
         signal.signal(signal.SIGTERM, self.intercept_signal)
@@ -172,12 +171,5 @@ class App(object):
 
 
 if __name__ == '__main__':
-    try:
-        app = App()
-    except SystemExit:
-        pass
-    except:
-        trace = traceback.format_exc()
-        print trace
-        with open(config.config['error_file'], "a") as f:
-            f.write(time.ctime() + "\n" + trace + "\n")
+    App()
+
