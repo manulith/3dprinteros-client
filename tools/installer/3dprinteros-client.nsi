@@ -130,9 +130,11 @@ Section Uninstall
 	
 	
 	; Delete Shortcuts
+	RequestExecutionLevel user
 	SetShellVarContext all
 	Delete "$DESKTOP\${APPNAME}.lnk"
-	RMDir /r "$SMPROGRAMS\${APPNAME}"	
+	RequestExecutionLevel admin
+	RMDir /r "$SMPROGRAMS\${APPNAME}"
 
 SectionEnd
 

@@ -542,7 +542,7 @@ def kill_existing_conveyor():
 
 def is_user_groups():
     logger = logging.getLogger('app')
-    if sys.platform.startswith('linux') and config.config['linux_rights_warning']:
+    if sys.platform.startswith('linux') and config.config['linux_rights_warning'] and not is_admin():
         p = Popen('groups', stdout=PIPE, stderr=PIPE)
         stdout, stderr = p.communicate()
         groups = stdout
@@ -556,7 +556,7 @@ def is_user_groups():
 
 def add_user_groups():
     logger = logging.getLogger('app')
-    if sys.platform.startswith('linux') and not is_admin():
+    if sys.platform.startswith('linux'):
         p = Popen('xterm -e "sudo usermod -a -G dialout,tty,usbusers $USER"', shell=True, stdout=PIPE, stderr=PIPE)
         stdout, stderr = p.communicate()
         if stdout:
