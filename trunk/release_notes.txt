@@ -1,11 +1,15 @@
 3DPrinterOS release notes
 
-    Add reboot ability
+4.8.0
+
+    Add client reboot ability
+    Automatic client reboot after logout or update implemented
+    Launcher preventing multiple launches of 3DPrinterOS
     Fixed bug of exit in printrun sender
     Fixed exit bug during login
-    Fixed hanging bugs in ZMorph
-    Fixed ZMorph in Windows
-    Launcher preventing multiple launches of 3DPrinterOS
+    Fixed several bugs in ZMorph
+    Fixed ZMorph support for  Windows
+    Commands to client with GET requests implemented (login, logout, quit)
 
 4.7.0
 

@@ -16,7 +16,12 @@ def get_process_list():
     print "Getting process list"
     if sys.platform.startswith('win'):
         tasks = os.popen('tasklist /svc').readlines()
-        task_pids = map(lambda x: x.split()[1], tasks)
+        task_pids = []
+        for task in tasks:
+            words = task.split()
+            if len(words) > 1:
+                task_pids.append(words[1])
+        #task_pids = map(lambda x: x.split()[1], filter(lambda x: len(x.split()) > 1, tasks))
     elif sys.platform.startswith('linux') or sys.platform.startswith('darwin'):
         tasks = os.popen('ps ax').readlines()
         task_pids = map(lambda x: x.split()[0], tasks)
