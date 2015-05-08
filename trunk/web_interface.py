@@ -221,7 +221,8 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         if result:
             message = result
         else:
-            message = '<p>Update successful!</p><p>Please restart Client to use all features of new version.</p>'
+            message = '<p>Update successful!</p><p>Applying changes...</p>'
+            self.restart_main_app()
         self.write_message(message)
 
     def show_logs(self):
@@ -308,6 +309,10 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             message = 'Login successful!<br><br>Processing...'
         self.write_message(message)
 
+    def restart_main_app(self):
+        self.server.app.set_reboot_flag(True)
+        self.server.app.stop_flag = True
+
     def process_logout(self):
         paths = utils.get_paths_to_settings_folder()
         for path in paths:
@@ -317,8 +322,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                     os.remove(login_info_path)
                 except Exception as e:
                     self.logger.error('Failed to logout: ' + e.message)
-        self.server.app.set_reboot_flag(True)
-        self.server.app.stop_flag = True
+        self.restart_main_app()
         self.write_message('Logout. Please wait...', show_time=4)
 
 

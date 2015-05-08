@@ -6,6 +6,8 @@
     Fixed hanging bugs in ZMorph
     Fixed ZMorph in Windows
     Launcher preventing multiple launches of 3DPrinterOS
+    Commands to client with GET requests implemented (login, logout, quit)
+    Need to restart manually after updating and logout abolished
 
 4.7.0
 
