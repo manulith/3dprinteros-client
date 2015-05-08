@@ -64,6 +64,8 @@ Section "3DPrinterOS Client" Section1
 	; Set Section properties
 	SetOverwrite on
 
+	SetOutPath "$INSTDIR\"
+
 	; Set Section Files and Shortcuts
 	File /r "3dprinteros-client\"
 		
