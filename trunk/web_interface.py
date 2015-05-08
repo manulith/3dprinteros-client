@@ -37,7 +37,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
     def write_with_autoreplace(self, page, response=200, headers = {}):
         try:
-            page = page.replace('!!!VERSION!!!', 'Client v.' + version.version + ', build ' + version.build + ', commit ' + version.commit)
+            page = page.replace('!!!VERSION!!!', 'Client v.' + version.version + ', build ' + version.build)
             page = page.replace('3DPrinterOS', '3DPrinterOS Client v.' + version.version)
             url = self.URL.replace('cli-', '')
             page = page.replace('!!!URL!!!', url)
