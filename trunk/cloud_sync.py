@@ -25,12 +25,12 @@ class Cloudsync:
         HOME_PATH = os.environ.get('HOMEPATH')
     else:
         HOME_PATH = os.environ.get('HOME')
-    PATH = join(HOME_PATH, 'Cloudsync')
-    SENDED_PATH = join(PATH, 'Sended')
-    UNSENDABLE_PATH = join(PATH, 'Unsendable')
-    favourites_link_path = join(HOME_PATH, "links\Cloudsync.lnk")
-    sendto_link_path = join(HOME_PATH, "AppData\Roaming\Microsoft\Windows\SendTo\Cloudsync.lnk")
-    desktop_link_path = join(HOME_PATH, "desktop\Cloudsync Folder.lnk")
+    PATH = join(HOME_PATH, 'CloudSync')
+    SENDED_PATH = join(PATH, 'Successful')
+    UNSENDABLE_PATH = join(PATH, 'Failed')
+    favourites_link_path = join(HOME_PATH, "links\CloudSync.lnk")
+    sendto_link_path = join(HOME_PATH, "AppData\Roaming\Microsoft\Windows\SendTo\CloudSync.lnk")
+    desktop_link_path = join(HOME_PATH, "desktop\CloudSync Folder.lnk")
     get_url = http_client.HTTPClient()
     URL = 'https://' + get_url.URL + get_url.cloudsync_path
     CHECK_URL = URL + '/check'
@@ -49,22 +49,22 @@ class Cloudsync:
         self.start()
 
     def intercept_signal(self, signal_code, frame):
-        self.logger.info("SIGINT or SIGTERM received. Closing Cloudsync Module...")
+        self.logger.info("SIGINT or SIGTERM received. Closing CloudSync Module...")
         self.stop_flag = True
 
     def process_error(self, error_code, error_message):
         self.error_code = error_code
         self.error_message = error_message
-        self.logger.warning('Error ' + str(error_code) + ' in Cloudsync. ' + error_message)
+        self.logger.warning('Error ' + str(error_code) + ' in CloudSync. ' + error_message)
 
     def login(self):
-        self.logger.info('Cloudsync login')
+        self.logger.info('CloudSync login')
         ul = user_login.UserLogin(self)
         ul.wait_for_login()
         self.user_token = ul.user_token
 
     def create_folders(self):
-        self.logger.info('Preparing Cloudsync folder: ' + self.PATH)
+        self.logger.info('Preparing CloudSync folder: ' + self.PATH)
         paths = [self.PATH, self.SENDED_PATH, self.UNSENDABLE_PATH]
         for path in paths:
             if not os.path.exists(path):
@@ -208,7 +208,7 @@ class Cloudsync:
                 self.logger.info('Files successfully uploaded')
 
     def start(self):
-        self.logger.info('Cloudsync started!')
+        self.logger.info('CloudSync started!')
         self.stop_flag = False
         self.login()
         self.create_folders()
@@ -233,7 +233,7 @@ class Cloudsync:
     def quit(self):
         if self.mswin and config.get_settings()['cloud_sync']['virtual_drive_enabled']:
             self.disable_virtual_drive()
-        self.logger.info('Cloudsync stopped')
+        self.logger.info('CloudSync stopped')
         os._exit(0)
 
 if __name__ == '__main__':

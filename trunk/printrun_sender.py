@@ -1,9 +1,10 @@
 from printrun.printcore import printcore
 from printrun.gcoder import LightGCode
 import re
-import threading
 import time
+import serial
 import logging
+import threading
 
 import config
 from base_sender import BaseSender
@@ -284,6 +285,11 @@ class Sender(BaseSender):
                 self.logger.debug('...done)')
         self.logger.info('Printrun sender disconnectiong from printer...')
         if self.printcore:
+            port = None
+            if not self.printcore.printer:
+                port = serial.Serial(self.profile['COM']) #it a hack to prevent printrun hanging on disconnect
             self.printcore.disconnect()
+            if port:
+                port.close()
         self.logger.info('...done')
 

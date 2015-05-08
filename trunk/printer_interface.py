@@ -55,7 +55,8 @@ class PrinterInterface(threading.Thread):
     def connect_to_printer(self):
         printer_sender = __import__(self.printer_profile['sender'])
         self.logger.info("Connecting with profile: " + str(self.printer_profile))
-        if "baudrate" in self.printer_profile and not self.printer_profile.get("COM"): # indication of serial printer, but no serial port
+        if "baudrate" in self.printer_profile and self.printer_profile.get("baudrate") and not self.printer_profile.get("COM"): # indication of serial printer, but no serial port
+            self.logger.warning('No serial port for serial printer')
             self.sender_error = {"code": 11, "message": "No serial port for serial printer. No senders or printer firmware hanged."}
             self.stop_flag = True
             return
@@ -173,14 +174,14 @@ class PrinterInterface(threading.Thread):
     def state_report(self, outer_state=None):
         if self.printer:
             report = {}
-            report["temps"] = self.printer.get_temps()
-            report["target_temps"] = self.printer.get_target_temps()
-            report["percent"] = self.printer.get_percent()
-            report["line_number"] = self.printer.get_current_line_number()
             if outer_state:
                 report["state"] = outer_state
             else:
                 report["state"] = self.get_printer_state()
+            report["percent"] = self.printer.get_percent()
+            report["temps"] = self.printer.get_temps()
+            report["target_temps"] = self.printer.get_target_temps()
+            report["line_number"] = self.printer.get_current_line_number()
             return report
 
     def close_printer_sender(self):

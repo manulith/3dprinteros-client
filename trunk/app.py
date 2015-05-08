@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 import sys
 import time
 import signal
@@ -14,6 +17,7 @@ import version
 import printer_interface
 import config
 
+reboot_flag = True # should be True for first boot, even if it isn't re boot
 
 class App(object):
 
@@ -22,10 +26,11 @@ class App(object):
 
     @log.log_exception
     def __init__(self):
+        self.set_reboot_flag(False)
+        self.logger = utils.create_logger('app', config.config['log_file'])
         self.logger = log.create_logger("app", log.LOG_FILE)
         self.logger.info("Starting 3DPrinterOS client. Version %s_%s" % (version.version, version.build))
-        self.logger.info('Operating system: ' + platform.system() + ' ' + platform.release())
-        self.time_stamp()
+        self.logger.info('Operating system: ' + platform.system() + ' ' + platform.release())        self.time_stamp()
         paths.init_path_to_libs()
         signal.signal(signal.SIGINT, self.intercept_signal)
         signal.signal(signal.SIGTERM, self.intercept_signal)
@@ -41,7 +46,7 @@ class App(object):
                 self.camera_controller = camera_controller.CameraController()
 
     def init_interface(self):
-        if config.get_settings()['web_interface']:
+        if config.get_settings()['web_interface']['enabled']:
             import webbrowser
             from web_interface import WebInterface
             self.web_interface = WebInterface(self)
@@ -50,7 +55,9 @@ class App(object):
             while not self.web_interface.server:
                 time.sleep(0.01)
             self.logger.debug("...server is up and running. Connecting browser...")
-            webbrowser.open("http://127.0.0.1:8008", 2, True)
+            time.sleep(3)
+            if config.get_settings()['web_interface']['browser_opening_on_start']:
+                webbrowser.open("http://127.0.0.1:8008", 2, True)
             self.logger.debug("...done")
 
     @log.log_exception
@@ -59,7 +66,8 @@ class App(object):
         self.detector = usb_detect.USBDetector()
         self.http_client = http_client.HTTPClient()
         while not self.stop_flag:
-            self.updater.timer_check_for_updates()
+            if hasattr(self, 'updater'):
+                self.updater.timer_check_for_updates()
             self.time_stamp()
             self.detected_printers = self.detector.get_printers_list()
             self.check_and_connect()
@@ -76,6 +84,10 @@ class App(object):
                 self.flush_log()
         self.quit()
 
+    def set_reboot_flag(self, value):
+        global reboot_flag
+        reboot_flag = value
+
     def flush_log(self):
         self.logger.info('Flushing logger handlers')
         for handler in self.logger.handlers:
@@ -91,7 +103,6 @@ class App(object):
                 pi = printer_interface.PrinterInterface(usb_info, self.user_login.user_token)
                 pi.start()
                 self.printer_interfaces.append(pi)
-
 
     def disconnect_printer(self, pi, reason):
         self.logger.info('Disconnecting because of %s %s' % (reason , str(pi.usb_info)))
@@ -129,21 +140,44 @@ class App(object):
             if ready_flag:
                 break
             time.sleep(0.1)
-        self.logger.info("...all gcode sending modules are closed.")
-        self.logger.debug("Waiting web interface server to shutdown...")
+        self.logger.info("...all gcode sending modules closed.")
+        self.shutdown_web_interface()
+        self.logger.info("...all modules were closed correctly.")
+        self.time_stamp()
+        self.logger.info("Goodbye ;-)")
+        self.shutdown_logging()
+
+    #logging is a most awful module in python, it's an one way to prevent multiply of handlers on reboot
+    def shutdown_logging(self):
+        handlers = []
+        for handler in self.logger.handlers:
+            handlers.append(handler)
+            handler.flush()
+        self.logger.handlers = []
+        #logging.shutdown()
+        #del (self.logger)
+        for handler in handlers:
+            del(handler)
+
+    def shutdown_web_interface(self):
+        self.logger.debug("Waiting web interface server to shutdown")        
         try:
             self.web_interface.server.shutdown()
             self.web_interface.join()
         except:
             pass
-        self.logger.info("...done.")
-        self.time_stamp()
-        self.logger.info("Goodbye ;-)")
         time.sleep(0.1)
-        self.flush_log()
-        sys.exit(0)
+        if hasattr(self, 'web_interface'):
+            del(self.web_interface)
+
 
 if __name__ == '__main__':
-    app = App()
-    config.Config.instance().set_app_pointer(app)
-    app.start_main_loop()
+    try:
+        app = App()
+    except SystemExit:
+        pass
+    except:
+        trace = traceback.format_exc()
+        print trace
+        with open(config.config['error_file'], "a") as f:
+            f.write(time.ctime() + "\n" + trace + "\n")

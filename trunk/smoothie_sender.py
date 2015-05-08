@@ -3,6 +3,7 @@ import time
 import raw_usb_sender
 
 
+
 class Sender(raw_usb_sender.Sender):
     def __init__(self, profile, usb_info, app):
         self.define_regexps()
@@ -60,6 +61,7 @@ class Sender(raw_usb_sender.Sender):
                 self.write('get pos')
 
     def prepare_heating(self):
+        self.logger.info('Preparing heating...')
         with self.buffer_lock:
             for gcode in self.buffer:
                 if gcode.startswith('G0') or gcode.startswith('G1'):
@@ -71,6 +73,7 @@ class Sender(raw_usb_sender.Sender):
                 match = self.tool_heating_re.match(gcode)
                 if match:
                     self.heating_gcodes.append(gcode)
+            self.logger.info('Got heating gcodes: %s' % str(self.heating_gcodes))
             for gcode in self.heating_gcodes:
                 self.buffer.remove(gcode)
 
@@ -90,7 +93,7 @@ class Sender(raw_usb_sender.Sender):
                 while self.temps[0] < self.target_temps[0]:
                     time.sleep(0.05)
                 self.logger.info('Bed heated!')
-            if self.tool_heating_re.match(gcode):
+            elif self.tool_heating_re.match(gcode):
                 self.logger.info('Heating tool')
                 while not self.temps[1] or not self.target_temps[1]:
                     time.sleep(0.05)
@@ -98,5 +101,15 @@ class Sender(raw_usb_sender.Sender):
                 while self.temps[1] < self.target_temps[1]:
                     time.sleep(0.05)
                 self.logger.info('Tool heated!')
+            else:
+                self.logger.warning('Heating gcode cannot be matched! Printer most likely will hang on heating.\nGcode: %s' % gcode)
         self.logger.info('Finished heating!')
         self.heating_flag = False
+
+    def temp_request(self):
+        while not self.stop_flag:
+            time.sleep(2)
+            if self.heating_flag:
+                time.sleep(5)  # For not bothering ZMorph printer too much while heating, otherwise it could hang up.
+            with self.write_lock:
+                self.write(self.TEMP_REQUEST_GCODE)

@@ -1,4 +1,6 @@
-import os, sys
+import os
+import sys
+import time
 import urllib
 import hashlib
 import logging
@@ -13,12 +15,17 @@ import rights
 import makerware_utils
 import version
 import config
-#import cloud_sync
+import cloud_sync
 
 
 class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
+    YOUR_ACCOUNT_BUTTON = config.get_settings()['web_interface']['your_account_button']
+    LOCALHOST_COMMANDS = config.get_settings()['web_interface']['localhost_commands']
+    URL = str(config.config['URL'])
+
     def setup(self):
+        self.get_login_flag = False
         self.working_dir = os.path.dirname(os.path.abspath(__file__))
         self.logger = logging.getLogger('app.' + __name__)
         BaseHTTPServer.BaseHTTPRequestHandler.setup(self)
@@ -33,21 +40,28 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         with open(os.path.join(self.working_dir, path_in_cwd)) as f:
             return f.read()
 
-    def write_with_autoreplace(self, page, response=200):        
-        page = page.replace('!!!VERSION!!!', 'Client v.' + version.version + ', build ' + version.build + ', commit ' + version.commit)
-        page = page.replace('3DPrinterOS', '3DPrinterOS Client v.' + version.version)
+    def write_with_autoreplace(self, page, response=200, headers = {}):
         try:
+            page = page.replace('!!!VERSION!!!', 'Client v.' + version.version + ', build ' + version.build + ', commit ' + version.commit)
+            page = page.replace('3DPrinterOS', '3DPrinterOS Client v.' + version.version)
+            url = self.URL.replace('cli-', '')
+            page = page.replace('!!!URL!!!', url)
             self.send_response(response)
+            for keyword, value in headers.iteritems():
+                self.send_header(keyword, value)
             self.end_headers()
             self.wfile.write(page)
         except Exception as e:
             self.logger.error(str(e.message))
 
-    def do_GET(self):
-        self.logger.debug("Server GET")
-        if self.path.find('get_login') >= 0:
+    def do_GET(self):        
+        self.logger.info("Server GET")
+        if self.LOCALHOST_COMMANDS and self.path.find('get_login') >= 0:
+            self.get_login_flag = True
             self.process_login()
-        elif self.path.find('quit') >= 0:
+        elif self.LOCALHOST_COMMANDS and self.path.find('logout') >= 0:
+            self.process_logout()
+        elif self.LOCALHOST_COMMANDS and self.path.find('quit') >= 0:
             self.quit_main_app()
         elif self.path.find('show_logs') >=0:
             self.show_logs()
@@ -60,8 +74,10 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     def form_main_page(self):
         page = ''
         if self.server.app:
-            if self.server.app.user_login.user_token:
+            if self.server.app.user_login.user_token and self.YOUR_ACCOUNT_BUTTON:
                 name = 'web_interface/main_loop_form.html'
+            elif self.server.app.user_login.user_token and not self.YOUR_ACCOUNT_BUTTON:
+                name = 'web_interface/main_loop_form_button_off.html'
             else:
                 name = 'web_interface/login.html'
             page = self.read_file(name)
@@ -74,7 +90,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 page = self.read_file('web_interface/conveyor_warning.html')
             if not rights.is_user_groups():
                 page = self.read_file('web_interface/groups_warning.html')
-            if not self.server.app.updater.auto_update_flag and self.server.app.updater.update_flag:
+            if self.server.app.updater and self.server.app.updater.update_flag:
                 page = page.replace('get_updates" style="display:none"', 'get_updates"')
             if config.get_settings()['cloud_sync']['enabled']:
                 page = page.replace('open_cloudsync_folder" style="display:none"', 'open_cloudsync_folder"')
@@ -171,7 +187,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             page = page.replace('!!!SHOW_TIME!!!', str(show_time))
         else:
             page = page.replace('<meta http-equiv="refresh" content="!!!SHOW_TIME!!!; url=/" />', '')
-        self.write_with_autoreplace(page, response)
+        self.write_with_autoreplace(page, response=response)
 
     def choose_cam(self):
         if hasattr(self.server.app, 'camera_controller'):
@@ -179,7 +195,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             module_selector_html = ''
             for module in modules.keys():
                 if modules[module] == self.server.app.camera_controller.current_camera_name:
-                    module_selector_html += '<p><input type="radio" disabled> ' + module + '</p>'
+                    modules_select = modules_select + '<p><input type="radio" disabled> <font color="lightgrey">' + module + '</font></p>'
                 else:
                     module_selector_html += '<p><input type="radio" name="module" value="' + module + '"> ' + module + '</p>'
             page = open(os.path.join(self.working_dir, 'web_interface/choose_cam.html')).read()
@@ -210,7 +226,8 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         if result:
             message = result
         else:
-            message = '<p>Update successful!</p><p>Please restart Client to use all features of new version.</p>'
+            message = '<p>Update successful!</p><p>Applying changes...</p>'
+            self.restart_main_app()
         self.write_message(message)
 
     def show_logs(self):
@@ -229,16 +246,12 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         rights.add_user_groups()
         self.quit_main_app()
 
-    def kill_conveyor(self):
-        fail_message = '3DPrinterOS was unable to stop conveyor.'
-        if makerware_utils.get_conveyor_pid():
-            result = makerware_utils.kill_existing_conveyor()
-            if result:
-                message = 'Conveyor was successfully stopped.<br><br>Returning...'
-            else:
-                message = fail_message
+    def kill_conveyor(self):        
+        result = makerware_utils.kill_existing_conveyor()
+        if result:
+            message = 'Conveyor was successfully stopped.<br><br>Returning...'
         else:
-            message = fail_message
+            message = '3DPrinterOS was unable to stop conveyor.'        
         self.write_message(message)
 
     def download_logs(self):
@@ -258,14 +271,25 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.write_message('Goodbye :-)', 0)
         self.server.app.stop_flag = True
 
+    def answer_with_image(self, img_path_in_cwd):
+        image_path = os.path.join(os.getcwd(), img_path_in_cwd)
+        with open(image_path, 'rb') as f:
+            message = f.read()
+        self.write_with_autoreplace(message, headers = { 'Content-Type': 'image/jpeg' })
+
     def process_login(self):
-        if self.server.app.user_login.user_token:
-            self.write_message('Please logout first before re-login')
-            return
+        if self.server.app and hasattr(self.server.app, "user_login"):
+            if self.server.app.user_login.user_token:
+                if self.get_login_flag:
+                    self.answer_with_image('web_interface/fail.jpg')
+                else:
+                    self.write_message('Please logout first before re-login')
+                return
         body = ''
-        if self.path.find('get_login'):
+        if self.get_login_flag:
             body = str(self.path)
             body = body.replace('/?get_', '')
+            body = body.split('&nocache=')[0]
         content_length = self.headers.getheader('Content-Length')
         if content_length:
             length = int(content_length)
@@ -274,24 +298,37 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         body = urllib.unquote(body).decode('utf8')
         raw_login, password = body.split("&password=")
         login = raw_login.replace("login=", "")
-        password = hashlib.sha256(password).hexdigest()
+        password = hashlib.sha256(password).hexdigest()        
+        while not hasattr(self.server.app, 'user_login'):
+            if not self.server.app or self.server.app.stop_flag:
+                self.answer_with_image('web_interface/fail.jpg')
+                return
+            time.sleep(0.01)
         error = self.server.app.user_login.login_as_user(login, password)
         if error:
             message = str(error[1])
         else:
+            if self.get_login_flag:
+                self.answer_with_image('web_interface/success.jpg')
+                return
             message = 'Login successful!<br><br>Processing...'
         self.write_message(message)
+
+    def restart_main_app(self):
+        self.server.app.set_reboot_flag(True)
+        self.server.app.stop_flag = True
 
     def process_logout(self):
         for path in paths.get_paths_to_settings_folder():
             login_info_path = os.path.join(path, 'login_info.bin')
-            if os.path.isfile(login_info_path) == True:
+            if os.path.isfile(login_info_path):
                 try:
                     os.remove(login_info_path)
                 except Exception as e:
                     self.logger.error('Failed to logout: ' + e.message)
-        page = self.read_file('web_interface/logout.html')
-        self.write_with_autoreplace(page)
+        self.restart_main_app()
+        self.write_message('Logout. Please wait...', show_time=4)
+
 
 class ThreadedHTTPServer(ThreadingMixIn, BaseHTTPServer.HTTPServer):
     """ This class allows to handle requests in separated threads.

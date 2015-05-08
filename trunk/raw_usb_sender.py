@@ -1,4 +1,5 @@
 import logging
+import re
 import threading
 import usb.core
 import usb.util
@@ -6,11 +7,9 @@ import usb.backend.libusb1
 import utils
 import collections
 import time
-
-import log
-import log
 import base_sender
-
+import sys
+utils.init_path_to_libs()
 
 TEMP_REQUEST_WAIT = 5
 PAUSE_LIFT_HEIGHT = 5
@@ -48,12 +47,12 @@ class Sender(base_sender.BaseSender):
         self.get_pos_counter = 0
 
         self.dev = None
-        self.endpoint_in = None
-        self.endpoint_out = None
+        self.define_endpoints()
 
         connect = self.connect()
         time.sleep(2)  # Important!
         if connect:
+            self.prepare_printer()
             self.handshake()
             self.read_thread = threading.Thread(target=self.reading)
             self.read_thread.start()
@@ -63,6 +62,11 @@ class Sender(base_sender.BaseSender):
             self.sending_thread.start()
         else:
             raise Exception('Cannot connect to USB device.')
+
+    # Override if needed
+    def define_endpoints(self):
+        self.endpoint_in = None
+        self.endpoint_out = None
 
     def set_total_gcodes(self, length):
         self.total_gcodes = len(self.buffer)
@@ -74,37 +78,46 @@ class Sender(base_sender.BaseSender):
     def connect(self):
         backend_from_our_directory = usb.backend.libusb1.get_backend(find_library=utils.get_libusb_path)
         self.dev = usb.core.find(idVendor=self.int_vid, idProduct=self.int_pid, backend=backend_from_our_directory)
-        # Checking and claiming interface 0 - interrupt interface for command sending
-        # Zmorph also has interface 1 - bulk interface, assuming for file upload.
-        if self.dev.is_kernel_driver_active(0) is True:
-            self.logger.info('Interface is kernel active. Detaching...')
-            claim_attempts = 5
-            for _ in range(claim_attempts):
-                try:
-                    self.dev.detach_kernel_driver(0)
-                    #time.sleep(0.1)
-                    self.dev.set_configuration()
-                    usb.util.claim_interface(self.dev, 0)
-                    #time.sleep(0.1)
-                except Exception as e:
-                    logging.warning('Exception while detaching : %s' % e.message)
-                else:
-                    if self.dev.is_kernel_driver_active(0) is True:
-                        self.logger.info('Can\'t detach USB device. Attempting once more...')
+        if sys.platform.startswith('linux'):  # TODO: test at mac this too
+            # Checking and claiming interface 0 - interrupt interface for command sending
+            # Zmorph also has interface 1 - bulk interface, assuming for file upload.
+            if self.dev.is_kernel_driver_active(0) is True:
+                self.logger.info('Interface is kernel active. Detaching...')
+                claim_attempts = 5
+                for _ in range(claim_attempts):
+                    try:
+                        self.dev.detach_kernel_driver(0)
+                        #time.sleep(0.1)
+                        self.dev.set_configuration()
+                        usb.util.claim_interface(self.dev, 0)
+                        #time.sleep(0.1)
+                    except Exception as e:
+                        logging.warning('Exception while detaching : %s' % e.message)
                     else:
-                        self.logger.info('Detached and claimed!')
-                        break
-        else:
-            self.logger.info('Interface is free. Connecting...')
-        if self.dev.is_kernel_driver_active(0) is True:
-            self.logger.warning('Cannot claim USB device. Aborting.')
-            return False
-        else:
-            #self.dev.set_configuration()
+                        if self.dev.is_kernel_driver_active(0) is True:
+                            self.logger.info('Can\'t detach USB device. Attempting once more...')
+                        else:
+                            self.logger.info('Detached and claimed!')
+                            break
+            else:
+                self.logger.info('Interface is free. Connecting...')
+            if self.dev.is_kernel_driver_active(0) is True:
+                self.logger.warning('Cannot claim USB device. Aborting.')
+                return False
+        elif sys.platform.startswith('win'):
+            self.dev.set_configuration()
+        #self.dev.set_configuration()
+        #cfg = self.dev.get_active_configuration()
+        if not self.endpoint_in and not self.endpoint_out:
             cfg = self.dev.get_active_configuration()
+            # TODO: endpoint sequence can vary in different printer. Ensure IN endpoint is actually IN etc.
             self.endpoint_in = cfg[(0, 0)][0]
             self.endpoint_out = cfg[(0, 0)][1]
-            return True
+            self.logger.info('Setting endpoints from device config')
+            # casting endpoints to str may cause exception if cfg is actually wrong
+            #self.logger.info('IN endpoint:\n' % str(self.endpoint_in))
+            #self.logger.info('OUT endpoint:\n' % str(self.endpoint_out))
+        return True
 
     def write(self, gcode):
         try:
@@ -112,13 +125,16 @@ class Sender(base_sender.BaseSender):
         except Exception as e:
             self.logger.warning('Error while writing gcode "%s"\nError: %s' % (gcode, e.message))
         else:
-            print 'SENT: %s' % gcode
+            self.logger.info('SENT: %s' % gcode)
 
     def get_percent(self):
         return self.percent
 
     def is_printing(self):
         return self.printing_flag
+
+    def parse_response(self, resp):
+        raise NotImplementedError
 
     def reading(self):
         with self.read_lock:
@@ -175,6 +191,8 @@ class Sender(base_sender.BaseSender):
                 for gcode in self.end_gcodes:
                     self.write(gcode)
                     time.sleep(0.1)
+            with self.write_lock:
+                self.buffer.clear()
             self.logger.info('Cancelled!')
 
     def lift_extruder(self):
@@ -198,7 +216,6 @@ class Sender(base_sender.BaseSender):
             self.pause_flag = False
             self.logger.info("Unpaused successfully")
 
-    @log.log_exception
     def temp_request(self):
         self.temp_request_counter = 0
         no_answer_counter = 0
@@ -207,7 +224,6 @@ class Sender(base_sender.BaseSender):
             time.sleep(1)
             if self.heating_flag:
                 time.sleep(5)
-                #continue
             if self.temp_request_counter:
                 time.sleep(1.5)
                 no_answer_counter += 1
@@ -222,9 +238,13 @@ class Sender(base_sender.BaseSender):
     def get_current_line_number(self):
         return self.oks
 
-    @log.log_exception
+    # For printer dependable functionality like beevery firmware flushing
+    def prepare_printer(self):
+        pass
+
     def sending(self):
         self.logger.info('Sending thread started!')
+        #self.handshake()
         while not self.stop_flag:
             if not self.printing_flag:
                 time.sleep(0.1)
@@ -239,16 +259,20 @@ class Sender(base_sender.BaseSender):
             self.logger.info('All gcodes are sent to printer. Waiting for finish')
             self.wait_for_sending_end()
             self.logger.info('Printer has finished printing!')
+            with self.write_lock:
+                self.buffer.clear()
             self.percent = 100
             self.printing_flag = False
 
     # Might have firmware-dependable logic
     def prepare_heating(self):
-        raise NotImplementedError
+        pass
+        #raise NotImplementedError  # Not always needed
 
     # Might have firmware-dependable logic
     def heat_printer(self):
-        raise NotImplementedError
+        pass
+        #raise NotImplementedError  # Not always needed
 
     def wait_for_sending_end(self):
         wait_cap = 30
@@ -292,10 +316,18 @@ class Sender(base_sender.BaseSender):
     def init_sending_values(self):
             self.gcode_lines = len(self.buffer)
             self.percent_step = self.gcode_lines / 100
+            if self.percent_step == 0:
+                self.percent_step = 1
+            self.heating_gcodes = []
+            self.temps[0] = 0
+            self.temps[1] = 0
+            self.target_temps[0] = 0
+            self.target_temps[1] = 0
             self.printing_flag = True
             self.percent = 0
             self.sent_gcodes = 0
             self.oks = 0
+            self.temp_request_counter = 0
             self.logger.info('Start sending!')
 
     def load_gcodes(self, gcodes):
