@@ -3,9 +3,9 @@
 
 import time
 import signal
-import logging
-import traceback
 import platform
+import traceback
+import webbrowser
 
 import utils
 utils.init_path_to_libs()
@@ -16,6 +16,7 @@ import http_client
 import printer_interface
 import user_login
 import updater
+from web_interface import WebInterface
 
 reboot_flag = True # should be True for first boot, even if it isn't re boot
 
@@ -69,13 +70,13 @@ class App:
 
     def init_interface(self):
         if config.config['web_interface']['enabled']:
-            import webbrowser
-            from web_interface import WebInterface
             self.web_interface = WebInterface(self)
             self.web_interface.start()
             self.logger.debug("Waiting for webserver to start...")
             while not self.web_interface.server:
                 time.sleep(0.01)
+                if self.stop_flag:
+                    return
             self.logger.debug("...server is up and running. Connecting browser...")
             time.sleep(3)
             if config.config['web_interface']['browser_opening_on_start']:
