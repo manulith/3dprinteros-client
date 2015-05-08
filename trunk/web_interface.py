@@ -22,7 +22,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
     YOUR_ACCOUNT_BUTTON = config.get_settings()['web_interface']['your_account_button']
     LOCALHOST_COMMANDS = config.get_settings()['web_interface']['localhost_commands']
-    URL = str(config.config['URL'])
+    URL = str(config.get_settings()['URL'])
 
     def setup(self):
         self.get_login_flag = False
