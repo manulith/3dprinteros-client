@@ -45,8 +45,7 @@ def is_admin():
         is_admin = os.getuid() == 0
     except:
         is_admin = ctypes.windll.shell32.IsUserAnAdmin()
-
-    print is_admin
+    return is_admin
 
 def sha256_hash(text):
     hash = sha256(text)
