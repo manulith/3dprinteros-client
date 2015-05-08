@@ -322,6 +322,10 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                     os.remove(login_info_path)
                 except Exception as e:
                     self.logger.error('Failed to logout: ' + e.message)
+        if sys.platform.startswith('darwin'):
+            page = self.read_file('web_interface/logout.html')
+            self.write_with_autoreplace(page)
+            return
         self.restart_main_app()
         self.write_message('Logout. Please wait...', show_time=4)
 
