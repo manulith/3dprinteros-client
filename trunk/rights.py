@@ -12,8 +12,7 @@ def is_admin():
         is_admin = os.getuid() == 0
     except:
         is_admin = ctypes.windll.shell32.IsUserAnAdmin()
-
-    print is_admin
+    return is_admin
 
 def is_user_groups():
     logger = logging.getLogger('app')
@@ -31,7 +30,7 @@ def is_user_groups():
 
 def add_user_groups():
     logger = logging.getLogger('app')
-    if sys.platform.startswith('linux'):
+    if sys.platform.startswith('linux') and not is_admin():
         p = Popen('xterm -e "sudo usermod -a -G dialout,tty,usbusers $USER"', shell=True, stdout=PIPE, stderr=PIPE)
         stdout, stderr = p.communicate()
         if stdout:
