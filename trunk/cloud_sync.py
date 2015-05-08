@@ -19,6 +19,9 @@ import user_login
 import http_client
 import config
 
+reload(sys)
+sys.setdefaultencoding('utf-8')
+
 class Cloudsync:
 
     if sys.platform.startswith('win32'):
