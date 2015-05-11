@@ -29,9 +29,7 @@
   },
   "cloud_sync": {
     "enabled": true,
-    "module": "cloud_sync.py",
     "max_send_retry": 10,
-    "icon_file": "cloudsync.ico",
     "virtual_drive_enabled": true,
     "log_file": "3dprinteros_cloudsync.log"
   }

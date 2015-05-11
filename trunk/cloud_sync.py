@@ -82,7 +82,7 @@ class Cloudsync:
             Popen(['cscript', 'createLink.vbs',
                    os.path.abspath(path),
                    os.path.abspath(self.PATH),
-                   os.path.abspath(join(os.getcwd(),config.get_settings()['cloud_sync']['icon_file']))])
+                   os.path.abspath(join(os.getcwd(),'cloudsync.ico'))])
 
     def remove_shortcuts_win(self):
         os.remove(self.sendto_link_path)
