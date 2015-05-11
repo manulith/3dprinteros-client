@@ -13,8 +13,9 @@ from os.path import join
 from subprocess import Popen, PIPE
 
 import requests
-import utils
-utils.init_path_to_libs()
+import log
+import paths
+paths.init_path_to_libs()
 import user_login
 import http_client
 import config
@@ -38,7 +39,7 @@ class Cloudsync:
     CONNECTION_TIMEOUT = 6
 
     def __init__(self):
-        self.logger = utils.create_logger('cloud_sync', config.get_settings()['cloud_sync']['log_file'])
+        self.logger = log.create_logger('cloud_sync', config.get_settings()['cloud_sync']['log_file'])
         signal.signal(signal.SIGINT, self.intercept_signal)
         signal.signal(signal.SIGTERM, self.intercept_signal)
         self.mswin = sys.platform.startswith('win')
