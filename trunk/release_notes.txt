@@ -1,5 +1,9 @@
 3DPrinterOS release notes
 
+4.8.4
+
+    Fixed critical bug in Launcher for Ubuntu
+
 4.8.3
 
     Fixed bug with unicode paths in CloudSync
