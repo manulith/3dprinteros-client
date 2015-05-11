@@ -142,6 +142,14 @@ class Sender(BaseSender):
                 self.parser.s3g.close()
         self.logger.info("...done closing makerbot sender.")
 
+    def unbuffered_gcodes(self, gcodes):
+        if self.printing_flag:
+            return False
+        else:
+            for gcode in self.preprocess_gcodes(gcodes):
+                self.execute(gcode)
+            return True
+
     def execute(self, command):
         buffer_overflow_counter = 0
         retry_count = 0
@@ -224,7 +232,6 @@ class Sender(BaseSender):
             extruder_number = int(result.group(2)) + 1
             self.target_temps[extruder_number] = int(result.group(1))
             self.logger.info('Heating toolhead ' + str(extruder_number) + ' to ' + str(result.group(1)))
-
 
     @log.log_exception
     def send_gcodes(self):
