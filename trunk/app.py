@@ -38,13 +38,11 @@ class App:
         self.stop_flag = False
         self.quit_flag = False
         self.http_client = http_client.HTTPClient()
+        self.updater = updater.Updater()
         self.cam = None
         self.cloud_sync = None
         self.cam_modules = config.config['camera']['modules']
         self.cam_current_module = self.cam_modules[config.config['camera']['default_module_name']]
-        self.updater = None
-        if config.config['update']['enabled']:
-            self.updater = updater.Updater()
         self.user_login = user_login.UserLogin(self)
         self.init_interface()
         self.user_login.wait_for_login()
@@ -87,8 +85,7 @@ class App:
     def main_loop(self):
         self.last_flush_time = 0
         while not self.stop_flag:
-            if self.updater:
-                self.updater.timer_check_for_updates()
+            self.updater.timer_check_for_updates()
             self.time_stamp()
             self.detected_printers = usb_detect.get_printers()
             self.check_and_connect()

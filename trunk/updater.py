@@ -8,8 +8,10 @@ import http_client
 import version
 import config
 
+
 class Updater:
 
+    enabled = config.config['update']['enabled']
     auto_update_flag = config.config['update']['auto_update_enabled']
     check_pause = config.config['update']['check_pause']
 
@@ -26,7 +28,7 @@ class Updater:
             self.check_for_updates()
 
     def check_for_updates(self):
-        if self.new_version_available():
+        if self.enabled and self.new_version_available():
             self.logger.info('Updates available!')
             self.update_flag = True
             self.auto_update()
@@ -92,4 +94,3 @@ class Updater:
 if __name__ == '__main__':
     logging.basicConfig(level='INFO')
     u = Updater()
-    u.new_version_available()
