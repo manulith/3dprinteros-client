@@ -12,7 +12,7 @@ import http_client
 
 class DualCameraMaster:
 
-    MAX_CAMERA_INDEX = 20
+    MAX_CAMERA_INDEX = 10
     FAILS_BEFORE_REINIT = 10
     X_RESOLUTION = 640.0
     Y_RESOLUTION = 480.0
@@ -131,8 +131,6 @@ class DualCameraMaster:
                 frame = self.make_shot(capture)
                 if frame:
                     self.send_frame(number, frame)
-                else:
-                    time.sleep(1)
             while time.time() < frame_start_time + self.min_loop_time * len(self.captures):
                 time.sleep(0.01)
         self.close_captures()
@@ -144,8 +142,6 @@ class DualCameraMaster:
             capture.release()
             self.logger.info("Closed camera capture " + str(capture))
             #del(capture)
-            print 1
-
 
 
 if __name__ == '__main__':
