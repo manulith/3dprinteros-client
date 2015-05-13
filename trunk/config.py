@@ -1,57 +1,57 @@
-import os
 import json
-import utils
-# use import config ; config.config to get config
+import threading
 
-def get_config_file_path():
-    config_path = os.path.dirname(os.path.abspath(__file__))
-    return os.path.join(config_path, 'settings.json')
+def get_settings():
+    return Config.instance().settings
 
-def get_profiles_file_path():
-    config_path = utils.get_paths_to_settings_folder()[0]
-    return os.path.join(config_path, 'profiles.json')
+def get_profiles():
+    return Config.instance().profiles
 
-def load_config():
-    with open(get_config_file_path()) as config_file:
-        try:
-            config = json.loads(config_file.read())
-        except Exception as e:
-            print e
-            print "Config is:\n" + str(config_file.read())
-        else:
-            return config
+def get_app():
+    return Config.instance().app
 
-def update_config(config):
-    with open(get_config_file_path(), 'w') as config_file:
-        try:
-            jdata = json.dumps(config)
-        except Exception as e:
-            print e
-        else:
-            config_file.write(jdata)
+class Singleton(object):
+    lock = threading.Lock()
+    _instance = None
 
-def update_profiles(profiles):
-    path = utils.get_paths_to_settings_folder()[0]
-    if not os.path.isdir(path):
-        os.mkdir(path)
-    with open(get_profiles_file_path(), 'w') as profiles_file:
-        try:
-            jdata = json.dumps(profiles)
-        except Exception as e:
-            print e
-        else:
-            profiles_file.write(jdata)
+    @classmethod
+    def instance(cls):
+        with cls.lock:
+            if not cls._instance:
+                print "Creating new instance of " + cls.__name__
+                cls._instance = cls()
+        return cls._instance
 
-def load_profiles():
-    with open(get_profiles_file_path()) as profiles_file:
-        try:
-            profiles = json.loads(profiles_file.read())
-        except Exception as e:
-            print e
-            print "Config is:\n" + str(profiles_file.read())
-        else:
-            return profiles
+class Config(Singleton):
 
+    SETTINGS_FILE_NAME = 'settings.json'
 
+    def __init__(self):
+        self.settings = self.load_settings()
+        self.profiles = None
+        self.app = None
 
-config = load_config()
+    def load_settings(self):
+        with open(self.SETTINGS_FILE_NAME) as settings_file:
+            try:
+                config = json.loads(settings_file.read())
+            except Exception as e:
+                print "Error reading %s: %s" % (self.SETTINGS_FILE_NAME, str(e))
+            else:
+                return config
+
+    def save_settings(self, settings):
+        with open(self.SETTINGS_FILE_NAME, 'w') as settings_file:
+            try:
+                jdata = json.dumps(settings)
+            except Exception as e:
+                print "Error writing %s: %s" % (self.SETTINGS_FILE_NAME, str(e))
+                return False
+            settings_file.write(jdata)
+            return True
+
+    def set_profiles(self, profiles):
+        self.profiles = profiles
+
+    def set_app_pointer(self, app):
+        self.app = app

@@ -1,0 +1,51 @@
+3DPrinterOS release notes
+
+5.0.0
+
+    Refactoring of almost all code
+    Profiles now are stored in memory
+    General config reimplementataion(singleton)
+    New unhandled exceptions catcher/logger
+    utils was split in several separate modules
+    New printer detection algorithm
+
+4.8.0
+    Add client reboot ability
+    Automatic client reboot after logout or update implemented
+    Launcher preventing multiple launches of 3DPrinterOS
+    Fixed bug of exit in printrun sender
+    Fixed exit bug during login
+    Fixed several bugs in ZMorph
+    Fixed ZMorph support for  Windows
+    Commands to client with GET requests implemented (login, logout, quit)
+
+4.7.0
+
+    Smoothie printers partial support
+    ZMorph support(dont work on MAC OS X)
+    Fixed rare bug of too many opened files
+    Camera selection page was updated
+    Changed names of folders for CloudSync - Successful and Failed
+
+4.6.2
+
+    Numerous bug fixes, small performance and code improvements
+    Code reorganized to improve memory usage and refuse some bugs (web interface)
+    Support for current line reporting was added(should fix false job completion bug)
+    Cloudsync
+
+4.5.1
+
+	HTTP with keep_alive - faster camera and status/command exchange between client and server
+	State reporting mechanism fix
+	Generic Reperier Firmware support
+	MassPortal support
+	Felix 3.0 support
+	Printbot slicing settings fix
+	Quit sequence was refactored and fixed
+	Ability to disable camera
+	New status message for printer waiting to type selection and link to manual how to do it
+	Reworked update mechanism to fix slow auto update.
+	Updated Printrun to fix very rare bug on gcode resend
+
+4.2.0 

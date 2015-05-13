@@ -1,17 +1,36 @@
 {
-  "URL": "acc-acorn.3dprinteros.com",
-  "AUX_URL": "acc-acorn.3dprinteros.com",
+  "URL": "cli-cloud.3dprinteros.com",
   "HTTPS": true,
   "log_file": "3dprinteros_client.log",
-  "logstash_addr": "ec2-54-67-60-43.us-west-1.compute.amazonaws.com",
-  "logstash_port": 5000,
-  "web_interface": true,
-  "linux_rights_warning":false,
+  "error_file": "critical_error.log",
+  "linux_rights_warning": true,
+  "max_download_retry": 3,
+  "web_interface": {
+    "enabled": true,
+    "localhost_commands": false,
+    "browser_opening_on_start": true,
+    "your_account_button": true
+  },
+  "update": {
+    "enabled": true,
+    "auto_update_enabled": false,
+    "update_file_url": "http://s3.amazonaws.com/3dprinteros-files/",
+    "update_file_name": "3dprinteros_client_update.zip",
+    "check_pause": 3600
+  },
   "camera": {
     "enabled" : true,
     "img_ext" : ".jpg",
     "img_qual" : 90,
-    "camera_min_loop_time" : 1,
-    "log_file" : "3dprinteros_camera.log"
+    "min_loop_time" : 1,
+    "hardware_resize": true,
+    "log_file" : "3dprinteros_camera.log",
+    "default": "Dual camera"
+  },
+  "cloud_sync": {
+    "enabled": true,
+    "max_send_retry": 10,
+    "virtual_drive_enabled": true,
+    "log_file": "3dprinteros_cloudsync.log"
   }
 }

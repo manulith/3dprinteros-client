@@ -1,14 +1,16 @@
 from printrun.printcore import printcore
 from printrun.gcoder import LightGCode
 import re
-import threading
 import time
+import serial
 import logging
+import threading
 
-import base_sender
+import config
+from base_sender import BaseSender
 
 
-class Sender(base_sender.BaseSender):
+class Sender(BaseSender):
 
     pause_lift_height = 5
     pause_extrude_length = 7
@@ -17,66 +19,67 @@ class Sender(base_sender.BaseSender):
     DEFAULT_TIMEOUT_FOR_PRINTER_ONLINE = 3
 
     def __init__(self, profile, usb_info):
-        self.temp_request_thread = None
-        self.printcore = None
+        BaseSender.__init__(self, profile, usb_info)
         self.logger = logging.getLogger('app.' + __name__)
-        base_sender.BaseSender.__init__(self, profile, usb_info)
+        self.printcore = None
+        self.last_line = None
         self.define_regexps()
         if self.select_baudrate_and_connect():
             self.extruder_count = self.profile['extruder_count']
             self.total_gcodes = 0
             self.temp_request_thread = threading.Thread(target=self.temp_request)
-            self.temp_request_thread.start()
-            self.stop_flag = False
+            if not self.stop_flag:
+                self.temp_request_thread.start()
 
     def select_baudrate_and_connect(self):
         baudrates = self.profile['baudrate']
         self.logger.info('Baudrates list for %s : %s' % (self.profile['name'], str(baudrates)))
         for baudrate in baudrates:
-            #for _ in range(0, self.RETRIES_FOR_EACH_BAUDRATE):
-                self.error_code = 0
-                self.error_message = ""
-                self.logger.info("Connecting at baudrate %i" % baudrate)
-                self.printcore = printcore()
-                self.printcore.onlinecb = self.onlinecb
-                self.printcore.errorcb = self.errorcb
-                self.printcore.tempcb = self.tempcb
-                self.printcore.recvcb = self.recvcb
-                self.printcore.sendcb = self.sendcb
-                time.sleep(0.1)
-                self.printcore.connect(self.profile['COM'], baudrate)
-                if not self.printcore.printer:
-                    self.logger.warning("Error connecting to printer at %i" % baudrate)
-                    self.printcore.disconnect()
-                else:
-                    self.online_flag = False
-                    wait_start_time = time.time()
-                    self.logger.info("Waiting for printer online")
-                    while time.time() < (wait_start_time + self.DEFAULT_TIMEOUT_FOR_PRINTER_ONLINE):
-                        if self.stop_flag:
-                            return False
-                        if self.online_flag:
-                            self.logger.info("Successful connection to printer %s:%i" % (self.profile['COM'], baudrate))
-                            time.sleep(0.1)
-                            self.logger.info("Sending homing gcodes...")
-                            for gcode in self.profile.get("end_gcodes", []):
-                                self.printcore.send_now(gcode)
-                            self.logger.info("...done sending homing")
-                            return True
-                    self.logger.warning("Timeout while waiting for printer online. Reseting and reconnecting...")
-                    self.reset()
-                    time.sleep(2)
-                    self.logger.warning("...done reseting.")
-        raise RuntimeError("Unable to connect to printer")
+            self.error_code = 0
+            self.error_message = ""
+            self.online_flag = False
+            self.logger.info("Connecting at baudrate %i" % baudrate)
+            self.printcore = printcore()
+            self.printcore.onlinecb = self.onlinecb
+            self.printcore.errorcb = self.errorcb
+            self.printcore.tempcb = self.tempcb
+            self.printcore.recvcb = self.recvcb
+            self.printcore.sendcb = self.sendcb
+            self.printcore.endcb = self.endcb
+            self.printcore.connect(self.profile['COM'], baudrate)
+            time.sleep(0.1)
+            if not self.printcore.printer:
+                self.logger.warning("Error connecting to printer at %i" % baudrate)
+                self.printcore.disconnect()
+            else:
+                wait_start_time = time.time()
+                self.logger.info("Waiting for printer online")
+                while time.time() < (wait_start_time + self.DEFAULT_TIMEOUT_FOR_PRINTER_ONLINE):
+                    if config.get_app().stop_flag:
+                        raise RuntimeError("Connection to printer interrupted by closing")
+                    if self.online_flag:
+                        self.logger.info("Successful connection to printer %s:%i" % (self.profile['COM'], baudrate))
+                        time.sleep(0.1)
+                        self.logger.info("Sending homing gcodes...")
+                        for gcode in self.profile["end_gcodes"]:
+                            self.printcore.send_now(gcode)
+                        self.logger.info("...done homing")
+                        return True
+                self.logger.warning("Timeout while waiting for printer online. Reseting and reconnecting...")
+                self.reset()
+                time.sleep(2)
+                self.logger.warning("...done reseting.")
+        raise RuntimeError("No more baudrates to try")
 
     def onlinecb(self):
+        self.logger.info("Printer %s is ready" % str(self.usb_info))
         self.online_flag = True
+
+    def endcb(self):
+        self.logger.info("Printrun has called end callback.")
 
     def reset(self):
         if self.printcore:
-            #self.logger.debug("Sending M999...")
-            #self.printcore.send_now("M999")
-            #time.sleep(1)
             self.logger.debug("Resetting...")
             try:
                 self.printcore.reset()
@@ -85,17 +88,18 @@ class Sender(base_sender.BaseSender):
             time.sleep(0.2)
             self.logger.debug("Disconnecting...")
             self.printcore.disconnect()
-            self.logger.debug("Successful reset and disconnect")
+            self.logger.info("Successful reset and disconnect")
         else:
             self.logger.warning("No printrun printcore to execute reset")
 
     def define_regexps(self):
         # ok T:29.0 /29.0 B:29.5 /29.0 @:0
-        self.temp_re = re.compile('.*ok T:([\d\.]+) /([\d\.]+) B:(-?[\d\.]+) /(-?[\d\.]+)')
+        self.temp_re = re.compile('.*T:([\d\.]+) /([\d\.]+) B:(-?[\d\.]+) /(-?[\d\.]+)')
         #self.position_re = re.compile('.*X:([\d\.]+) Y:([\d\.]+) Z:([\d\.]+).*')
         # M190 - T:26.34 E:0 B:33.7
-        # M109 - T:26.3 E:0 W:?f
-        self.wait_tool_temp_re = re.compile('T:([\d\.]+) E:(\d+)')
+        # M109 - T:26.3 E:0 W:?
+        #self.wait_tool_temp_re = re.compile('T:([\d\.]+) E:(\d+)')
+        self.wait_tool_temp_re = re.compile('T:([\d\.]+)')
         self.wait_platform_temp_re = re.compile('.+B:(-?[\d\.]+)')
 
     def temp_request(self):
@@ -112,6 +116,7 @@ class Sender(base_sender.BaseSender):
 
     def tempcb(self, line):
         self.logger.debug(line)
+        self.logger.debug("Last executed line: " + str(self.last_line))
         match = self.temp_re.match(line)
         if match:
             tool_temp = float(match.group(1))
@@ -126,14 +131,15 @@ class Sender(base_sender.BaseSender):
         #self.logger.debug(self.debug_position())
 
     def recvcb(self, line):
-        self.logger.debug(line)
-        if line.startswith('T'):
+        #self.logger.debug(line)
+        if line.startswith('T:'):
             self.fetch_temps(line)
-        elif line.startswith('ok'):
-            self.online_flag = True
+        elif line[0:2] == 'ok':
+             self.online_flag = True
 
     def sendcb(self, command, gline):
-        self.logger.debug("Executing command: " + command)
+        #self.logger.debug("Executing command: " + command)
+        self.last_line = command
         if 'M104' in command or 'M109' in command:
             tool = 0
             tool_match = re.match('.+T(\d+)', command)
@@ -157,13 +163,15 @@ class Sender(base_sender.BaseSender):
     def fetch_temps(self, wait_temp_line):
         match = self.wait_tool_temp_re.match(wait_temp_line)
         if match:
-            self.temps[int(match.group(2)) + 1] = float(match.group(1))
+            #self.temps[int(match.group(2)) + 1] = float(match.group(1))
+            self.temps[1] = float(match.group(1))
         match = self.wait_platform_temp_re.match(wait_temp_line)
         if match:
             self.temps[0] = float(match.group(1))
 
     def set_total_gcodes(self, length):
         self.total_gcodes = length
+        self.current_line_number = 0
 
     def startcb(self, resuming_flag):
         if resuming_flag:
@@ -171,13 +179,10 @@ class Sender(base_sender.BaseSender):
         else:
             self.logger.info("Printrun is starting print")
 
-    def gcodes(self, gcodes_text):
-        gcodes = gcodes_text.split("\n")
-        while gcodes[-1] in ("\n", "\r\n", "\t", " ", "", None):
-            gcodes.pop()
+    def load_gcodes(self, gcodes):
+        gcodes = self.preprocess_gcodes(gcodes)
         length = len(gcodes)
-        self.set_total_gcodes(length)
-        self.logger.info('Loading %i gcodes in printcore...' % length)
+        self.logger.info('Loading %d gcodes...' % length)
         if length:
             self.buffer = LightGCode(gcodes)
             if self.printcore.startprint(self.buffer):
@@ -210,6 +215,9 @@ class Sender(base_sender.BaseSender):
             return False
 
     def cancel(self):
+        if self.downloading_flag:
+            self.cancel_download()
+            return
         self.printcore.cancelprint()
         self.printcore.reset()
         self.printcore.disconnect()
@@ -241,21 +249,47 @@ class Sender(base_sender.BaseSender):
                    self.printcore.send_thread.is_alive()
         return False
 
+    def update_current_line_number(self):
+        if self.printcore:
+            if self.current_line_number < self.printcore.queueindex:
+                self.current_line_number = self.printcore.queueindex
+
     def get_percent(self):
+        if self.downloading_flag:
+            self.logger.info('Downloading flag is true. Getting percent from downloader')
+            return self.downloader.get_percent()
         percent = 0
         if self.total_gcodes:
-            percent = int( self.printcore.queueindex / float(self.total_gcodes) * 100 )
+            self.update_current_line_number()
+            percent = int( self.current_line_number / float(self.total_gcodes) * 100 )
         return percent
 
+    def get_current_line_number(self):
+        self.update_current_line_number()
+        return self.current_line_number
+
     def close(self):
+        self.recvcb = None
+        self.sendcb = None
+        self.onlinecb = None
+        self.endcb = None
+        self.tempcb = None
         self.stop_flag = True
-        self.logger.debug('Printrun sender is closing')
-        if self.printcore:
-            self.printcore.disconnect()
-        self.logger.debug('(Joining printrun threads...')
-        if self.temp_request_thread:
+        self.logger.info('Printrun sender is closing')
+        if hasattr(self, 'temp_request_thread'):
+            self.logger.debug('(Joining printrun threads...')
             self.temp_request_thread.join(10)
             if self.temp_request_thread.isAlive():
-                self.logger.error("Error stopping temperature request thread.")
+                self.logger.error("Error stopping temperature request thread!")
             else:
-                self.logger.debug('...done Printrun sender closing)')
+                self.logger.debug('...done)')
+        self.logger.info('Printrun sender disconnectiong from printer...')
+        if self.printcore:
+            port = None
+            if not self.printcore.printer:
+                port = serial.Serial(self.profile['COM']) #it a hack to prevent printrun hanging on disconnect
+            self.printcore.disconnect()
+            if port:
+                port.close()
+        self.logger.info('...done')
+

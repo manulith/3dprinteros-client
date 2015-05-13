@@ -6,9 +6,10 @@ import makerbot_driver
 import makerbot_serial as serial
 import serial.serialutil
 
-import base_sender
+import log
+from base_sender import BaseSender
 
-class Sender(base_sender.BaseSender):
+class Sender(BaseSender):
 
     PAUSE_STEP_TIME = 0.5
     BUFFER_OVERFLOW_WAIT = 0.01
@@ -19,8 +20,9 @@ class Sender(base_sender.BaseSender):
     MAX_RETRY_BEFORE_ERROR = 100
 
     def __init__(self, profile, usb_info):
-        base_sender.BaseSender.__init__(self, profile, usb_info)
+        BaseSender.__init__(self, profile, usb_info)
         self.logger = logging.getLogger('app.' + __name__)
+        #self.logger.setLevel('INFO')
         self.logger.info('Makerbot printer created')
         self.init_target_temp_regexps()
         self.execution_lock = threading.Lock()
@@ -66,33 +68,35 @@ class Sender(base_sender.BaseSender):
             self.execute('G1  Z' + str(z) + ' A' + str(a) + ' B' + str(b))
 
     # length argument is used for unification with Printrun. DON'T REMOVE IT!
-    def set_total_gcodes(self, length=0):
+    def set_total_gcodes(self, length):
         self.execute(lambda: self.parser.s3g.abort_immediately())
         self.parser.state.values["build_name"] = '3DPrinterOS'
         self.parser.state.percentage = 0
+        self.current_line_number = 0
         self.logger.info('Begin of GCodes')
+        self.printing_flag = False
         self.execute(lambda: self.parser.s3g.set_RGB_LED(255, 255, 255, 0))
 
-    def gcodes(self, gcodes):
-        gcodes = gcodes.split("\n")
-        self.set_total_gcodes()
-        for code in gcodes:
-            with self.buffer_lock:
+    def load_gcodes(self, gcodes):
+        gcodes = self.preprocess_gcodes(gcodes)
+        with self.buffer_lock:
+            for code in gcodes:
                 self.buffer.append(code)
-        self.logger.info('Enqueued block: ' + str(len(gcodes)) + ', total: ' + str(len(self.buffer)))
+        self.logger.info('Enqueued block: ' + str(len(gcodes)) + ', of total: ' + str(len(self.buffer)))
 
     def cancel(self, go_home=True):
+        if self.downloading_flag:
+            self.cancel_download()
+            return
         with self.buffer_lock:
             self.buffer.clear()
         self.pause_flag = False
         self.cancel_flag = True
         time.sleep(0.1)
-        self.execute(lambda: self.parser.s3g.abort_immediate())
-        #with self.buffer_lock:
-            #self.buffer.extend(gcodes)
+        self.execute(lambda: self.parser.s3g.abort_immediately())
 
     def pause(self):
-        if not self.pause_flag:
+        if not self.pause_flag and not self.cancel_flag:
             self.pause_flag = True
             time.sleep(0.1)
             self.append_position_and_lift_extruder()
@@ -101,7 +105,7 @@ class Sender(base_sender.BaseSender):
             return False
 
     def unpause(self):
-        if self.pause_flag:
+        if self.pause_flag and not self.cancel_flag:
             self.pause_flag = False
             return True
         else:
@@ -157,7 +161,7 @@ class Sender(base_sender.BaseSender):
                     self.printing_flag = True
                     self.parser.execute_line(command)
                     self.set_target_temps(command)
-                    self.logger.debug("Executing: " + command)
+                    #self.logger.debug("Executing: " + command)
                     result = None
                 else:
                     text = command.__name__
@@ -175,7 +179,7 @@ class Sender(base_sender.BaseSender):
                     self.error_message = message
                     self.close()
             except Exception as e:
-                self.logger.warning("Makerbot can't continue because of: %s %s" % (str(e), e.message), exc_info=True)
+                self.logger.warning("Makerbot can't continue because of: %s %s" % (str(e), e.message))
                 self.error_code = 1
                 self.error_message = e.message
                 self.close()
@@ -191,9 +195,9 @@ class Sender(base_sender.BaseSender):
         head_temp2 = self.execute(lambda: self.parser.s3g.get_toolhead_temperature(1))
         head_ttemp1 = self.execute(lambda: self.parser.s3g.get_toolhead_target_temperature(0))
         head_ttemp2 = self.execute(lambda: self.parser.s3g.get_toolhead_target_temperature(1))
-        #self.mb            = self.execute(lambda: self.parser.s3g.get_motherboard_status())
         self.temps = [platform_temp, head_temp1, head_temp2]
         self.target_temps = [platform_ttemp, head_ttemp1, head_ttemp2]
+        # self.mb            = self.execute(lambda: self.parser.s3g.get_motherboard_status())
         #self.position      = self.execute(lambda: self.parser.s3g.get_extended_position())
 
     def reset(self):
@@ -221,6 +225,8 @@ class Sender(base_sender.BaseSender):
             self.target_temps[extruder_number] = int(result.group(1))
             self.logger.info('Heating toolhead ' + str(extruder_number) + ' to ' + str(result.group(1)))
 
+
+    @log.log_exception
     def send_gcodes(self):
         last_time = time.time()
         counter = 0
@@ -244,19 +250,23 @@ class Sender(base_sender.BaseSender):
             except IndexError:
                 self.buffer_lock.release()
                 if self.execute(lambda: self.parser.s3g.is_finished()):
-                    self.printing_flag = False
+                    if self.printing_flag:
+                        self.printing_flag = False
                 time.sleep(self.IDLE_WAITING_STEP)
             else:
                 self.buffer_lock.release()
                 self.execute(command)
+                self.current_line_number += 1
         self.logger.info("Makerbot sender: sender thread ends.")
 
     def is_printing(self):
         return self.printing_flag
 
     def get_percent(self):
+        if self.downloading_flag:
+            self.logger.info('Downloading flag is true. Getting percent from downloader')
+            return self.downloader.get_percent()
         return self.parser.state.percentage
 
-
-
-
+    def get_current_line_number(self):
+        return self.current_line_number
