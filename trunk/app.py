@@ -7,6 +7,7 @@ import platform
 
 import log
 import paths
+paths.init_path_to_libs()
 import usb_detect
 import http_client
 import camera_controller
@@ -31,7 +32,6 @@ class App(object):
         self.logger.info("Starting 3DPrinterOS client. Version %s_%s" % (version.version, version.build))
         self.logger.info('Operating system: ' + platform.system() + ' ' + platform.release())
         self.time_stamp()
-        paths.init_path_to_libs()
         signal.signal(signal.SIGINT, self.intercept_signal)
         signal.signal(signal.SIGTERM, self.intercept_signal)
         self.detected_printers = []
