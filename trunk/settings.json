@@ -3,7 +3,7 @@
   "HTTPS": true,
   "log_file": "3dprinteros_client.log",
   "error_file": "critical_error.log",
-  "linux_rights_warning": true,
+  "linux_rights_warning": false,
   "max_download_retry": 3,
   "web_interface": {
     "enabled": true,
@@ -28,7 +28,7 @@
     "default": "Dual camera"
   },
   "cloud_sync": {
-    "enabled": true,
+    "enabled": false,
     "max_send_retry": 10,
     "virtual_drive_enabled": true,
     "log_file": "3dprinteros_cloudsync.log"
