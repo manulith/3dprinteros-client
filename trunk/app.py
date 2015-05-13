@@ -174,5 +174,7 @@ class App(object):
 
 
 if __name__ == '__main__':
-    App()
+    app = App()
+    config.Config.instance().set_app_pointer(app)
+    app.start_main_loop()
 

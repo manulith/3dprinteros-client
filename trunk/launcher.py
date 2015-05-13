@@ -4,6 +4,7 @@ import tempfile
 import webbrowser
 
 import app
+import config
 
 pid_file_name = "3dprinteros.pid"
 tmp_path = tempfile.gettempdir()
@@ -30,8 +31,10 @@ def run():
     with open(pid_file_path, "w") as f:
         f.write(str(os.getpid()))
     while app.reboot_flag:
-        tdprinteros = app.App()
-        del(tdprinteros)
+        app_instance = app.App()
+        config.Config.instance().set_app_pointer(app_instance)
+        app_instance.start_main_loop()
+        del(app_instance)
 
 try:
     f = open(pid_file_path)
