@@ -1,5 +1,9 @@
 3DPrinterOS release notes
 
+4.8.6
+
+    Updater logic upgraded
+
 4.8.5
 
     Fixed critical bug in app, which caused total fail of web interface when updater disabled.
