@@ -7,7 +7,7 @@ import time
 import zipfile
 import logging
 import traceback
-import cloghandler
+#import cloghandler
 
 import paths
 import requests
@@ -29,7 +29,8 @@ def create_logger(logger_name, log_file_name=None):
     logger.addHandler(std_handler)
     if log_file_name:
         try:
-            file_handler = cloghandler.ConcurrentRotatingFileHandler(log_file_name, maxBytes=1024*1024*10, backupCount=10)
+            file_handler = logging.handlers.RotatingFileHandler(log_file_name, maxBytes=1024*1024*10, backupCount=10)
+            #file_handler = cloghandler.ConcurrentRotatingFileHandler(log_file_name, maxBytes=1024*1024*10, backupCount=10)
             file_handler.setFormatter(logging.Formatter('%(levelname)s\t%(asctime)s\t%(threadName)s/%(funcName)s\t%(message)s'))
             file_handler.setLevel(logging.DEBUG)
             logger.addHandler(file_handler)
