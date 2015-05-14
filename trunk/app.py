@@ -44,8 +44,7 @@ class App(object):
             config.Config.instance().set_profiles(self.user_login.profiles)
             if config.get_settings()["camera"]["enabled"]:
                 self.camera_controller = camera_controller.CameraController()
-            if config.get_settings()['cloud_sync']['enabled']:
-                self.cloud_sync_controller = cloud_sync_controller.CloudSyncController()
+            self.cloud_sync_controller = cloud_sync_controller.CloudSyncController()
 
     def init_interface(self):
         if config.get_settings()['web_interface']['enabled']:

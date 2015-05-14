@@ -9,10 +9,8 @@ import config
 
 class CloudSyncController:
 
-    if config.get_settings()['cloud_sync']['enabled']:
-        CLOUDSYNC_MODULE = 'cloud_sync.py'
-    else:
-        CLOUDSYNC_MODULE = None
+    enabled = config.get_settings()['cloud_sync']['enabled']
+    CLOUD_SYNC_MODULE = 'cloud_sync.py'
 
     def __init__(self):
         self.logger = logging.getLogger("app." + __name__)
@@ -20,9 +18,9 @@ class CloudSyncController:
         self.start_cloud_sync_process()
 
     def start_cloud_sync_process(self):
-        self.logger.info('Launching CloudSync subprocess')
-        if self.CLOUDSYNC_MODULE:
-            cs_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), self.CLOUDSYNC_MODULE)
+        if self.enabled and self.CLOUD_SYNC_MODULE:
+            self.logger.info('Launching CloudSync subprocess')
+            cs_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), self.CLOUD_SYNC_MODULE)
             try:
                 self.camera_process = subprocess.Popen([sys.executable, cs_path])
             except Exception as e:

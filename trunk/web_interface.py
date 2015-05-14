@@ -92,7 +92,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 page = self.read_file('web_interface/groups_warning.html')
             if self.server.app.updater and self.server.app.updater.update_flag:
                 page = page.replace('get_updates" style="display:none"', 'get_updates"')
-            if config.get_settings()['cloud_sync']['enabled']:
+            if self.server.app.cloud_sync_controller.enabled:
                 page = page.replace('open_cloudsync_folder" style="display:none"', 'open_cloudsync_folder"')
         return page
 
