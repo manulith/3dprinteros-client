@@ -111,7 +111,7 @@ class USBDetector:
                 vid_of_comport = vid_of_comport.zfill(4).upper()
                 pid_of_comport = pid_of_comport.zfill(4).upper()
                 if vid == vid_of_comport and pid == pid_of_comport:
-                    if snr and not 'SNR=' + snr in port_dct[2].upper():
+                    if snr and not 'SNR=' + snr.upper() in port_dct[2].upper():
                         continue
                     self.unused_serial_ports.remove(port_dct)
                     return port_dct[0]
