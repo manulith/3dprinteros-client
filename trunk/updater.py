@@ -65,20 +65,28 @@ class Updater:
     def update(self):
         if self.update_flag:
             self.logger.info('Updating client...')
+            update_file_name = config.get_settings()['update']['update_file_name']
             try:
-                update_file_name = config.get_settings()['update']['update_file_name']
                 urllib.urlretrieve(config.get_settings()['update']['update_file_url'] + update_file_name, update_file_name)
-                z = zipfile.ZipFile(update_file_name)
-                z.extractall()
-                z.close()
-                os.remove(update_file_name)
             except Exception as e:
-                error = "Update failed! " + str(e)
+                error = 'Update failed!\nReason: error while downloading.\nDetails: ' + str(e)
                 self.logger.error(error, exc_info=True)
                 return error
             else:
+                error = self.extract_update(update_file_name)
+                if error:
+                    return error
                 self.logger.info('...client successfully updated!')
                 self.update_flag = False
+
+    def extract_update(self, update_file_name):
+        try:
+            z = zipfile.ZipFile(update_file_name)
+            z.extractall()
+            z.close()
+            os.remove(update_file_name)
+        except Exception as e:
+            return 'Update failed!\nReason: error while extracting.\nDetails: ' + str(e)
 
 
 if __name__ == '__main__':

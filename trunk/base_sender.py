@@ -18,8 +18,11 @@ class BaseSender:
         self.usb_info = usb_info
         self.error_code = None
         self.error_message = ''
-        self.temps = [0,0]
-        self.target_temps = [0,0]
+        self.temps = [0]
+        self.target_temps = [0]
+        for _ in range(0, profile['extruder_count']):
+            self.temps.append(0)
+            self.target_temps.append(0)
         self.total_gcodes = None
         self.buffer = collections.deque()
         self.downloading_flag = False

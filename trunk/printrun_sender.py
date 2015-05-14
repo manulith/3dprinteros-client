@@ -141,13 +141,15 @@ class Sender(BaseSender):
         #self.logger.debug("Executing command: " + command)
         self.last_line = command
         if 'M104' in command or 'M109' in command:
-            tool = 0
             tool_match = re.match('.+T(\d+)', command)
             if tool_match:
-                tool = int(tool_match.group(1))
+                tool = int(tool_match.group(1)) + 1
+            else:
+                tool = 1
             temp_match = re.match('.+S([\d\.]+)', command)
             if temp_match:
-                self.target_temps[tool + 1] = float(temp_match.group(1))
+                if not tool >= len(self.target_temps):
+                    self.target_temps[tool] = float(temp_match.group(1))
         elif 'M140' in command or 'M190' in command:
             temp_match = re.match('.+S([\d\.]+)', command)
             if temp_match:
