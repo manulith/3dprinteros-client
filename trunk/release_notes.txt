@@ -1,5 +1,11 @@
 3DPrinterOS release notes
 
+Next version
+
+    Fixed getting paths for CloudSync
+    Upgraded CloudSync launching and control schema
+    Fixed camera switching page
+
 5.0.0
 
     Refactoring of almost all code

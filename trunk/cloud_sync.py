@@ -22,10 +22,7 @@ import config
 
 class Cloudsync:
 
-    if sys.platform.startswith('win32'):
-        HOME_PATH = os.environ.get('HOMEPATH')
-    else:
-        HOME_PATH = os.environ.get('HOME')
+    HOME_PATH = os.path.expanduser('~')
     PATH = join(HOME_PATH, 'CloudSync')
     SENDED_PATH = join(PATH, 'Successful')
     UNSENDABLE_PATH = join(PATH, 'Failed')

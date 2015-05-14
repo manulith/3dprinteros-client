@@ -553,6 +553,10 @@ def _setup_prototypes(lib):
     lib.libusb_get_device_address.argtypes = [c_void_p]
     lib.libusb_get_device_address.restype = c_uint8
 
+    # uint8_t libusb_get_device_speed(libusb_device *dev)
+    lib.libusb_get_device_speed.argtypes = [c_void_p]
+    lib.libusb_get_device_speed.restype = c_uint8
+
     try:
         # uint8_t libusb_get_port_number(libusb_device *dev)
         lib.libusb_get_port_number.argtypes = [c_void_p]
@@ -715,6 +719,7 @@ class _LibUSB(usb.backend.IBackend):
         _check(self.lib.libusb_get_device_descriptor(dev.devid, byref(dev_desc)))
         dev_desc.bus = self.lib.libusb_get_bus_number(dev.devid)
         dev_desc.address = self.lib.libusb_get_device_address(dev.devid)
+        dev_desc.speed = self.lib.libusb_get_device_speed(dev.devid)
 
         # Only available in newer versions of libusb
         try:

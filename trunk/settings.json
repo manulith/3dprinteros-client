@@ -28,7 +28,7 @@
     "default": "Dual camera"
   },
   "cloud_sync": {
-    "enabled": false,
+    "enabled": true,
     "max_send_retry": 10,
     "virtual_drive_enabled": true,
     "log_file": "3dprinteros_cloudsync.log"

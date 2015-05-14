@@ -46,6 +46,7 @@ __author__ = 'Wander Lairson Costa'
 
 import operator
 import array
+from sys import hexversion
 import usb._interop as _interop
 
 # descriptor type
@@ -88,6 +89,13 @@ _CTRL_DIR_MASK = 0x80
 
 # For compatibility between Python 2 and 3
 _dummy_s = '\x00'.encode('utf-8')
+
+# speed type
+SPEED_LOW = 1
+SPEED_FULL = 2
+SPEED_HIGH = 3
+SPEED_SUPER = 4
+SPEED_UNKNOWN = 0
 
 def endpoint_address(address):
     r"""Return the endpoint absolute address.
@@ -270,4 +278,7 @@ def get_string(dev, index, langid = None):
                 index,
                 langid
             )
-    return buf[2:buf[0]].tostring().decode('utf-16-le')
+    if hexversion >= 0x03020000:
+        return buf[2:buf[0]].tobytes().decode('utf-16-le')
+    else:
+        return buf[2:buf[0]].tostring().decode('utf-16-le')

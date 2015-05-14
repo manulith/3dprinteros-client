@@ -92,7 +92,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 page = self.read_file('web_interface/groups_warning.html')
             if self.server.app.updater and self.server.app.updater.update_flag:
                 page = page.replace('get_updates" style="display:none"', 'get_updates"')
-            if config.get_settings()['cloud_sync']['enabled']:
+            if self.server.app.cloud_sync_controller.enabled:
                 page = page.replace('open_cloudsync_folder" style="display:none"', 'open_cloudsync_folder"')
         return page
 
@@ -187,9 +187,10 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         if hasattr(self.server.app, 'camera_controller'):
             modules = self.server.app.camera_controller.CAMERA_MODULES
             module_selector_html = ''
+            print(self.server.app.camera_controller.current_camera_name + 'KURWA!')
             for module in modules.keys():
-                if modules[module] == self.server.app.camera_controller.current_camera_name:
-                    modules_select = modules_select + '<p><input type="radio" disabled> <font color="lightgrey">' + module + '</font></p>'
+                if module == self.server.app.camera_controller.current_camera_name:
+                    module_selector_html += '<p><input type="radio" disabled> <font color="lightgrey">' + module + '</font></p>'
                 else:
                     module_selector_html += '<p><input type="radio" name="module" value="' + module + '"> ' + module + '</p>'
             page = open(os.path.join(self.working_dir, 'web_interface/choose_cam.html')).read()
