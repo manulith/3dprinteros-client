@@ -29,6 +29,7 @@ class CloudSyncController:
     def stop_cloud_sync_process(self):
         if self.cloud_sync_process:
             self.cloud_sync_process.terminate()
+            self.logger.info('CloudSync is stopped')
 
     def open_cloud_sync_folder(self):
         path = os.path.abspath(cloud_sync.Cloudsync.PATH)
