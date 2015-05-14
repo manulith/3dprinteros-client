@@ -89,6 +89,8 @@ class USBDetector:
                 serial_number = self.get_snr_by_serial_port_name(serial_port_name)
                 printer_info['COM'] = serial_port_name
                 printer_info['SNR'] = serial_number
+
+        self.all_devices = []
         return printers_info
 
     def get_snr_by_serial_port_name(self, serial_port_name):
