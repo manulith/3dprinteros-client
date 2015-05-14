@@ -126,7 +126,7 @@ class App(object):
     def quit(self):
         self.logger.info("Starting exit sequence...")
         if hasattr(self, 'cloud_sync'):
-            self.cloud_sync.terminate()
+            self.cloud_sync_controller.stop_cloud_sync_process()
         if hasattr(self, 'camera_controller'):
             self.camera_controller.stop_camera_process()
         for pi in self.printer_interfaces:
