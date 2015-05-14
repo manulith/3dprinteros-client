@@ -8,6 +8,9 @@
     New unhandled exceptions catcher/logger
     utils was split in several separate modules
     New printer detection algorithm
+    Fixed getting paths for CloudSync
+    Upgraded CloudSync launching and control schema
+    Fixed camera switching page
 
 4.8.0
     Add client reboot ability
