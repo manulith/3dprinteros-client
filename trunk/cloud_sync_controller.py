@@ -22,7 +22,7 @@ class CloudSyncController:
             self.logger.info('Launching CloudSync subprocess')
             cs_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), self.CLOUD_SYNC_MODULE)
             try:
-                self.camera_process = subprocess.Popen([sys.executable, cs_path])
+                self.cloud_sync_process = subprocess.Popen([sys.executable, cs_path])
             except Exception as e:
                 self.logger.warning('Could not launch CloudSync due to error:\n' + str(e))
 

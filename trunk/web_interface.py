@@ -187,10 +187,9 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         if hasattr(self.server.app, 'camera_controller'):
             modules = self.server.app.camera_controller.CAMERA_MODULES
             module_selector_html = ''
-            print(self.server.app.camera_controller.current_camera_name + 'KURWA!')
             for module in modules.keys():
                 if module == self.server.app.camera_controller.current_camera_name:
-                    module_selector_html += '<p><input type="radio" disabled> <font color="lightgrey">' + module + '</font></p>'
+                    module_selector_html += '<p><input type="radio" disabled> <font color="lightgrey" title="Current live view mode">' + module + '</font></p>'
                 else:
                     module_selector_html += '<p><input type="radio" name="module" value="' + module + '"> ' + module + '</p>'
             page = open(os.path.join(self.working_dir, 'web_interface/choose_cam.html')).read()
@@ -207,9 +206,9 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             body = urllib.unquote(body).decode('utf8')
             body = body.split('module=')[-1]
             self.server.app.camera_controller.switch_camera(body)
-            message = 'Live view type switched to ' + body
+            message = 'Live view mode switched to ' + body
         else:
-            message = 'Live view type not chosen'
+            message = 'Live view mode not chosen'
         self.write_message(message)
 
     def get_updates(self):

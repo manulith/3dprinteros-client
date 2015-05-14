@@ -3,8 +3,6 @@
 
 import time
 import signal
-import logging
-import traceback
 import platform
 
 import log
