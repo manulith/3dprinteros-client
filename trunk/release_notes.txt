@@ -1,19 +1,19 @@
 3DPrinterOS release notes
 
-Next version
-
-    Fixed getting paths for CloudSync
-    Upgraded CloudSync launching and control schema
-    Fixed camera switching page
-
 5.0.0
 
+    Cameras now uses single thread and single http connection, greatly decreases cpu usage for bot client and server
+    New printer detection algorithm, support multiprinting even if pyusb can't read serial number
+    Console/Joysting support
+    Bug of cancel during loading gcode, was fixed
+    Fixed camera switching page
     Refactoring of almost all code
-    Profiles now are stored in memory
+    Profiles now are stored in memory(for better stability and cleaner code)
     General config reimplementataion(singleton)
-    New unhandled exceptions catcher/logger
+    New unhandled exceptions catcher/logger(100% of code covered)
     utils was split in several separate modules
-    New printer detection algorithm
+    Upgraded CloudSync launching and control schema
+    Fix of path get for CloudSync
     
 4.8.6
 
