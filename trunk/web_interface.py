@@ -41,18 +41,18 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             return f.read()
 
     def write_with_autoreplace(self, page, response=200, headers = {}):
+        page = page.replace('!!!VERSION!!!', 'Client v.' + version.version + ', build ' + version.build)
+        page = page.replace('3DPrinterOS', '3DPrinterOS Client v.' + version.version)
+        url = self.URL.replace('cli-', '')
+        page = page.replace('!!!URL!!!', url)
         try:
-            page = page.replace('!!!VERSION!!!', 'Client v.' + version.version + ', build ' + version.build)
-            page = page.replace('3DPrinterOS', '3DPrinterOS Client v.' + version.version)
-            url = self.URL.replace('cli-', '')
-            page = page.replace('!!!URL!!!', url)
             self.send_response(response)
             for keyword, value in headers.iteritems():
                 self.send_header(keyword, value)
             self.end_headers()
             self.wfile.write(page)
         except Exception as e:
-            self.logger.error(str(e.message))
+            self.logger.error('Error while writing page: ' + str(e))
 
     def do_GET(self):        
         self.logger.info("Server GET")
@@ -90,7 +90,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 page = self.read_file('web_interface/conveyor_warning.html')
             if not rights.is_user_groups():
                 page = self.read_file('web_interface/groups_warning.html')
-            if self.server and self.server.app and self.server.app.updater and self.server.app.updater.update_flag:
+            if self.server.app.updater.update_flag:
                 page = page.replace('get_updates" style="display:none"', 'get_updates"')
             if self.server.app.cloud_sync_controller.enabled:
                 page = page.replace('open_cloudsync_folder" style="display:none"', 'open_cloudsync_folder"')

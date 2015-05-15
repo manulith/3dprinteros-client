@@ -37,9 +37,7 @@ class App(object):
         self.detected_printers = []
         self.printer_interfaces = []
         self.stop_flag = False
-        self.updater = None
-        if config.get_settings()['update']['enabled']:
-            self.updater = updater.Updater()
+        self.updater = updater.Updater()
         self.user_login = user_login.UserLogin(self)
         self.init_interface()
         if self.user_login.wait_for_login():
@@ -71,8 +69,7 @@ class App(object):
         self.detector = usb_detect.USBDetector()
         self.http_client = http_client.HTTPClient()
         while not self.stop_flag:
-            if self.updater:
-                self.updater.timer_check_for_updates()
+            self.updater.timer_check_for_updates()
             self.time_stamp()
             self.detected_printers = self.detector.get_printers_list()
             self.check_and_connect()
