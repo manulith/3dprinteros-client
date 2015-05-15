@@ -121,7 +121,8 @@ class Sender(BaseSender):
 
     def get_position(self):
         parser_pos = self.get_position_from_parser()
-        self.position = [parser_pos[3], parser_pos[4], parser_pos[2]]  # setting to xyz sequence format
+        if parser_pos:
+            self.position = [parser_pos[3], parser_pos[4], parser_pos[2]]  # setting to xyz sequence format
 
     def emergency_stop(self):
         self.cancel(False)
