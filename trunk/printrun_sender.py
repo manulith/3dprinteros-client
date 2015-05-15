@@ -95,7 +95,7 @@ class Sender(BaseSender):
     def define_regexps(self):
         # ok T:29.0 /29.0 B:29.5 /29.0 @:0
         self.temp_re = re.compile('.*T:([\d\.]+) /([\d\.]+) B:(-?[\d\.]+) /(-?[\d\.]+)')
-        #self.position_re = re.compile('.*X:([\d\.]+) Y:([\d\.]+) Z:([\d\.]+).*')
+        self.position_re = re.compile('.*X:([\d\.]+) Y:([\d\.]+) Z:([\d\.]+).*')
         # M190 - T:26.34 E:0 B:33.7
         # M109 - T:26.3 E:0 W:?
         #self.wait_tool_temp_re = re.compile('T:([\d\.]+) E:(\d+)')
@@ -125,10 +125,9 @@ class Sender(BaseSender):
             platform_target_temp = float(match.group(4))
             self.temps = [platform_temp, tool_temp]
             self.target_temps = [platform_target_temp, tool_target_temp]
-        #match = self.position_re.match(line)
-        #if match:
-        #    self.position = [ match.group(0), match.group(1), match.group(2) ]
-        #self.logger.debug(self.debug_position())
+        match = self.position_re.match(line)
+        if match:
+            self.position = [ match.group(0), match.group(1), match.group(2) ]
 
     def recvcb(self, line):
         #self.logger.debug(line)
@@ -234,6 +233,7 @@ class Sender(BaseSender):
         else:
             for gcode in self.preprocess_gcodes(gcodes):
                 self.printcore.send_now(gcode)
+            self.printcore.send_now('M114')
             return True
 
     def is_paused(self):

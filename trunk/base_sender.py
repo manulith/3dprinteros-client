@@ -18,6 +18,7 @@ class BaseSender:
         self.usb_info = usb_info
         self.error_code = None
         self.error_message = ''
+        self.position = [0, 0, 0]  # X, Y, Z
         self.temps = [0]
         self.target_temps = [0]
         for _ in range(0, profile['extruder_count']):
@@ -64,6 +65,9 @@ class BaseSender:
         else:
             gcodes = base64.b64decode(gcodes)
             self.unbuffered_gcodes(gcodes)
+
+    def get_position(self):
+        return self.position
 
     @log.log_exception
     def download_thread(self, link):
