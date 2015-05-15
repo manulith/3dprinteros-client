@@ -11,7 +11,6 @@ import config
 
 class Updater:
 
-    enabled = config.config['update']['enabled']
     auto_update_flag = config.config['update']['auto_update_enabled']
     check_pause = config.config['update']['check_pause']
 
@@ -28,7 +27,7 @@ class Updater:
             self.check_for_updates()
 
     def check_for_updates(self):
-        if self.enabled and self.new_version_available():
+        if config.config['update']['enabled'] and self.new_version_available():
             self.logger.info('Updates available!')
             self.update_flag = True
             self.auto_update()
