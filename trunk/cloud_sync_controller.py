@@ -9,7 +9,6 @@ import config
 
 class CloudSyncController:
 
-    enabled = config.get_settings()['cloud_sync']['enabled']
     CLOUD_SYNC_MODULE = 'cloud_sync.py'
 
     def __init__(self):
@@ -18,7 +17,7 @@ class CloudSyncController:
         self.start_cloud_sync_process()
 
     def start_cloud_sync_process(self):
-        if self.enabled and self.CLOUD_SYNC_MODULE:
+        if config.get_settings()['cloud_sync']['enabled'] and self.CLOUD_SYNC_MODULE:
             self.logger.info('Launching CloudSync subprocess')
             cs_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), self.CLOUD_SYNC_MODULE)
             try:
