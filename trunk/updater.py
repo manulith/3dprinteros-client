@@ -27,7 +27,7 @@ class Updater:
             self.check_for_updates()
 
     def check_for_updates(self):
-        if config.config['update']['enabled'] and self.new_version_available():
+        if config.get_settings()['update']['enabled'] and self.new_version_available():
             self.logger.info('Updates available!')
             self.update_flag = True
             self.auto_update()
