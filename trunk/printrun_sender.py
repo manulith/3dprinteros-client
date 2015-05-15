@@ -228,6 +228,14 @@ class Sender(BaseSender):
     def emergency_stop(self):
         self.printcore.reset()
 
+    def unbuffered_gcodes(self, gcodes):
+        if self.printcore.printing:
+            return False
+        else:
+            for gcode in self.preprocess_gcodes(gcodes):
+                self.printcore.send_now(gcode)
+            return True
+
     def is_paused(self):
         return self.printcore.paused
 
