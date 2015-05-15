@@ -60,6 +60,12 @@ FunctionEnd
 !insertmacro MUI_RESERVEFILE_LANGDLL
 
 Section "3DPrinterOS Client" Section1
+	
+	FindProcDLL::FindProc "pythonw.exe"
+	IntCmp $R0 1 0 notRunning
+			MessageBox MB_OK|MB_ICONEXCLAMATION "${APPNAME} or another Python application is running. Please close it first" /SD IDOK
+			Abort
+	notRunning:
 
 	; Set Section properties
 	SetOverwrite on
@@ -112,7 +118,7 @@ SectionEnd
 ;Uninstall section
 Section Uninstall	
 	
-	FindProcDLL::FindProc "python.exe"
+	FindProcDLL::FindProc "pythonw.exe"
 	IntCmp $R0 1 0 notRunning
 			MessageBox MB_OK|MB_ICONEXCLAMATION "${APPNAME} or another Python application is running. Please close it first" /SD IDOK
 			Abort
