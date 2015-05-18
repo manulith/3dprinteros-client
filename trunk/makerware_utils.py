@@ -3,7 +3,7 @@ import sys
 import time
 import signal
 import logging
-from subprocess import Popen, PIPE
+from subprocess import Popen
 
 def detect_makerware_paths():
     logger = logging.getLogger('app')
@@ -79,20 +79,19 @@ def kill_existing_conveyor():
             pids = []
             conveyor_svc_path = None
             for id in pid:  # List of processes here, should be 2 processes as usual
-                if 'sudo' in pid:  # Convenient task for parsing conveyor-svc path
+                id = id.split()
+                # sudo -u conveyor LD_LIBRARY_PATH=/usr/lib/makerbot/ /usr/bin/conveyor-svc --config /etc/conveyor.conf
+                if 'sudo' in id:  # Convenient task for parsing conveyor-svc path
                     conveyor_svc_path = id[8]
                     if conveyor_svc_path.startswith('/') and conveyor_svc_path.endswith('conveyor-svc'):
-                        logger.info('Got conveyor service path: %s. Applying "chmod -x"') % conveyor_svc_path
+                        logger.info('Got conveyor service path: {0}. Applying "chmod -x"'.format(conveyor_svc_path))
                 pids.append(id[0])
             pids_sting = ' '.join(pids)
             if conveyor_svc_path and pids_sting:
-                command = 'sudo chmod -x %s && kill -9 %s' % (conveyor_svc_path, pids_sting)
-                p = Popen('xterm -e "%s"', shell=True, stdout=PIPE, stderr=PIPE) % command
-                stdout, stderr = p.communicate()
-                if stdout:
-                    logger.info('Adding to Linux groups result: ' + stdout)
+                command = 'sudo chmod -x %s && sudo kill -9 %s' % (conveyor_svc_path, pids_sting)
+                p = Popen('xterm -e "{0}"'.format(command), shell=True)
             else:
-                logger.info('Cannot get conveyor path or pids:\nconveyor_path: %s\nconveyor_pids: %s') % (str(conveyor_svc_path), str(pids))
+                logger.info('Cannot get conveyor path or pids:\nconveyor_path: {0}\nconveyor_pids: {1}'.format(str(conveyor_svc_path), str(pids)))
         elif sys.platform.startswith('darwin'):
             makerware_path = detect_makerware_paths()
             command = os.path.join(makerware_path, 'stop_conveyor_service')
