@@ -86,7 +86,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 page = page.replace('!!!LOGIN!!!', login)
             if makerware_utils.get_conveyor_pid():
                 page = self.read_file('web_interface/conveyor_warning.html')
-            if not rights.is_user_groups():
+            if rights.groups_warning_flag and not rights.is_user_groups():
                 page = self.read_file('web_interface/groups_warning.html')
             if self.server.app.updater.update_flag:
                 page = page.replace('get_updates" style="display:none"', 'get_updates"')
@@ -155,6 +155,8 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.kill_conveyor()
         elif self.path.find('add_user_groups') >= 0:
             self.add_user_groups()
+        elif self.path.find('ignore_groups_warning') >= 0:
+            self.ignore_groups_warning()
         elif self.path.find('get_updates') >= 0:
             self.get_updates()
         elif self.path.find('update_software') >= 0:
@@ -233,6 +235,10 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         page = self.read_file('web_interface/show_logs.html')
         page = page.replace('!!!LOGS!!!', content)
         self.write_with_autoreplace(page)
+
+    def ignore_groups_warning(self):
+        rights.groups_warning_flag = False
+        self.do_GET()
 
     def add_user_groups(self):
         rights.add_user_groups()

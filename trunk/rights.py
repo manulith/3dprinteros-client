@@ -5,6 +5,7 @@ from subprocess import Popen, PIPE
 
 import config
 
+groups_warning_flag = True
 
 def is_admin():
     import ctypes, os
