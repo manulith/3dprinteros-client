@@ -228,10 +228,10 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         log_file = config.get_settings()['log_file']
         logs = log.get_file_tail(log_file)
         content = ''
-        if not content:
-            content = 'No logs'
         for line in logs:
             content = content + line + '<br>'
+        if not content:
+            content = 'No logs'
         page = self.read_file('web_interface/show_logs.html')
         page = page.replace('!!!LOGS!!!', content)
         self.write_with_autoreplace(page)

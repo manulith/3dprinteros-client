@@ -19,6 +19,7 @@ LOG_SNAPSHOT_LINES = 200
 
 LOG_FILE = "3dprinteros_client.log"
 EXCEPTIONS_LOG_FILE = 'critical_errors.log'
+CLOUD_SYNC_LOG_FILE = '3dprinteros_cloudsync.log'
 LOG_SNAPSHOTS_DIR = 'log_snapshots'
 
 def create_logger(logger_name, log_file_name=None):
@@ -66,7 +67,7 @@ def make_full_log_snapshot():
     for path in possible_paths:
         for log in os.listdir(path):
             try:
-                if log.startswith(LOG_FILE) or log.startswith(EXCEPTIONS_LOG_FILE):
+                if log.startswith(LOG_FILE) or log.startswith(EXCEPTIONS_LOG_FILE) or log.startswith(CLOUD_SYNC_LOG_FILE):
                     log_files.append(os.path.join(path, log))
             except Exception:
                 continue
