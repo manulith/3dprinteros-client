@@ -12,6 +12,7 @@ import string
 from os.path import join
 from subprocess import Popen, PIPE
 
+import log
 import requests
 import log
 import paths
@@ -20,6 +21,7 @@ import user_login
 import http_client
 import config
 
+#dirty hack to switch system default encoding to UTF-8
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
@@ -39,7 +41,7 @@ class Cloudsync:
     CONNECTION_TIMEOUT = 6
 
     def __init__(self):
-        self.logger = log.create_logger('cloud_sync', config.get_settings()['cloud_sync']['log_file'])
+        self.logger = log.create_logger('cloud_sync', log.CLOUD_SYNC_LOG_FILE)
         signal.signal(signal.SIGINT, self.intercept_signal)
         signal.signal(signal.SIGTERM, self.intercept_signal)
         self.mswin = sys.platform.startswith('win')
