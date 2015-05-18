@@ -41,9 +41,10 @@ class USBDetector:
         self.all_devices = list(devices)
 
     def detect_serial_ports(self):
-        serial_ports = serial.tools.list_ports.comports()
+        serial_ports = list(serial.tools.list_ports.comports())
         self.all_serial_ports = serial_ports
         self.unused_serial_ports = filter(lambda x: x[2] != "n/a", serial_ports)
+
 
     def get_printers_list(self):
         self.detect_devices()
@@ -85,16 +86,15 @@ class USBDetector:
             #logger.debug(device_dct)
         for printer_info in printers_info:
             if not printer_info['SNR']:
-                serial_port_name = self.get_serial_port_name(printer_info['VID'], printer_info['PID'], None)
-                serial_number = self.get_snr_by_serial_port_name(serial_port_name)
+                serial_port_name = self.get_serial_port_name(printer_info['VID'], printer_info['PID'], None)                
+                serial_number = self.get_snr_by_serial_port_name(serial_port_name)                
                 printer_info['COM'] = serial_port_name
                 printer_info['SNR'] = serial_number
-
         self.all_devices = []
         return printers_info
 
-    def get_snr_by_serial_port_name(self, serial_port_name):
-        for port_dct in self.all_serial_ports:
+    def get_snr_by_serial_port_name(self, serial_port_name):        
+        for port_dct in self.all_serial_ports:            
             if port_dct[0] == serial_port_name:
                 vid_pid_snr_string = port_dct[2]
                 match = self.serial_number_re.match(vid_pid_snr_string)
@@ -136,4 +136,3 @@ if __name__ == '__main__':
     print "\nDevices with serial port:"
     for printer in printers:
         print printer
-
