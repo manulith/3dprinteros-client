@@ -83,7 +83,9 @@ def prepare_logs_to_send():
     for fname in log_files:
         shutil.copyfile(fname, os.path.join(log_snapshots_dir, os.path.basename(fname)))
 
-def compress_and_send(user_token, log_file_names=[]):
+def compress_and_send(user_token, log_file_names=None):
+    if not log_file_names:
+        log_file_names = []
     logger = logging.getLogger('app.' + __name__)
     log_snapshots_dir = os.path.join(paths.get_paths_to_settings_folder()[0], LOG_SNAPSHOTS_DIR)
     zip_file_name = time.strftime("%Y_%m_%d___%H_%M_%S", time.localtime()) + ".zip"
