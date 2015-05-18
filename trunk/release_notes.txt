@@ -14,7 +14,7 @@
     utils was split in several separate modules
     Upgraded CloudSync launching and control schema
     Fix of path get for CloudSync
-    Log sender upgraded
+    Logs sender upgraded
     
 4.8.6
 
