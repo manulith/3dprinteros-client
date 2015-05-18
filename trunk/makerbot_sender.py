@@ -148,13 +148,16 @@ class Sender(BaseSender):
         self.logger.info("...done closing makerbot sender.")
 
     def unbuffered_gcodes(self, gcodes):
-        if self.printing_flag:
+        self.logger.info("Gcodes for unbuffered execution: " + str(gcodes))
+        if self.printing_flag or self.pause_flag:
+            self.logger.warning("Can't execute gcodes - wrong mode")
             return False
         else:
             if not self.parser.state.values.get("build_name"):
                 self.parser.state.values["build_name"] = '3DPrinterOS'
             for gcode in self.preprocess_gcodes(gcodes):
                 self.execute(gcode)
+            self.logger.info("Gcodes were sent to printer")
             return True
 
     def execute(self, command):

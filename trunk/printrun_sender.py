@@ -228,12 +228,15 @@ class Sender(BaseSender):
         self.printcore.reset()
 
     def unbuffered_gcodes(self, gcodes):
+        self.logger.info("Gcodes for unbuffered execution: " + str(gcodes))
         if self.printcore.printing:
+            self.logger.warning("Can't execute gcodes - wrong mode")
             return False
         else:
             for gcode in self.preprocess_gcodes(gcodes):
                 self.printcore.send_now(gcode)
             self.printcore.send_now('M114')
+            self.logger.info("Gcodes were sent to printer")
             return True
 
     def is_paused(self):
