@@ -1,7 +1,7 @@
 {
   "URL": "cli-cloud.3dprinteros.com",
   "HTTPS": true,
-  "linux_rights_warning": false,
+  "linux_rights_warning": true,
   "max_download_retry": 3,
   "web_interface": {
     "enabled": true,
@@ -28,7 +28,6 @@
   "cloud_sync": {
     "enabled": true,
     "max_send_retry": 10,
-    "virtual_drive_enabled": true,
-    "log_file": "3dprinteros_cloudsync.log"
+    "virtual_drive_enabled": true
   }
 }

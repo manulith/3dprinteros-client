@@ -55,7 +55,7 @@ def log_exception(func_or_methon):
             return result
     return decorator
 
-def make_full_log_snapshot():
+def prepare_logs_to_send():
     log_files = []
     logger = logging.getLogger("app." + __name__)
     for handler in logger.handlers:
@@ -83,10 +83,12 @@ def make_full_log_snapshot():
     for fname in log_files:
         shutil.copyfile(fname, os.path.join(log_snapshots_dir, os.path.basename(fname)))
 
-def compress_and_send(user_token, log_file_names=[]):
+def compress_and_send(user_token, log_file_names=None):
+    if not log_file_names:
+        return
     logger = logging.getLogger('app.' + __name__)
     log_snapshots_dir = os.path.join(paths.get_paths_to_settings_folder()[0], LOG_SNAPSHOTS_DIR)
-    zip_file_name = time.strftime("%Y_%m_%d___%H_%M_%S", time.localtime()) + ".log" + ".zip"
+    zip_file_name = time.strftime("%Y_%m_%d___%H_%M_%S", time.localtime()) + ".zip"
     for number, name in enumerate(log_file_names):
         log_file_names[number] = os.path.abspath(os.path.join(log_snapshots_dir, name))
     zip_file_name_path = os.path.abspath(os.path.join(log_snapshots_dir, zip_file_name))
@@ -103,8 +105,6 @@ def compress_and_send(user_token, log_file_names=[]):
     else:
         get_path = http_client.HTTPClient()
         url = 'https://' + get_path.URL + get_path.token_send_logs_path
-        #if http_client.multipart_upload(url, {"token": read_token()}, {'files': file}):
-            #os.remove(LOG_SNAPSHOTS_DIR + '/' + log_file_name)
         user_token = {'user_token': user_token}
         logger.info('Sending logs to %s' % url)
         with open(zip_file_name_path, 'rb') as f:
@@ -122,7 +122,7 @@ def compress_and_send(user_token, log_file_names=[]):
             return result
 
 def send_logs(user_token):
-    make_full_log_snapshot()
+    prepare_logs_to_send()
     log_snapshots_dir = os.path.join(paths.get_paths_to_settings_folder()[0], LOG_SNAPSHOTS_DIR)
     try:
         snapshot_files = os.listdir(log_snapshots_dir)
