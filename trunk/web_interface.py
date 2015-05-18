@@ -87,7 +87,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 page = page.replace('!!!LOGIN!!!', login)
             if makerware_utils.get_conveyor_pid():
                 page = self.read_file('web_interface/conveyor_warning.html')
-            if rights.groups_warning_flag and not rights.is_user_groups():
+            if rights.groups_warning_flag and rights.need_user_groups():
                 page = self.read_file('web_interface/groups_warning.html')
             if self.server.app.updater.update_flag:
                 page = page.replace('get_updates" style="display:none"', 'get_updates"')
