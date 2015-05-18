@@ -6,16 +6,14 @@ import hashlib
 import logging
 import threading
 import BaseHTTPServer
-import subprocess
 from SocketServer import ThreadingMixIn
 
-import log
 import paths
 import rights
 import makerware_utils
 import version
 import config
-import cloud_sync
+import log
 
 
 class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
@@ -225,7 +223,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.write_message(message)
 
     def show_logs(self):
-        log_file = config.get_settings()['log_file']
+        log_file = log.LOG_FILE
         logs = log.get_file_tail(log_file)
         content = ''
         for line in logs:
