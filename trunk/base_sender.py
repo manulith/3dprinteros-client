@@ -139,7 +139,7 @@ class BaseSender:
     def upload_logs(self):
         log.make_full_log_snapshot()
         self.logger.info("Sending logs")
-        log.send_all_snapshots(config.get_app().user_login.user_token)
+        log.send_logs(config.get_app().user_login.user_token)
         self.logger.info("Done")
 
     def switch_camera(self, module):
