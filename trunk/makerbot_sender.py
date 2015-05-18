@@ -22,7 +22,6 @@ class Sender(BaseSender):
     def __init__(self, profile, usb_info):
         BaseSender.__init__(self, profile, usb_info)
         self.logger = logging.getLogger('app.' + __name__)
-        #self.logger.setLevel('INFO')
         self.logger.info('Makerbot printer created')
         self.init_target_temp_regexps()
         self.execution_lock = threading.Lock()
@@ -58,7 +57,7 @@ class Sender(BaseSender):
         self.extruder_ttemp_regexp = re.compile('\s*M104\s*S(\d+)\s*T(\d+)')
 
     def append_position_and_lift_extruder(self):
-        position = self.get_position()
+        position = self.request_position_from_printer()
         if position:
             with self.buffer_lock:
                 self.buffer.appendleft('G1 Z' + str(position[2]) + ' A' + str(position[3]) + ' B' + str(position[4]))
@@ -111,13 +110,18 @@ class Sender(BaseSender):
         else:
             return False
 
-    def get_position(self):
+    def request_position_from_printer(self):
         position = self.parser.state.position.ToList()
         if position[2] is None or position[3] is None or position[4] is None:
-            self.logger.warning("Can't get current tool position to execute extruder lift")
-            # TODO check this is real print(can cause misprints)
-            # self.position = self.execute(lambda: self.parser.s3g.get_extended_position())
-            return position
+            #self.logger.warning("Can't get current tool position to execute extruder lift") #spam
+            pass
+        else:
+            # setting to xyz sequence format, zero is for compatibility
+            self.position = [position[3], position[4], position[2], 0]
+            return self.position
+
+    def get_position(self):
+        return self.position
 
     def emergency_stop(self):
         self.cancel(False)
@@ -141,6 +145,19 @@ class Sender(BaseSender):
                 time.sleep(0.1)
                 self.parser.s3g.close()
         self.logger.info("...done closing makerbot sender.")
+
+    def unbuffered_gcodes(self, gcodes):
+        self.logger.info("Gcodes for unbuffered execution: " + str(gcodes))
+        if self.printing_flag or self.pause_flag:
+            self.logger.warning("Can't execute gcodes - wrong mode")
+            return False
+        else:
+            if not self.parser.state.values.get("build_name"):
+                self.parser.state.values["build_name"] = '3DPrinterOS'
+            for gcode in self.preprocess_gcodes(gcodes):
+                self.execute(gcode)
+            self.logger.info("Gcodes were sent to printer")
+            return True
 
     def execute(self, command):
         buffer_overflow_counter = 0
@@ -198,7 +215,7 @@ class Sender(BaseSender):
         self.temps = [platform_temp, head_temp1, head_temp2]
         self.target_temps = [platform_ttemp, head_ttemp1, head_ttemp2]
         # self.mb            = self.execute(lambda: self.parser.s3g.get_motherboard_status())
-        #self.position      = self.execute(lambda: self.parser.s3g.get_extended_position())
+        self.position      = self.execute(lambda: self.parser.s3g.get_extended_position())
 
     def reset(self):
         self.buffer.clear()
@@ -224,7 +241,6 @@ class Sender(BaseSender):
             extruder_number = int(result.group(2)) + 1
             self.target_temps[extruder_number] = int(result.group(1))
             self.logger.info('Heating toolhead ' + str(extruder_number) + ' to ' + str(result.group(1)))
-
 
     @log.log_exception
     def send_gcodes(self):

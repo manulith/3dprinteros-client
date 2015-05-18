@@ -95,7 +95,7 @@ class Sender(BaseSender):
     def define_regexps(self):
         # ok T:29.0 /29.0 B:29.5 /29.0 @:0
         self.temp_re = re.compile('.*T:([\d\.]+) /([\d\.]+) B:(-?[\d\.]+) /(-?[\d\.]+)')
-        #self.position_re = re.compile('.*X:([\d\.]+) Y:([\d\.]+) Z:([\d\.]+).*')
+        self.position_re = re.compile('.*X:([\d\.]+) Y:([\d\.]+) Z:([\d\.]+) E:([\d\.]+).*')
         # M190 - T:26.34 E:0 B:33.7
         # M109 - T:26.3 E:0 W:?
         #self.wait_tool_temp_re = re.compile('T:([\d\.]+) E:(\d+)')
@@ -109,6 +109,8 @@ class Sender(BaseSender):
         while not self.stop_flag:
             if counter >= steps_in_cycle:
                 self.printcore.send_now('M105')
+                time.sleep(0.01)
+                self.printcore.send_now('M114')
                 time.sleep(0.01)
                 counter = 0
             time.sleep(wait_step)
@@ -125,10 +127,9 @@ class Sender(BaseSender):
             platform_target_temp = float(match.group(4))
             self.temps = [platform_temp, tool_temp]
             self.target_temps = [platform_target_temp, tool_target_temp]
-        #match = self.position_re.match(line)
-        #if match:
-        #    self.position = [ match.group(0), match.group(1), match.group(2) ]
-        #self.logger.debug(self.debug_position())
+        match = self.position_re.match(line)
+        if match:
+            self.position = [ match.group(0), match.group(1), match.group(2), match.group(3) ]
 
     def recvcb(self, line):
         #self.logger.debug(line)
@@ -227,6 +228,18 @@ class Sender(BaseSender):
 
     def emergency_stop(self):
         self.printcore.reset()
+
+    def unbuffered_gcodes(self, gcodes):
+        self.logger.info("Gcodes for unbuffered execution: " + str(gcodes))
+        if self.printcore.printing:
+            self.logger.warning("Can't execute gcodes - wrong mode")
+            return False
+        else:
+            for gcode in self.preprocess_gcodes(gcodes):
+                self.printcore.send_now(gcode)
+            self.printcore.send_now('M114')
+            self.logger.info("Gcodes were sent to printer")
+            return True
 
     def is_paused(self):
         return self.printcore.paused

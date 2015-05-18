@@ -18,6 +18,7 @@ class BaseSender:
         self.usb_info = usb_info
         self.error_code = None
         self.error_message = ''
+        self.position = [0, 0, 0, 0]  # X, Y, Z, E
         self.temps = [0]
         self.target_temps = [0]
         for _ in range(0, profile['extruder_count']):
@@ -28,7 +29,8 @@ class BaseSender:
         self.downloading_flag = False
         self.downloader = None
         self.current_line_number = 0
-        #self._position = [0.00,0.00,0.00]
+        self.loading_gcodes_flag = False
+        self.cancel_after_loading_flag = False
 
     def set_total_gcodes(self, length):
         raise NotImplementedError
@@ -61,7 +63,10 @@ class BaseSender:
                 self.download_gcodes_and_print(gcodes)
         else:
             gcodes = base64.b64decode(gcodes)
-            self.load_gcodes(gcodes)
+            self.unbuffered_gcodes(gcodes)
+
+    def get_position(self):
+        return self.position
 
     @log.log_exception
     def download_thread(self, link):
@@ -72,10 +77,13 @@ class BaseSender:
                 with open(gcode_file_name, 'rb') as f:
                     gcodes = f.read()
                 try:
+                    self.loading_gcodes_flag = True
                     self.load_gcodes(gcodes)  # Derived class method call, for example makerbot_sender.load_gcodes(gcodes)
                 except Exception as e:
                     self.error_code = 37
                     self.error_message = "Exception occured when printrun was parsing gcodes. Corrupted gcodes? " + str(e)
+                finally:
+                    self.loading_gcodes_flag = False
                 self.logger.info('Gcodes loaded to memory, deleting temp file')
             try:
                 os.remove(gcode_file_name)
@@ -84,6 +92,9 @@ class BaseSender:
             self.downloader = None
             self.logger.info('Download thread has been closed')
             self.downloading_flag = False
+            if self.cancel_after_loading_flag:
+                self.cancel()
+                self.cancel_after_loading_flag = False
 
     def is_downloading(self):
         return self.downloading_flag
@@ -91,6 +102,9 @@ class BaseSender:
     def cancel_download(self):
         self.downloading_flag = False
         self.logger.info("File downloading has been cancelled")
+        if self.loading_gcodes_flag:
+            self.logger.info("Gcodes loading in progress. Setting flag to cancel print right after load.")
+            self.cancel_after_loading_flag = True
 
     def get_temps(self):
         return self.temps
