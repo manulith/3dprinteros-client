@@ -6,6 +6,7 @@ import sys
 import time
 import zipfile
 import logging
+import logging.handlers
 import traceback
 import shutil
 
@@ -33,6 +34,7 @@ def create_logger(logger_name, log_file_name=None):
             file_handler.setFormatter(logging.Formatter('%(levelname)s\t%(asctime)s\t%(threadName)s/%(funcName)s\t%(message)s'))
             file_handler.setLevel(logging.DEBUG)
             logger.addHandler(file_handler)
+            print "File logger created: " + log_file_name
         except Exception as e:
             logger.debug('Could not create log file because' + e.message + '\n.No log mode.')
     return logger
