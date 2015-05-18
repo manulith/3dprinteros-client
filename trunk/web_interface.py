@@ -253,9 +253,8 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.write_with_autoreplace(page)
 
     def send_logs(self):
-        making_result = log.make_full_log_snapshot()
-        sending_result = log.send_all_snapshots(self.server.app.user_login.user_token)
-        if making_result and sending_result:
+        error = log.send_logs(self.server.app.user_login.user_token)
+        if not error:
             message = 'Logs successfully sent'
         else:
             message = 'Error while sending logs'

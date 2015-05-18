@@ -7,6 +7,7 @@ import time
 import zipfile
 import logging
 import traceback
+import shutil
 #import cloghandler
 
 import paths
@@ -54,44 +55,21 @@ def log_exception(func_or_methon):
             return result
     return decorator
 
-def make_log_snapshot():
-    logger = logging.getLogger("app." + __name__)
-    with open(LOG_FILE) as log_file:
-        log_text = "3DPrinterOS %s_%s_%s\n" % (version.version, version.build, version.commit)
-        log_text += tail(log_file, LOG_SNAPSHOT_LINES)
-    if not os.path.exists(LOG_SNAPSHOTS_DIR):
-        try:
-            os.mkdir(LOG_SNAPSHOTS_DIR)
-        except IOError:
-            logger.warning("Can't create directory %s" % LOG_SNAPSHOTS_DIR)
-            return
-    while True:
-        filename = time.strftime("%Y_%m_%d___%H_%M_%S", time.localtime()) + ".log"
-        path = os.path.join(LOG_SNAPSHOTS_DIR, filename)
-        if os.path.exists(path):
-            time.sleep(1)
-        else:
-            break
-    with open(path, "w") as log_snap_file:
-        log_snap_file.write(log_text)
-    return path
-
 def make_full_log_snapshot():
+    log_files = []
     logger = logging.getLogger("app." + __name__)
     for handler in logger.handlers:
         handler.flush()
     possible_paths = [os.path.abspath(os.path.dirname(__file__))]
     if sys.platform.startswith('linux'):
         possible_paths.append(os.path.abspath(os.path.expanduser("~")))
-    log_files = []
     for path in possible_paths:
         for log in os.listdir(path):
             try:
-                if log.startswith(LOG_FILE) or log.startswith(errors.EXCEPTIONS_LOG):
-                    log_files.append(log)
+                if log.startswith(LOG_FILE) or log.startswith(EXCEPTIONS_LOG_FILE):
+                    log_files.append(os.path.join(path, log))
             except Exception:
                 continue
-    #logger.info('Files to log : ' + str(log_files))
     if not log_files:
         logger.info('Log files was not created for some reason. Nothing to send')
         return
@@ -101,31 +79,23 @@ def make_full_log_snapshot():
             os.mkdir(log_snapshots_dir)
         except Exception as e:
             logger.warning("Can't create directory %s" % log_snapshots_dir)
-            return
-    filename = time.strftime("%Y_%m_%d___%H_%M_%S", time.localtime()) + ".log"
-    file_path = os.path.abspath(os.path.join(log_snapshots_dir, filename))
-    logger.info('Creating snapshot file : ' + file_path)
-    with open(file_path, 'w') as outfile:
-        for fname in log_files:
-            with open(fname, 'r') as infile:
-                outfile.write('/////\nLog file:\n' + fname + '\n/////\n')  # See if logs are concatenated in right order
-                for line in infile:
-                    outfile.write(line)
-            outfile.write('\n')
-    return filename
+            return e
+    for fname in log_files:
+        shutil.copyfile(fname, os.path.join(log_snapshots_dir, os.path.basename(fname)))
 
-def compress_and_send(user_token, log_file_name=None):
+def compress_and_send(user_token, log_file_names=[]):
     logger = logging.getLogger('app.' + __name__)
     log_snapshots_dir = os.path.join(paths.get_paths_to_settings_folder()[0], LOG_SNAPSHOTS_DIR)
-    if not log_file_name:
-        log_file_name = LOG_FILE
-    zip_file_name = log_file_name + ".zip"
-    log_file_name_path = os.path.abspath(os.path.join(log_snapshots_dir, log_file_name))
+    zip_file_name = time.strftime("%Y_%m_%d___%H_%M_%S", time.localtime()) + ".log" + ".zip"
+    for number, name in enumerate(log_file_names):
+        log_file_names[number] = os.path.abspath(os.path.join(log_snapshots_dir, name))
     zip_file_name_path = os.path.abspath(os.path.join(log_snapshots_dir, zip_file_name))
     logger.info('Creating zip file : ' + zip_file_name)
     try:
         zf = zipfile.ZipFile(zip_file_name_path, mode='w')
-        zf.write(log_file_name_path, os.path.basename(log_file_name), compress_type=zipfile.ZIP_DEFLATED)
+        for name in log_file_names:
+            if not name.endswith('zip'):
+                zf.write(name, os.path.basename(name), compress_type=zipfile.ZIP_DEFLATED)
         zf.close()
     except Exception as e:
         logger.warning("Error while creating logs archive " + zip_file_name)
@@ -139,30 +109,30 @@ def compress_and_send(user_token, log_file_name=None):
         logger.info('Sending logs to %s' % url)
         with open(zip_file_name_path, 'rb') as f:
             files = {'file_data': f}
+            print(zip_file_name_path)
             r = requests.post(url, data=user_token, files=files)
         result = r.text
         logger.info("Log sending response: " + result)
         os.remove(zip_file_name_path)
         if '"success":true' in result:
-            os.remove(os.path.join(log_file_name_path))
+            for name in log_file_names:
+                os.remove(name)
         else:
             logger.warning('Error while sending logs: %s' % result)
             return result
 
-def send_all_snapshots(user_token):
+def send_logs(user_token):
+    make_full_log_snapshot()
     log_snapshots_dir = os.path.join(paths.get_paths_to_settings_folder()[0], LOG_SNAPSHOTS_DIR)
     try:
-        snapshot_dir = os.listdir(log_snapshots_dir)
+        snapshot_files = os.listdir(log_snapshots_dir)
     except OSError:
         logging.info("No logs snapshots to send")
     else:
-        for file_name in snapshot_dir:
-            #print '\n\n%s\n\n' % str(file_name)
-            if not file_name.endswith('zip'):
-                error = compress_and_send(user_token, file_name)
-                if error:
-                    return False
-        return True
+        #print '\n\n%s\n\n' % str(file_name)
+        error = compress_and_send(user_token, snapshot_files)
+        if error:
+            return error
 
 def tail(f, lines=200):
     total_lines_wanted = lines
