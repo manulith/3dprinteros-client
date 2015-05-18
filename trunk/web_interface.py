@@ -38,15 +38,16 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         with open(os.path.join(self.working_dir, path_in_cwd)) as f:
             return f.read()
 
-    def write_with_autoreplace(self, page, response=200, headers = {}):
+    def write_with_autoreplace(self, page, response=200, headers = None):
         page = page.replace('!!!VERSION!!!', 'Client v.' + version.version + ', build ' + version.build)
         page = page.replace('3DPrinterOS', '3DPrinterOS Client v.' + version.version)
         url = self.URL.replace('cli-', '')
         page = page.replace('!!!URL!!!', url)
         try:
             self.send_response(response)
-            for keyword, value in headers.iteritems():
-                self.send_header(keyword, value)
+            if headers:
+                for keyword, value in headers.iteritems():
+                    self.send_header(keyword, value)
             self.end_headers()
             self.wfile.write(page)
         except Exception as e:
