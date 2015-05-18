@@ -57,7 +57,7 @@ class Sender(BaseSender):
         self.extruder_ttemp_regexp = re.compile('\s*M104\s*S(\d+)\s*T(\d+)')
 
     def append_position_and_lift_extruder(self):
-        position = self.get_position_from_parser()
+        position = self.request_position_from_printer()
         if position:
             with self.buffer_lock:
                 self.buffer.appendleft('G1 Z' + str(position[2]) + ' A' + str(position[3]) + ' B' + str(position[4]))
@@ -110,18 +110,18 @@ class Sender(BaseSender):
         else:
             return False
 
-    def get_position_from_parser(self):
+    def request_position_from_printer(self):
         position = self.parser.state.position.ToList()
         if position[2] is None or position[3] is None or position[4] is None:
-            self.logger.warning("Can't get current tool position to execute extruder lift")
-            # TODO check this is real print(can cause misprints)
-            # self.position = self.execute(lambda: self.parser.s3g.get_extended_position())
-            return position
+            #self.logger.warning("Can't get current tool position to execute extruder lift") #spam
+            pass
+        else:
+            # setting to xyz sequence format, zero is for compatibility
+            self.position = [position[3], position[4], position[2], 0]
+            return self.position
 
     def get_position(self):
-        parser_pos = self.get_position_from_parser()
-        if parser_pos:
-            self.position = [parser_pos[3], parser_pos[4], parser_pos[2], 0]  # setting to xyz sequence format, zero is for compatibility
+        return self.position
 
     def emergency_stop(self):
         self.cancel(False)
