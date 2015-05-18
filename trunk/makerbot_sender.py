@@ -22,7 +22,6 @@ class Sender(BaseSender):
     def __init__(self, profile, usb_info):
         BaseSender.__init__(self, profile, usb_info)
         self.logger = logging.getLogger('app.' + __name__)
-        #self.logger.setLevel('INFO')
         self.logger.info('Makerbot printer created')
         self.init_target_temp_regexps()
         self.execution_lock = threading.Lock()
@@ -122,7 +121,7 @@ class Sender(BaseSender):
     def get_position(self):
         parser_pos = self.get_position_from_parser()
         if parser_pos:
-            self.position = [parser_pos[3], parser_pos[4], parser_pos[2]]  # setting to xyz sequence format
+            self.position = [parser_pos[3], parser_pos[4], parser_pos[2], 0]  # setting to xyz sequence format, zero is for compatibility
 
     def emergency_stop(self):
         self.cancel(False)
@@ -216,7 +215,7 @@ class Sender(BaseSender):
         self.temps = [platform_temp, head_temp1, head_temp2]
         self.target_temps = [platform_ttemp, head_ttemp1, head_ttemp2]
         # self.mb            = self.execute(lambda: self.parser.s3g.get_motherboard_status())
-        #self.position      = self.execute(lambda: self.parser.s3g.get_extended_position())
+        self.position      = self.execute(lambda: self.parser.s3g.get_extended_position())
 
     def reset(self):
         self.buffer.clear()

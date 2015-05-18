@@ -95,7 +95,7 @@ class Sender(BaseSender):
     def define_regexps(self):
         # ok T:29.0 /29.0 B:29.5 /29.0 @:0
         self.temp_re = re.compile('.*T:([\d\.]+) /([\d\.]+) B:(-?[\d\.]+) /(-?[\d\.]+)')
-        self.position_re = re.compile('.*X:([\d\.]+) Y:([\d\.]+) Z:([\d\.]+).*')
+        self.position_re = re.compile('.*X:([\d\.]+) Y:([\d\.]+) Z:([\d\.]+) E:([\d\.]+).*')
         # M190 - T:26.34 E:0 B:33.7
         # M109 - T:26.3 E:0 W:?
         #self.wait_tool_temp_re = re.compile('T:([\d\.]+) E:(\d+)')
@@ -127,7 +127,7 @@ class Sender(BaseSender):
             self.target_temps = [platform_target_temp, tool_target_temp]
         match = self.position_re.match(line)
         if match:
-            self.position = [ match.group(0), match.group(1), match.group(2) ]
+            self.position = [ match.group(0), match.group(1), match.group(2), match.group(3) ]
 
     def recvcb(self, line):
         #self.logger.debug(line)

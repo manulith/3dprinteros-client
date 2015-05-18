@@ -18,7 +18,7 @@ class BaseSender:
         self.usb_info = usb_info
         self.error_code = None
         self.error_message = ''
-        self.position = [0, 0, 0]  # X, Y, Z
+        self.position = [0, 0, 0, 0]  # X, Y, Z
         self.temps = [0]
         self.target_temps = [0]
         for _ in range(0, profile['extruder_count']):
@@ -31,7 +31,6 @@ class BaseSender:
         self.current_line_number = 0
         self.loading_gcodes_flag = False
         self.cancel_after_loading_flag = False
-        #self._position = [0.00,0.00,0.00]
 
     def set_total_gcodes(self, length):
         raise NotImplementedError
