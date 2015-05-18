@@ -110,6 +110,8 @@ class Sender(BaseSender):
             if counter >= steps_in_cycle:
                 self.printcore.send_now('M105')
                 time.sleep(0.01)
+                self.printcore.send_now('M114')
+                time.sleep(0.01)
                 counter = 0
             time.sleep(wait_step)
             counter += 1
