@@ -69,7 +69,7 @@ def read_login():
 def write_login(login, password):
     logger = logging.getLogger('app.' + __name__)
     package_name = 'login_info.bin'  # probably it shoud be read from config
-    path = paths.SETTINGS_FOLDER_PATH
+    path = paths.current_settings_folder()
     try:
         result = pack_login_zip(package_name, path, login, password)
     except Exception as e:

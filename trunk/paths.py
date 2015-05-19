@@ -63,8 +63,9 @@ def get_paths_to_settings_folder():
     else:
         raise EnvironmentError('Could not detect OS. Only GNU/LINUX, MAC OS X and MS WIN VISTA/7/8 are supported.')
     local_path = os.path.dirname(os.path.abspath(__file__))
+    if not os.path.exists(path):
+        os.mkdir(path)
     return (path, local_path)
 
-SETTINGS_FOLDER_PATH = get_paths_to_settings_folder()[0]
-if not os.path.exists(SETTINGS_FOLDER_PATH):
-    os.mkdir(SETTINGS_FOLDER_PATH)
+def current_settings_folder():
+    return get_paths_to_settings_folder()[0]

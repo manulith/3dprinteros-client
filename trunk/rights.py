@@ -1,11 +1,10 @@
 import os
 import sys
 import logging
+import time
 from subprocess import Popen, PIPE
 
 import config
-
-groups_warning_flag = True
 
 def is_admin():
     import ctypes, os
@@ -14,25 +13,6 @@ def is_admin():
     except:
         is_admin = ctypes.windll.shell32.IsUserAnAdmin()
     return is_admin
-
-def need_user_groups():
-    logger = logging.getLogger('app')
-    if sys.platform.startswith('linux') and config.get_settings()['linux_rights_warning']:
-        p = Popen('groups', stdout=PIPE, stderr=PIPE)
-        stdout, stderr = p.communicate()
-        groups = stdout
-        if not ('tty' in groups and 'dialout' in groups and 'usbusers' in groups):
-            logger.info('Current Linux user is not in tty and dialout groups')
-            return True
-
-def add_user_groups():
-    logger = logging.getLogger('app')
-    if sys.platform.startswith('linux') and not is_admin():
-        Popen('groupadd usbusers')
-        p = Popen('xterm -e "sudo usermod -a -G dialout,tty,usbusers $USER"', shell=True, stdout=PIPE, stderr=PIPE)
-        stdout, stderr = p.communicate()
-        if stdout:
-            logger.info('Adding to Linux groups result: ' + stdout)
 
 def launch_suprocess(file_name):
     logger = logging.getLogger('app')
@@ -45,3 +25,36 @@ def launch_suprocess(file_name):
         logger.warning('Could not launch ' + file_name + ' as subprocess due to error:\n' + e.message)
     else:
         return process
+
+class RightsCheckerAndWaiter:
+
+    def __init__(self, app):
+        self.logger = logging.getLogger('app')
+        self.app = app
+        self.need = False
+        self.check()
+        self.wait()
+
+    def wait(self):
+        while not self.app:
+            time.sleep(0.1)
+            if not self.need:
+                break
+
+    def check(self):
+        if sys.platform.startswith('linux') and config.get_settings()['linux_rights_warning']:
+            p = Popen('groups', stdout=PIPE, stderr=PIPE)
+            stdout, stderr = p.communicate()
+            groups = stdout
+            if not ('tty' in groups and 'dialout' in groups and 'usbusers' in groups):
+                self.logger.info('Current Linux user is not in tty and dialout groups')
+                self.need = True
+
+    def add_user_groups(self):
+        if sys.platform.startswith('linux') and not is_admin():
+            Popen('groupadd usbusers')
+            p = Popen('xterm -e "sudo usermod -a -G dialout,tty,usbusers $USER"', shell=True, stdout=PIPE, stderr=PIPE)
+            stdout, stderr = p.communicate()
+            if stdout:
+                self.logger.info('Adding to Linux groups result: ' + stdout)
+            self.need = False

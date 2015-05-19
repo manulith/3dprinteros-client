@@ -18,10 +18,10 @@ from os.path import join
 
 LOG_SNAPSHOT_LINES = 200
 
-LOG_FILE = join(paths.SETTINGS_FOLDER_PATH, "3dprinteros_client.log")
-EXCEPTIONS_LOG_FILE = join(paths.SETTINGS_FOLDER_PATH, 'critical_errors.log')
-CLOUD_SYNC_LOG_FILE = join(paths.SETTINGS_FOLDER_PATH, '3dprinteros_cloudsync.log')
-LOG_SNAPSHOTS_DIR = join(paths.SETTINGS_FOLDER_PATH, 'log_snapshots')
+LOG_FILE = join(paths.current_settings_folder(), "3dprinteros_client.log")
+EXCEPTIONS_LOG_FILE = join(paths.current_settings_folder(), 'critical_errors.log')
+CLOUD_SYNC_LOG_FILE = join(paths.current_settings_folder(), '3dprinteros_cloudsync.log')
+LOG_SNAPSHOTS_DIR = join(paths.current_settings_folder(), 'log_snapshots')
 
 def create_logger(logger_name, log_file_name=None):
     logger = logging.getLogger(logger_name)
