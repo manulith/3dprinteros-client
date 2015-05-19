@@ -18,6 +18,8 @@
     Logs writing path changed to user folder
     Linux rights warning schema upgraded
     User folder path for Darwin fixed
+    ZMorph code updated to 5.0.0 architecture
+    Makerbot conveyor service killing for linux
 
 4.8.6
 
