@@ -20,6 +20,7 @@
     User folder path for Darwin fixed
     ZMorph code updated to 5.0.0 architecture
     Makerbot conveyor service killing for linux
+    Fix of exit sequence for printrun gcode sender
 
 4.8.6
 
