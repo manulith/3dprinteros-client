@@ -3,7 +3,7 @@ import sys
 import time
 import signal
 import logging
-from subprocess import Popen
+from subprocess import Popen, PIPE
 
 def detect_makerware_paths():
     logger = logging.getLogger('app')
@@ -87,7 +87,7 @@ def kill_existing_conveyor():
             pids_sting = ' '.join(pids)
             if conveyor_svc_path and pids_sting:
                 command = 'sudo chmod -x %s && sudo kill -9 %s' % (conveyor_svc_path, pids_sting)
-                p = Popen('xterm -e "{0}"'.format(command), shell=True)
+                p = Popen('xterm -e "{0}"'.format(command), shell=True, stdout=PIPE, stderr=PIPE)
                 stdout, stderr = p.communicate()
                 if stdout:
                     print 'STDOUT: ' + stdout
