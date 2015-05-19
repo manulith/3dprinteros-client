@@ -15,6 +15,7 @@
     Upgraded CloudSync launching and control schema
     Fix of path get for CloudSync
     Logs sender upgraded
+    Logs writing path changed to user folder
     
 4.8.6
 

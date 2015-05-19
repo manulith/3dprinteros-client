@@ -28,7 +28,7 @@ def need_user_groups():
 def add_user_groups():
     logger = logging.getLogger('app')
     if sys.platform.startswith('linux') and not is_admin():
-        Popen(['groupadd', 'usbusers'])
+        Popen('groupadd usbusers')
         p = Popen('xterm -e "sudo usermod -a -G dialout,tty,usbusers $USER"', shell=True, stdout=PIPE, stderr=PIPE)
         stdout, stderr = p.communicate()
         if stdout:
