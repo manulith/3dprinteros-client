@@ -89,7 +89,8 @@ def kill_existing_conveyor():
                 command = 'sudo chmod -x %s && sudo kill -9 %s' % (conveyor_svc_path, pids_sting)
                 p = Popen('xterm -e "{0}"'.format(command), shell=True)
                 while not p.poll():
-                    time.sleep(0.1)
+                    time.sleep(0.5)
+                    print '+++Polling...'
                 print 'RETURNCODE : ' + str(p.returncode)
             else:
                 logger.info('Cannot get conveyor path or pids:\nconveyor_path: {0}\nconveyor_pids: {1}'.format(str(conveyor_svc_path), str(pids)))
