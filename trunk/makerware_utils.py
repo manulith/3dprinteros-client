@@ -88,7 +88,7 @@ def kill_existing_conveyor():
             if conveyor_svc_path and pids_sting:
                 command = 'sudo chmod -x %s && sudo kill -9 %s' % (conveyor_svc_path, pids_sting)
                 p = Popen('xterm -e "{0}"'.format(command), shell=True)
-                while p.poll() is None:
+                while p.poll() is None:  # Returns 0 when finished
                     time.sleep(0.1)
                 # Returned code is 0 either user closes the console or enters pass.
                 # But if console was closed, message and button to kill still on place and can be done again
