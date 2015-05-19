@@ -31,30 +31,37 @@ class RightsCheckerAndWaiter:
     def __init__(self, app):
         self.logger = logging.getLogger('app')
         self.app = app
-        self.need = False
+        self.waiting = False
         self.check()
-        self.wait()
 
     def wait(self):
-        while not self.app:
+        while not self.app.stop_flag:
             time.sleep(0.1)
-            if not self.need:
+            if not self.waiting:
                 break
 
     def check(self):
         if sys.platform.startswith('linux') and config.get_settings()['linux_rights_warning']:
-            p = Popen('groups', stdout=PIPE, stderr=PIPE)
-            stdout, stderr = p.communicate()
-            groups = stdout
-            if not ('tty' in groups and 'dialout' in groups and 'usbusers' in groups):
+            self.logger.info('Checking Linux rights')
+            result = self.execute_command('groups')
+            if not ('tty' in result and 'dialout' in result and 'usbusers' in result):
                 self.logger.info('Current Linux user is not in tty and dialout groups')
-                self.need = True
+                self.waiting = True
 
     def add_user_groups(self):
         if sys.platform.startswith('linux') and not is_admin():
-            Popen('groupadd usbusers')
-            p = Popen('xterm -e "sudo usermod -a -G dialout,tty,usbusers $USER"', shell=True, stdout=PIPE, stderr=PIPE)
-            stdout, stderr = p.communicate()
+            self.execute_command(['groupadd', 'usbusers'])
+            self.execute_command('xterm -e "sudo usermod -a -G dialout,tty,usbusers $USER"', shell=True)
+            self.waiting = False
+
+    def execute_command(self, command, shell=False):
+        self.logger.info('Executing command: ' + str(command))
+        try:
+            process = Popen(command, shell=shell, stdout=PIPE, stderr=PIPE)
+        except Exception as e:
+            self.logger.warning('Error while executing command "' + command + '\n' + str(e))
+        else:
+            stdout, stderr = process.communicate()
             if stdout:
-                self.logger.info('Adding to Linux groups result: ' + stdout)
-            self.need = False
+                self.logger.info('Executing result: ' + stdout)
+                return stdout
