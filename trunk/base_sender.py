@@ -50,8 +50,7 @@ class BaseSender:
             while gcodes[-1] in ("\n", "\r\n", "\t", " ", "", None):
                 line = gcodes.pop()
                 self.logger.info("Removing corrupted line '%s' from gcodes tail" % line)
-        length = len(gcodes)
-        self.logger.info('Got %d gcodes to print.' % length)
+        self.logger.info('Got %d gcodes to print.' % len(gcodes))
         return gcodes
 
     def gcodes(self, gcodes, is_link = False):
@@ -78,10 +77,8 @@ class BaseSender:
                     gcodes = f.read()
                 try:
                     self.loading_gcodes_flag = True
-                    self.set_total_gcodes(len(gcodes))
                     self.load_gcodes(gcodes)  # Derived class method call, for example makerbot_sender.load_gcodes(gcodes)
                 except Exception as e:
-                    self.set_total_gcodes(0)
                     self.error_code = 37
                     self.error_message = "Exception occured when printrun was parsing gcodes. Corrupted gcodes? " + str(e)
                 finally:

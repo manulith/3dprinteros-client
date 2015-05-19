@@ -338,6 +338,7 @@ class Sender(base_sender.BaseSender):
             self.logger.warning('Got gcodes command while job is not finished. Skipping.')
             return False
         gcodes = gcodes.split('\n')
+        self.set_total_gcodes(len(gcodes))
         with self.buffer_lock:
             for line in gcodes:
                 line = line.replace('\n', '')
