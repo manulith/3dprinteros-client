@@ -50,6 +50,7 @@ class RightsCheckerAndWaiter:
 
     def add_user_groups(self):
         if sys.platform.startswith('linux') and not is_admin():
+            self.logger.info('Adding Linux user to necessary groups')
             self.execute_command(['groupadd', 'usbusers'])
             self.execute_command('xterm -e "sudo usermod -a -G dialout,tty,usbusers $USER"', shell=True)
             self.waiting = False
