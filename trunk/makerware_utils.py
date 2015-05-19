@@ -89,9 +89,10 @@ def kill_existing_conveyor():
                 command = 'sudo chmod -x %s && sudo kill -9 %s' % (conveyor_svc_path, pids_sting)
                 p = Popen('xterm -e "{0}"'.format(command), shell=True)
                 while p.poll() is None:
-                    time.sleep(0.5)
-                    print '+++Polling...'
-                print 'RETURNCODE : ' + str(p.returncode)
+                    time.sleep(0.1)
+                # Returned code is 0 either user closes the console or enters pass.
+                # But if console was closed, message and button to kill still on place and can be done again
+                logger.info('Xterm process returned code: ') + str(p.returncode)
             else:
                 logger.info('Cannot get conveyor path or pids:\nconveyor_path: {0}\nconveyor_pids: {1}'.format(str(conveyor_svc_path), str(pids)))
         elif sys.platform.startswith('darwin'):
