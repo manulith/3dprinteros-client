@@ -53,13 +53,12 @@ def get_libusb_path(lib):
 
 def get_paths_to_settings_folder():
     abs_path_to_users_home = os.path.abspath(os.path.expanduser("~"))
+    folder_name = '.3dprinteros'
     if sys.platform.startswith('win'):
         abs_path_to_appdata = os.path.abspath(os.getenv('APPDATA'))
-        path = os.path.join(abs_path_to_appdata, '3DPrinterOS')
-    elif sys.platform.startswith('linux'):
-        path = os.path.join(abs_path_to_users_home, ".3DPrinterOS")
-    elif sys.platform.startswith('darwin'):
-        path = os.path.join(abs_path_to_users_home, "Library", "Application Support", "3DPrinterOS")
+        path = os.path.join(abs_path_to_appdata, '3dprinteros')
+    elif sys.platform.startswith('linux') or sys.platform.startswith('darwin'):
+        path = os.path.join(abs_path_to_users_home, folder_name)
     else:
         raise EnvironmentError('Could not detect OS. Only GNU/LINUX, MAC OS X and MS WIN VISTA/7/8 are supported.')
     local_path = os.path.dirname(os.path.abspath(__file__))
