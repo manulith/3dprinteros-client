@@ -26,7 +26,7 @@ LOG_SNAPSHOTS_DIR = join(paths.current_settings_folder(), 'log_snapshots')
 def create_logger(logger_name, log_file_name=None):
     logger = logging.getLogger(logger_name)
     logger.propagate = False
-    logger.setLevel(logging.INFO)
+    logger.setLevel(logging.DEBUG)
     std_handler = logging.StreamHandler(stream=sys.stdout)
     std_handler.setLevel(logging.DEBUG)
     logger.addHandler(std_handler)
