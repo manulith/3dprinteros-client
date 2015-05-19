@@ -16,9 +16,9 @@
     Fix of path get for CloudSync
     Logs sender upgraded
     Logs writing path changed to user folder
-    Linux makerware conveyor service killing add
-    ZMorph code updated to 5.0.0 architecture
-    
+    Linux rights warning schema upgraded
+    User folder path for Darwin fixed
+
 4.8.6
 
     Updater logic upgraded
