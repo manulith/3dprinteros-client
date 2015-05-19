@@ -287,7 +287,8 @@ class Sender(BaseSender):
 
     def disconnect_printcore(self):
         self.logger.info("Disconnecting printcore...")
-        self.printcore.printer.close()
+        if self.printcore.printer:
+            self.printcore.printer.close()
         self.printcore.disconnect()
         self.logger.info("...done")
 
@@ -309,11 +310,6 @@ class Sender(BaseSender):
         self.logger.info('Printrun sender disconnectiong from printer...')
         if self.printcore:
             port = None
-            if not self.printcore.printer:
-                try:
-                    port = serial.Serial(self.profile['COM'], timeout=0.1) #it a hack to prevent printrun hanging on disconnect
-                except:
-                    pass
             self.disconnect_printcore()
             if port:
                 port.close()
