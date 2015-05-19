@@ -83,7 +83,7 @@ class DualCameraMaster:
                 return result
 
     def make_shot(self, capture):
-        self.logger.debug("Capturing frame from " + str(capture))
+        #self.logger.debug("Capturing frame from " + str(capture))
         index = self.captures.index(capture)
         state, frame = capture.read()
         if state and frame.any():
@@ -96,7 +96,7 @@ class DualCameraMaster:
                 frame = self.cv2.resize(frame, (self.X_RESOLUTION, self.Y_RESOLUTION))
             except Exception as e:
                 self.resized[index] = True
-                self.logger.warning("Error while software resize of frame: " + str(e))
+                #self.logger.warning("Error while software resize of frame: " + str(e))
         encode_param = [int(self.cv2.IMWRITE_JPEG_QUALITY), self.image_quality]
         try:
             result, encoded_frame = self.cv2.imencode(self.image_extension, frame, encode_param)
@@ -106,14 +106,14 @@ class DualCameraMaster:
         if state and result:
             data = self.np.array(encoded_frame)
             string_data = data.tostring()
-            self.logger.debug("Successfully captured and encoded from" + str(capture))
+            #self.logger.debug("Successfully captured and encoded from" + str(capture))
             return string_data
 
     def send_frame(self, number, frame):
         frame = base64.b64encode(str(frame))
         number = number + 1
         message = self.user_token, number, "Camera" + str(number), frame
-        self.logger.debug("Camera %d sending frame to server..." % number)
+        #self.logger.debug("Camera %d sending frame to server..." % number)
         answer = self.http_client.pack_and_send('camera', *message)
         if answer:
             self.logger.debug("...success")

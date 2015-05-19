@@ -131,7 +131,6 @@ class Sender(BaseSender):
 
     def recvcb(self, line):
         #self.logger.debug(line)
-        print line
         if line.startswith('T:'):
             self.fetch_temps(line)
             self.online_flag = True
@@ -140,7 +139,6 @@ class Sender(BaseSender):
         match = self.position_re.match(line)
         if match:
             self.position = [float(match.group(1)), float(match.group(2)), float(match.group(3)), float(match.group(4))]
-            print self.position
 
     def sendcb(self, command, gline):
         #self.logger.debug("Executing command: " + command)
