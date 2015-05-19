@@ -4,12 +4,12 @@ import threading
 import usb.core
 import usb.util
 import usb.backend.libusb1
-import utils
+import paths
 import collections
 import time
 import base_sender
 import sys
-utils.init_path_to_libs()
+paths.init_path_to_libs()
 
 TEMP_REQUEST_WAIT = 5
 PAUSE_LIFT_HEIGHT = 5
@@ -76,7 +76,7 @@ class Sender(base_sender.BaseSender):
         pass
 
     def connect(self):
-        backend_from_our_directory = usb.backend.libusb1.get_backend(find_library=utils.get_libusb_path)
+        backend_from_our_directory = usb.backend.libusb1.get_backend(find_library=paths.get_libusb_path)
         self.dev = usb.core.find(idVendor=self.int_vid, idProduct=self.int_pid, backend=backend_from_our_directory)
         if sys.platform.startswith('linux'):  # TODO: test at mac this too
             # Checking and claiming interface 0 - interrupt interface for command sending
