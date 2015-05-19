@@ -64,8 +64,6 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.quit_main_app()
         elif self.path.find('show_logs') >=0:
             self.show_logs()
-        elif self.path.find('download_logs') >= 0:
-            self.download_logs()
         else:
             page = self.form_main_page()
             self.write_with_autoreplace(page)
@@ -252,10 +250,6 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         else:
             message = '3DPrinterOS was unable to stop conveyor.'        
         self.write_message(message)
-
-    def download_logs(self):
-        page = self.read_file('web_interface/download_logs.html')
-        self.write_with_autoreplace(page)
 
     def send_logs(self):
         error = log.send_logs(self.server.app.user_login.user_token)
