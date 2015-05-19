@@ -85,7 +85,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 page = page.replace('!!!LOGIN!!!', login)
             if makerware_utils.get_conveyor_pid():
                 page = self.read_file('web_interface/conveyor_warning.html')
-            if self.server.app.rights_checker_and_waiter.need:
+            if self.server.app.rights_checker_and_waiter.waiting:
                 page = self.read_file('web_interface/groups_warning.html')
             if self.server.app.updater.update_flag:
                 page = page.replace('get_updates" style="display:none"', 'get_updates"')
@@ -236,7 +236,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.write_with_autoreplace(page)
 
     def ignore_groups_warning(self):
-        self.server.app.rights_checker_and_waiter.need = False
+        self.server.app.rights_checker_and_waiter.waiting = False
         self.do_GET()
 
     def add_user_groups(self):

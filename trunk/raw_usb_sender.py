@@ -18,8 +18,8 @@ class Sender(base_sender.BaseSender):
 
     TEMP_REQUEST_GCODE = 'M105'
 
-    def __init__(self, profile, usb_info, app):
-        base_sender.BaseSender.__init__(self, profile, usb_info, app)
+    def __init__(self, profile, usb_info):
+        base_sender.BaseSender.__init__(self, profile, usb_info)
         self.logger = logging.getLogger('app.' + __name__)
         self.logger.info('Raw USB Sender started!')
         self.int_vid = int(usb_info['VID'], 16)
