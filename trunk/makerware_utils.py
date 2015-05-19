@@ -3,7 +3,7 @@ import sys
 import time
 import signal
 import logging
-from subprocess import Popen, PIPE
+from subprocess import Popen
 
 def detect_makerware_paths():
     logger = logging.getLogger('app')
@@ -87,12 +87,10 @@ def kill_existing_conveyor():
             pids_sting = ' '.join(pids)
             if conveyor_svc_path and pids_sting:
                 command = 'sudo chmod -x %s && sudo kill -9 %s' % (conveyor_svc_path, pids_sting)
-                p = Popen('xterm -e "{0}"'.format(command), shell=True, stdout=PIPE, stderr=PIPE)
-                stdout, stderr = p.communicate()
-                if stdout:
-                    print 'STDOUT: ' + stdout
-                if stderr:
-                    print 'STDERR: ' + stderr
+                p = Popen('xterm -e "{0}"'.format(command), shell=True)
+                while not p.poll():
+                    time.sleep(0.1)
+                print 'RETURNCODE : ' + str(p.returncode)
             else:
                 logger.info('Cannot get conveyor path or pids:\nconveyor_path: {0}\nconveyor_pids: {1}'.format(str(conveyor_svc_path), str(pids)))
         elif sys.platform.startswith('darwin'):
