@@ -88,7 +88,7 @@ def kill_existing_conveyor():
             if conveyor_svc_path and pids_sting:
                 command = 'sudo chmod -x %s && sudo kill -9 %s' % (conveyor_svc_path, pids_sting)
                 p = Popen('xterm -e "{0}"'.format(command), shell=True)
-                while not p.poll():
+                while p.poll() is None:
                     time.sleep(0.5)
                     print '+++Polling...'
                 print 'RETURNCODE : ' + str(p.returncode)
