@@ -183,9 +183,7 @@ class PrinterInterface(threading.Thread):
             report["temps"] = self.printer.get_temps()
             report["target_temps"] = self.printer.get_target_temps()
             report["line_number"] = self.printer.get_current_line_number()
-            coords = self.printer.get_position()
-            if coords:
-                report["coords"] = coords
+            report["coords"] = self.printer.get_position()
             return report
 
     def close_printer_sender(self):
