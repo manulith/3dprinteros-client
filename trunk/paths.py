@@ -55,14 +55,16 @@ def get_paths_to_settings_folder():
     abs_path_to_users_home = os.path.abspath(os.path.expanduser("~"))
     if sys.platform.startswith('win'):
         abs_path_to_appdata = os.path.abspath(os.getenv('APPDATA'))
-        path = os.path.join(abs_path_to_appdata, '3dprinteros')
+        path = os.path.join(abs_path_to_appdata, '3DPrinterOS')
     elif sys.platform.startswith('linux'):
-        path = os.path.join(abs_path_to_users_home, ".3dprinteros")
+        path = os.path.join(abs_path_to_users_home, ".3DPrinterOS")
     elif sys.platform.startswith('darwin'):
-        path = os.path.join(abs_path_to_users_home, "Library", "Application Support")
+        path = os.path.join(abs_path_to_users_home, "Library", "Application Support", "3DPrinterOS")
     else:
         raise EnvironmentError('Could not detect OS. Only GNU/LINUX, MAC OS X and MS WIN VISTA/7/8 are supported.')
     local_path = os.path.dirname(os.path.abspath(__file__))
     return (path, local_path)
 
 SETTINGS_FOLDER_PATH = get_paths_to_settings_folder()[0]
+if not os.path.exists(SETTINGS_FOLDER_PATH):
+    os.mkdir(SETTINGS_FOLDER_PATH)
