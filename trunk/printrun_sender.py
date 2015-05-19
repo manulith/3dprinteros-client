@@ -50,12 +50,13 @@ class Sender(BaseSender):
             time.sleep(0.1)
             if not self.printcore.printer:
                 self.logger.warning("Error connecting to printer at %i" % baudrate)
-                self.printcore.disconnect()
+                self.disconnect_printcore()
             else:
                 wait_start_time = time.time()
                 self.logger.info("Waiting for printer online")
                 while time.time() < (wait_start_time + self.DEFAULT_TIMEOUT_FOR_PRINTER_ONLINE):
                     if config.get_app().stop_flag:
+                        self.disconnect_printcore()
                         raise RuntimeError("Connection to printer interrupted by closing")
                     if self.online_flag:
                         self.logger.info("Successful connection to printer %s:%i" % (self.profile['COM'], baudrate))
@@ -87,7 +88,7 @@ class Sender(BaseSender):
                 self.logger.warning("Error occured on printrun printer reset: " + str(e))
             time.sleep(0.2)
             self.logger.debug("Disconnecting...")
-            self.printcore.disconnect()
+            self.disconnect_printcore()
             self.logger.info("Successful reset and disconnect")
         else:
             self.logger.warning("No printrun printcore to execute reset")
@@ -110,8 +111,8 @@ class Sender(BaseSender):
             if counter >= steps_in_cycle:
                 self.printcore.send_now('M105')
                 time.sleep(0.01)
-                self.printcore.send_now('M114')
-                time.sleep(0.01)
+                #self.printcore.send_now('M114')
+                #time.sleep(0.01)
                 counter = 0
             time.sleep(wait_step)
             counter += 1
@@ -127,16 +128,17 @@ class Sender(BaseSender):
             platform_target_temp = float(match.group(4))
             self.temps = [platform_temp, tool_temp]
             self.target_temps = [platform_target_temp, tool_target_temp]
-        match = self.position_re.match(line)
-        if match:
-            self.position = [ match.group(0), match.group(1), match.group(2), match.group(3) ]
 
     def recvcb(self, line):
         #self.logger.debug(line)
         if line.startswith('T:'):
             self.fetch_temps(line)
-        elif line[0:2] == 'ok':
-             self.online_flag = True
+            self.online_flag = True
+        elif line.startswith('ok'):
+            self.online_flag = True
+        match = self.position_re.match(line)
+        if match:
+            self.position = [float(match.group(1)), float(match.group(2)), float(match.group(3)), float(match.group(4))]
 
     def sendcb(self, command, gline):
         #self.logger.debug("Executing command: " + command)
@@ -173,6 +175,7 @@ class Sender(BaseSender):
             self.temps[0] = float(match.group(1))
 
     def set_total_gcodes(self, length):
+        self.logger.info("Total gcodes number set to: %d" % length)
         self.total_gcodes = length
         self.current_line_number = 0
 
@@ -185,6 +188,7 @@ class Sender(BaseSender):
     def load_gcodes(self, gcodes):
         gcodes = self.preprocess_gcodes(gcodes)
         length = len(gcodes)
+        self.set_total_gcodes(length)
         self.logger.info('Loading %d gcodes...' % length)
         if length:
             self.buffer = LightGCode(gcodes)
@@ -222,8 +226,7 @@ class Sender(BaseSender):
             self.cancel_download()
             return
         self.printcore.cancelprint()
-        self.printcore.reset()
-        self.printcore.disconnect()
+        self.reset()
         self.logger.info("Cancelled successfully")
 
     def emergency_stop(self):
@@ -283,6 +286,13 @@ class Sender(BaseSender):
         self.update_current_line_number()
         return self.current_line_number
 
+    def disconnect_printcore(self):
+        self.logger.info("Disconnecting printcore...")
+        if self.printcore.printer:
+            self.printcore.printer.close()
+        self.printcore.disconnect()
+        self.logger.info("...done")
+
     def close(self):
         self.recvcb = None
         self.sendcb = None
@@ -301,9 +311,7 @@ class Sender(BaseSender):
         self.logger.info('Printrun sender disconnectiong from printer...')
         if self.printcore:
             port = None
-            if not self.printcore.printer:
-                port = serial.Serial(self.profile['COM']) #it a hack to prevent printrun hanging on disconnect
-            self.printcore.disconnect()
+            self.disconnect_printcore()
             if port:
                 port.close()
         self.logger.info('...done')

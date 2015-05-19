@@ -3,6 +3,7 @@ import sys
 import time
 import signal
 import logging
+from subprocess import Popen
 
 def detect_makerware_paths():
     logger = logging.getLogger('app')
@@ -43,7 +44,7 @@ def get_conveyor_pid():
                     # print task
             except IndexError:
                 pass
-    elif sys.platform.startswith('linux') or sys.platform.startswith('darwin'):
+    elif sys.platform.startswith('darwin'):
         tasks = os.popen('ps ax').readlines()
         for task in tasks:
             # TODO: make conveyor service die on linux with makerware
@@ -54,6 +55,12 @@ def get_conveyor_pid():
                     # print task
             except IndexError:
                 pass
+    elif sys.platform.startswith('linux'):
+        conveyor_pid = []  # There are 2 processes for conveyor at linux, so we should return both
+        tasks = os.popen('ps ax|grep conveyor').readlines()
+        for task in tasks:
+            if 'conveyor-svc' in task:
+                conveyor_pid.append(task)  # Adding whole tasks to parse them later, for chmod path finding
     return conveyor_pid
 
 def kill_existing_conveyor():
@@ -67,8 +74,27 @@ def kill_existing_conveyor():
             #os.popen('taskkill /f /pid ' + pid)
             os.popen('sc stop "MakerBot Conveyor Service"')
         elif sys.platform.startswith('linux'):
-            # TODO: it does not work
-            os.kill(int(pid), signal.SIGTERM)
+            pids = []
+            conveyor_svc_path = None
+            for id in pid:  # List of processes here, should be 2 processes as usual
+                id = id.split()
+                # sudo -u conveyor LD_LIBRARY_PATH=/usr/lib/makerbot/ /usr/bin/conveyor-svc --config /etc/conveyor.conf
+                if 'sudo' in id:  # Convenient task for parsing conveyor-svc path
+                    conveyor_svc_path = id[8]
+                    if conveyor_svc_path.startswith('/') and conveyor_svc_path.endswith('conveyor-svc'):
+                        logger.info('Got conveyor service path: {0}. Applying "chmod -x"'.format(conveyor_svc_path))
+                pids.append(id[0])
+            pids_sting = ' '.join(pids)
+            if conveyor_svc_path and pids_sting:
+                command = 'sudo chmod -x %s && sudo kill -9 %s' % (conveyor_svc_path, pids_sting)
+                p = Popen('xterm -e "{0}"'.format(command), shell=True)
+                while p.poll() is None:  # Returns 0 when finished
+                    time.sleep(0.1)
+                # Returned code is 0 either user closes the console or enters pass.
+                # But if console was closed, message and button to kill still on place and can be done again
+                logger.info('Xterm process returned code: ') + str(p.returncode)
+            else:
+                logger.info('Cannot get conveyor path or pids:\nconveyor_path: {0}\nconveyor_pids: {1}'.format(str(conveyor_svc_path), str(pids)))
         elif sys.platform.startswith('darwin'):
             makerware_path = detect_makerware_paths()
             command = os.path.join(makerware_path, 'stop_conveyor_service')

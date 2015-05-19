@@ -6,16 +6,14 @@ import hashlib
 import logging
 import threading
 import BaseHTTPServer
-import subprocess
 from SocketServer import ThreadingMixIn
 
-import log
 import paths
 import rights
 import makerware_utils
 import version
 import config
-import cloud_sync
+import log
 
 
 class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
@@ -40,15 +38,16 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         with open(os.path.join(self.working_dir, path_in_cwd)) as f:
             return f.read()
 
-    def write_with_autoreplace(self, page, response=200, headers = {}):
+    def write_with_autoreplace(self, page, response=200, headers = None):
         page = page.replace('!!!VERSION!!!', 'Client v.' + version.version + ', build ' + version.build)
         page = page.replace('3DPrinterOS', '3DPrinterOS Client v.' + version.version)
         url = self.URL.replace('cli-', '')
         page = page.replace('!!!URL!!!', url)
         try:
             self.send_response(response)
-            for keyword, value in headers.iteritems():
-                self.send_header(keyword, value)
+            if headers:
+                for keyword, value in headers.iteritems():
+                    self.send_header(keyword, value)
             self.end_headers()
             self.wfile.write(page)
         except Exception as e:
@@ -65,8 +64,6 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.quit_main_app()
         elif self.path.find('show_logs') >=0:
             self.show_logs()
-        elif self.path.find('download_logs') >= 0:
-            self.download_logs()
         else:
             page = self.form_main_page()
             self.write_with_autoreplace(page)
@@ -88,7 +85,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 page = page.replace('!!!LOGIN!!!', login)
             if makerware_utils.get_conveyor_pid():
                 page = self.read_file('web_interface/conveyor_warning.html')
-            if not rights.is_user_groups():
+            if self.server.app.rights_checker_and_waiter.waiting:
                 page = self.read_file('web_interface/groups_warning.html')
             if self.server.app.updater.update_flag:
                 page = page.replace('get_updates" style="display:none"', 'get_updates"')
@@ -157,6 +154,8 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.kill_conveyor()
         elif self.path.find('add_user_groups') >= 0:
             self.add_user_groups()
+        elif self.path.find('ignore_groups_warning') >= 0:
+            self.ignore_groups_warning()
         elif self.path.find('get_updates') >= 0:
             self.get_updates()
         elif self.path.find('update_software') >= 0:
@@ -225,7 +224,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.write_message(message)
 
     def show_logs(self):
-        log_file = config.get_settings()['log_file']
+        log_file = log.LOG_FILE
         logs = log.get_file_tail(log_file)
         content = ''
         for line in logs:
@@ -236,8 +235,12 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         page = page.replace('!!!LOGS!!!', content)
         self.write_with_autoreplace(page)
 
+    def ignore_groups_warning(self):
+        self.server.app.rights_checker_and_waiter.waiting = False
+        self.do_GET()
+
     def add_user_groups(self):
-        rights.add_user_groups()
+        self.server.app.rights_checker_and_waiter.add_user_groups()
         self.quit_main_app()
 
     def kill_conveyor(self):        
@@ -247,10 +250,6 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         else:
             message = '3DPrinterOS was unable to stop conveyor.'        
         self.write_message(message)
-
-    def download_logs(self):
-        page = self.read_file('web_interface/download_logs.html')
-        self.write_with_autoreplace(page)
 
     def send_logs(self):
         error = log.send_logs(self.server.app.user_login.user_token)

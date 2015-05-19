@@ -77,7 +77,8 @@ class PrinterInterface(threading.Thread):
     def process_command_request(self, data_dict):
         error = data_dict.get('error')
         if error:
-            self.logger.warning("Server command came with errors %d %s" % (error['code'], error['message']))
+            self.logger.warning("Server return error on command request. Error code: %d. Message: %s" %
+                                (error['code'], error['message']))
         else:
             command = data_dict.get('command')
             if command:
@@ -90,7 +91,7 @@ class PrinterInterface(threading.Thread):
                     if not number:
                         self.logger.error("No number field in servers answer")
                         raise RuntimeError("No number field in servers answer")
-                    self.logger.info("Excecuting command number %i : %s" % (number, str(command)))
+                    self.logger.info("Executing command number %i : %s" % (number, str(command)))
                     payload = data_dict.get('payload')
                     arguments = []
                     if payload:
@@ -182,9 +183,7 @@ class PrinterInterface(threading.Thread):
             report["temps"] = self.printer.get_temps()
             report["target_temps"] = self.printer.get_target_temps()
             report["line_number"] = self.printer.get_current_line_number()
-            coords = self.printer.get_position()
-            if coords:
-                report["coords"] = coords
+            report["coords"] = self.printer.get_position()
             return report
 
     def close_printer_sender(self):

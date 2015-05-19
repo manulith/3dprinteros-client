@@ -14,17 +14,19 @@ import paths
 import requests
 import http_client
 
+from os.path import join
+
 LOG_SNAPSHOT_LINES = 200
 
-LOG_FILE = "3dprinteros_client.log"
-EXCEPTIONS_LOG_FILE = 'critical_errors.log'
-CLOUD_SYNC_LOG_FILE = '3dprinteros_cloudsync.log'
-LOG_SNAPSHOTS_DIR = 'log_snapshots'
+LOG_FILE = join(paths.current_settings_folder(), "3dprinteros_client.log")
+EXCEPTIONS_LOG_FILE = join(paths.current_settings_folder(), 'critical_errors.log')
+CLOUD_SYNC_LOG_FILE = join(paths.current_settings_folder(), '3dprinteros_cloudsync.log')
+LOG_SNAPSHOTS_DIR = join(paths.current_settings_folder(), 'log_snapshots')
 
 def create_logger(logger_name, log_file_name=None):
     logger = logging.getLogger(logger_name)
     logger.propagate = False
-    logger.setLevel(logging.INFO)
+    logger.setLevel(logging.DEBUG)
     std_handler = logging.StreamHandler(stream=sys.stdout)
     std_handler.setLevel(logging.DEBUG)
     logger.addHandler(std_handler)
@@ -55,41 +57,41 @@ def log_exception(func_or_methon):
             return result
     return decorator
 
-def make_full_log_snapshot():
+def prepare_logs_to_send():
     log_files = []
     logger = logging.getLogger("app." + __name__)
     for handler in logger.handlers:
         handler.flush()
-    possible_paths = [os.path.abspath(os.path.dirname(__file__))]
-    if sys.platform.startswith('linux'):
-        possible_paths.append(os.path.abspath(os.path.expanduser("~")))
+    possible_paths = paths.get_paths_to_settings_folder()
     for path in possible_paths:
         for log in os.listdir(path):
             try:
-                if log.startswith(LOG_FILE) or log.startswith(EXCEPTIONS_LOG_FILE) or log.startswith(CLOUD_SYNC_LOG_FILE):
+                if log.startswith(os.path.basename(LOG_FILE))\
+                        or log.startswith(os.path.basename(EXCEPTIONS_LOG_FILE))\
+                        or log.startswith(os.path.basename(CLOUD_SYNC_LOG_FILE)):
                     log_files.append(os.path.join(path, log))
             except Exception:
                 continue
     if not log_files:
         logger.info('Log files was not created for some reason. Nothing to send')
         return
-    log_snapshots_dir = os.path.join(paths.get_paths_to_settings_folder()[0], LOG_SNAPSHOTS_DIR)
-    if not os.path.exists(log_snapshots_dir):
+    if not os.path.exists(LOG_SNAPSHOTS_DIR):
         try:
-            os.mkdir(log_snapshots_dir)
+            os.mkdir(LOG_SNAPSHOTS_DIR)
         except Exception as e:
-            logger.warning("Can't create directory %s" % log_snapshots_dir)
+            logger.warning("Can't create directory %s" % LOG_SNAPSHOTS_DIR)
             return e
     for fname in log_files:
-        shutil.copyfile(fname, os.path.join(log_snapshots_dir, os.path.basename(fname)))
+        shutil.copyfile(fname, os.path.join(LOG_SNAPSHOTS_DIR, os.path.basename(fname)))
 
-def compress_and_send(user_token, log_file_names=[]):
+def compress_and_send(user_token, log_file_names=None):
+    if not log_file_names:
+        return
     logger = logging.getLogger('app.' + __name__)
-    log_snapshots_dir = os.path.join(paths.get_paths_to_settings_folder()[0], LOG_SNAPSHOTS_DIR)
-    zip_file_name = time.strftime("%Y_%m_%d___%H_%M_%S", time.localtime()) + ".log" + ".zip"
+    zip_file_name = time.strftime("%Y_%m_%d___%H_%M_%S", time.localtime()) + ".zip"
     for number, name in enumerate(log_file_names):
-        log_file_names[number] = os.path.abspath(os.path.join(log_snapshots_dir, name))
-    zip_file_name_path = os.path.abspath(os.path.join(log_snapshots_dir, zip_file_name))
+        log_file_names[number] = os.path.abspath(os.path.join(LOG_SNAPSHOTS_DIR, name))
+    zip_file_name_path = os.path.abspath(os.path.join(LOG_SNAPSHOTS_DIR, zip_file_name))
     logger.info('Creating zip file : ' + zip_file_name)
     try:
         zf = zipfile.ZipFile(zip_file_name_path, mode='w')
@@ -103,8 +105,6 @@ def compress_and_send(user_token, log_file_names=[]):
     else:
         get_path = http_client.HTTPClient()
         url = 'https://' + get_path.URL + get_path.token_send_logs_path
-        #if http_client.multipart_upload(url, {"token": read_token()}, {'files': file}):
-            #os.remove(LOG_SNAPSHOTS_DIR + '/' + log_file_name)
         user_token = {'user_token': user_token}
         logger.info('Sending logs to %s' % url)
         with open(zip_file_name_path, 'rb') as f:
@@ -122,10 +122,9 @@ def compress_and_send(user_token, log_file_names=[]):
             return result
 
 def send_logs(user_token):
-    make_full_log_snapshot()
-    log_snapshots_dir = os.path.join(paths.get_paths_to_settings_folder()[0], LOG_SNAPSHOTS_DIR)
+    prepare_logs_to_send()
     try:
-        snapshot_files = os.listdir(log_snapshots_dir)
+        snapshot_files = os.listdir(LOG_SNAPSHOTS_DIR)
     except OSError:
         logging.info("No logs snapshots to send")
     else:

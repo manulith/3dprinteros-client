@@ -46,12 +46,11 @@ class BaseSender:
     def preprocess_gcodes(self, gcodes):
         gcodes = gcodes.split("\n")
         gcodes = filter(lambda item: item, gcodes)
-        while gcodes[-1] in ("\n", "\r\n", "\t", " ", "", None):
-            line = gcodes.pop()
-            self.logger.info("Removing corrupted line '%s' from gcodes tail" % line)
-        length = len(gcodes)
-        self.set_total_gcodes(length)
-        self.logger.info('Got %d gcodes to print.' % length)
+        if gcodes:
+            while gcodes[-1] in ("\n", "\r\n", "\t", " ", "", None):
+                line = gcodes.pop()
+                self.logger.info("Removing corrupted line '%s' from gcodes tail" % line)
+        self.logger.info('Got %d gcodes to print.' % len(gcodes))
         return gcodes
 
     def gcodes(self, gcodes, is_link = False):
@@ -137,9 +136,8 @@ class BaseSender:
         return False
 
     def upload_logs(self):
-        log.make_full_log_snapshot()
         self.logger.info("Sending logs")
-        log.send_all_snapshots(config.get_app().user_login.user_token)
+        log.send_logs(config.get_app().user_login.user_token)
         self.logger.info("Done")
 
     def switch_camera(self, module):

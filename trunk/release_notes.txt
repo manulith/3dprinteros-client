@@ -14,7 +14,14 @@
     utils was split in several separate modules
     Upgraded CloudSync launching and control schema
     Fix of path get for CloudSync
-    
+    Logs sender upgraded
+    Logs writing path changed to user folder
+    Linux rights warning schema upgraded
+    User folder path for Darwin fixed
+    ZMorph code updated to 5.0.0 architecture
+    Makerbot conveyor service killing for linux
+    Fix of exit sequence for printrun gcode sender
+
 4.8.6
 
     Updater logic upgraded

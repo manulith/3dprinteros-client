@@ -28,7 +28,6 @@
   "cloud_sync": {
     "enabled": true,
     "max_send_retry": 10,
-    "virtual_drive_enabled": true,
-    "log_file": "3dprinteros_cloudsync.log"
+    "virtual_drive_enabled": true
   }
 }

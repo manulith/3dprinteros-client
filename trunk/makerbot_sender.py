@@ -78,6 +78,7 @@ class Sender(BaseSender):
 
     def load_gcodes(self, gcodes):
         gcodes = self.preprocess_gcodes(gcodes)
+        self.set_total_gcodes(len(gcodes))
         with self.buffer_lock:
             for code in gcodes:
                 self.buffer.append(code)
