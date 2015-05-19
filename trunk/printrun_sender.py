@@ -16,7 +16,7 @@ class Sender(BaseSender):
     pause_extrude_length = 7
     RETRIES_FOR_EACH_BAUDRATE = 2
     TEMP_REQUEST_WAIT = 5
-    DEFAULT_TIMEOUT_FOR_PRINTER_ONLINE = 5
+    DEFAULT_TIMEOUT_FOR_PRINTER_ONLINE = 3
 
     def __init__(self, profile, usb_info):
         BaseSender.__init__(self, profile, usb_info)
@@ -128,16 +128,19 @@ class Sender(BaseSender):
             platform_target_temp = float(match.group(4))
             self.temps = [platform_temp, tool_temp]
             self.target_temps = [platform_target_temp, tool_target_temp]
-        match = self.position_re.match(line)
-        if match:
-            self.position = [ match.group(0), match.group(1), match.group(2), match.group(3) ]
 
     def recvcb(self, line):
         #self.logger.debug(line)
+        print line
         if line.startswith('T:'):
             self.fetch_temps(line)
-        elif line[0:2] == 'ok':
-             self.online_flag = True
+            self.online_flag = True
+        elif line.startswith('ok'):
+            self.online_flag = True
+        match = self.position_re.match(line)
+        if match:
+            self.position = [float(match.group(1)), float(match.group(2)), float(match.group(3)), float(match.group(4))]
+            print self.position
 
     def sendcb(self, command, gline):
         #self.logger.debug("Executing command: " + command)
@@ -184,8 +187,6 @@ class Sender(BaseSender):
             self.logger.info("Printrun is starting print")
 
     def load_gcodes(self, gcodes):
-        with open("/tmp/g.gcode", "w") as f:
-            f.write(gcodes)
         gcodes = self.preprocess_gcodes(gcodes)
         length = len(gcodes)
         self.logger.info('Loading %d gcodes...' % length)
