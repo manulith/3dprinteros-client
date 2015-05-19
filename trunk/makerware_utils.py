@@ -74,8 +74,6 @@ def kill_existing_conveyor():
             #os.popen('taskkill /f /pid ' + pid)
             os.popen('sc stop "MakerBot Conveyor Service"')
         elif sys.platform.startswith('linux'):
-            # TODO: it does not work
-            #os.kill(int(pid), signal.SIGTERM)
             pids = []
             conveyor_svc_path = None
             for id in pid:  # List of processes here, should be 2 processes as usual
@@ -90,6 +88,11 @@ def kill_existing_conveyor():
             if conveyor_svc_path and pids_sting:
                 command = 'sudo chmod -x %s && sudo kill -9 %s' % (conveyor_svc_path, pids_sting)
                 p = Popen('xterm -e "{0}"'.format(command), shell=True)
+                stdout, stderr = p.communicate()
+                if stdout:
+                    print 'STDOUT: ' + stdout
+                if stderr:
+                    print 'STDERR: ' + stderr
             else:
                 logger.info('Cannot get conveyor path or pids:\nconveyor_path: {0}\nconveyor_pids: {1}'.format(str(conveyor_svc_path), str(pids)))
         elif sys.platform.startswith('darwin'):
