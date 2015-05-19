@@ -5,9 +5,9 @@ import raw_usb_sender
 
 
 class Sender(raw_usb_sender.Sender):
-    def __init__(self, profile, usb_info, app):
+    def __init__(self, profile, usb_info):
         self.define_regexps()
-        raw_usb_sender.Sender.__init__(self, profile, usb_info, app)
+        raw_usb_sender.Sender.__init__(self, profile, usb_info)
 
     def define_regexps(self):
         self.temp_re = re.compile('.*ok T:([\d\.]+) /([\d\.]+) .* B:(-?[\d\.]+) /(-?[\d\.]+) .*')
