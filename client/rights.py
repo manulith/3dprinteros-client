@@ -58,7 +58,7 @@ class RightsCheckerAndWaiter:
                 break
 
     def check(self):
-        if sys.platform.startswith('linux') and config.get_settings()['linux_rights_warning']:
+        if sys.platform.startswith('linux') and config.get_settings()['linux_rights_warning'] and not is_admin():
             self.logger.info('Checking Linux rights')
             result = self.execute_command('groups')
             if not ('tty' in result and 'dialout' in result and 'usbusers' in result):
@@ -66,7 +66,7 @@ class RightsCheckerAndWaiter:
                 self.waiting = True
 
     def add_user_groups(self):
-        if sys.platform.startswith('linux') and not is_admin():
+        if sys.platform.startswith('linux'):
             self.logger.info('Adding Linux user to necessary groups')
             self.execute_command(['groupadd', 'usbusers'])
             self.execute_command('xterm -e "sudo usermod -a -G dialout,tty,usbusers $USER"', shell=True)

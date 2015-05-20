@@ -1,5 +1,9 @@
 3DPrinterOS release notes
 
+5.0.1
+
+    Linux rights warning fixed for RPI
+
 5.0.0
 
     Cameras now uses single thread and single http connection, greatly decreases cpu usage for bot client and server
