@@ -13,7 +13,7 @@
 #You should have received a copy of the GNU Affero General Public License
 #along with 3DPrinterOS client.  If not, see <http://www.gnu.org/licenses/>.
 
-__author__ = 'Vladimir Avdeev <another.vic@yandex.ru>'
+# Author: Vladimir Avdeev <another.vic@yandex.ru> 2015
 
 version = "5.0.0"
 build = ""
