@@ -60,9 +60,11 @@ def get_conveyor_pid():
         tasks = os.popen('ps ax|grep conveyor').readlines()
         for task in tasks:
             if 'conveyor-svc' in task:
-                conveyor_pid.append(task)  # Adding whole tasks to parse them later, for chmod path finding
+                conveyor_pid.append(task)  # Adding whole tasks to parse them later, for chmod path finding in killing function
     return conveyor_pid
 
+# Getting Makerbot service named Conveyor from MakerWare killed.
+# It binds COM-ports to itself even for non-makerbot printers and we can not work
 def kill_existing_conveyor():
     wait_count = 5
     sleep_time = 1
@@ -73,18 +75,29 @@ def kill_existing_conveyor():
         if sys.platform.startswith('win'):
             #os.popen('taskkill /f /pid ' + pid)
             os.popen('sc stop "MakerBot Conveyor Service"')
+        # At linux we have very bad and unfriendly conveyor behaviour, so little magic here
         elif sys.platform.startswith('linux'):
             pids = []
             conveyor_svc_path = None
             for id in pid:  # List of processes here, should be 2 processes as usual
                 id = id.split()
+                # if we get 'sudo' word in process string from 'ps ax|grep conveyor', then it means we got this string format:
                 # sudo -u conveyor LD_LIBRARY_PATH=/usr/lib/makerbot/ /usr/bin/conveyor-svc --config /etc/conveyor.conf
-                if 'sudo' in id:  # Convenient task for parsing conveyor-svc path
-                    conveyor_svc_path = id[8]
+                # this is the one of two conveyor processes, the second is like
+                # /usr/bin/conveyor-svc --config /etc/conveyor.conf
+                # The processes have respawn flag, so you could not just kill them.
+                if 'sudo' in id:  # Convenient task string for parsing conveyor-svc path
+                    conveyor_svc_path = id[8]  # '/usr/bin/conveyor-svc' string position
                     if conveyor_svc_path.startswith('/') and conveyor_svc_path.endswith('conveyor-svc'):
                         logger.info('Got conveyor service path: {0}. Applying "chmod -x"'.format(conveyor_svc_path))
-                pids.append(id[0])
+                pids.append(id[0])  # Get pids to kill
             pids_sting = ' '.join(pids)
+            # to kill it, we need to forbid executable rights for file /usr/bin/conveyor-svc
+            # and then kill these two processes. For now it will stop conveyor for forever.
+            # However you can turn in on again by executing these commands:
+            # sudo chmod +x /usr/bin/conveyor-svc
+            # sudo -u conveyor LD_LIBRARY_PATH=/usr/lib/makerbot/ /usr/bin/conveyor-svc --config /etc/conveyor.conf &
+            # This process also will start second conveyor process and all should be fine
             if conveyor_svc_path and pids_sting:
                 command = 'sudo chmod -x %s && sudo kill -9 %s' % (conveyor_svc_path, pids_sting)
                 p = Popen('xterm -e "{0}"'.format(command), shell=True)

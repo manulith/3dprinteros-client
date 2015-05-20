@@ -9,7 +9,6 @@ import BaseHTTPServer
 from SocketServer import ThreadingMixIn
 
 import paths
-import rights
 import makerware_utils
 import version
 import config
@@ -264,6 +263,8 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.server.app.stop_flag = True
 
     def answer_with_image(self, img_path_in_cwd):
+        #this function performs hack that necessary for sending requests from HTTPS to HTTP
+        #answering with image is the only way to communicate by requests between HTTPS and HTTP
         image_path = os.path.join(os.getcwd(), img_path_in_cwd)
         with open(image_path, 'rb') as f:
             message = f.read()
@@ -290,7 +291,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         body = urllib.unquote(body).decode('utf8')
         raw_login, password = body.split("&password=")
         login = raw_login.replace("login=", "")
-        password = hashlib.sha256(password).hexdigest()        
+        password = hashlib.sha256(password).hexdigest()
         while not hasattr(self.server.app, 'user_login'):
             if not self.server.app or self.server.app.stop_flag:
                 self.answer_with_image('web_interface/fail.jpg')
