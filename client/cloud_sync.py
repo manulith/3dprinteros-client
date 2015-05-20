@@ -111,24 +111,24 @@ class Cloudsync:
     def enable_virtual_drive(self):
         process = Popen(['subst'], stdout = PIPE, stderr = PIPE)
         stdout, stderr = process.communicate()
-        if stdout == '':
+        if not stdout:
             abspath = os.path.abspath(self.PATH)
             letters = 'HIJKLMNOPQRSTUVWXYZ'
             for letter in letters:
                 process = Popen(['subst', letter + ':', abspath], stdout = PIPE, stderr = PIPE)
                 stdout, stderr = process.communicate()
-                if stdout == '':
+                if not stdout:
                     self.logger.info("Virtual drive enabled.")
                     break
 
     def disable_virtual_drive(self):
         process = Popen(['subst'], stdout = PIPE, stderr = PIPE)
         stdout, stderr = process.communicate()
-        if stdout != '':
+        if stdout:
             stdout = stdout[0]
             process = Popen(['subst', stdout + ':', '/d'], stdout = PIPE, stderr = PIPE)
             stdout, stderr = process.communicate()
-            if stdout == '':
+            if not stdout:
                 self.logger.info("Virtual drive disabled.")
 
     def move_file(self, current_path, destination_folder_path):
@@ -203,6 +203,7 @@ class Cloudsync:
                 result = requests.post(self.URL, data = data, files = files, timeout = self.CONNECTION_TIMEOUT)
                 result = str(result.text)
                 if '"result":true' in result:
+                    file.close()
                     return
             except Exception as e:
                 result = str(e)
