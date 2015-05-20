@@ -13,7 +13,7 @@
 #You should have received a copy of the GNU Affero General Public License
 #along with 3DPrinterOS client.  If not, see <http://www.gnu.org/licenses/>.
 
-# Author: Vladimir Avdeev <another.vic@yandex.ru> 2015
+# Author: Alexey Slynko <alexey@3dprinteros.com>
 
 import logging
 import threading
@@ -181,6 +181,10 @@ class Sender(base_sender.BaseSender):
                     time.sleep(0.001)
                     continue
             time.sleep(0.001)
+
+    def unbuffered_gcodes(self, gcodes):
+        #TODO implement it some day
+        return False
 
     def read(self):
         try:
