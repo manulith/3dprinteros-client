@@ -1,11 +1,28 @@
+#Copyright (c) 2015 3D Control Systems LTD
+
+#3DPrinterOS client is free software: you can redistribute it and/or modify
+#it under the terms of the GNU Affero General Public License as published by
+#the Free Software Foundation, either version 3 of the License, or
+#(at your option) any later version.
+
+#3DPrinterOS client is distributed in the hope that it will be useful,
+#but WITHOUT ANY WARRANTY; without even the implied warranty of
+#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#GNU Affero General Public License for more details.
+
+#You should have received a copy of the GNU Affero General Public License
+#along with 3DPrinterOS client.  If not, see <http://www.gnu.org/licenses/>.
+
+__author__ = 'Vladimir Avdeev <another.vic@yandex.ru>'
+
 from printrun.printcore import printcore
 from printrun.gcoder import LightGCode
 import re
 import time
-import serial
 import logging
 import threading
 
+import log
 import config
 from base_sender import BaseSender
 
@@ -103,6 +120,7 @@ class Sender(BaseSender):
         self.wait_tool_temp_re = re.compile('T:([\d\.]+)')
         self.wait_platform_temp_re = re.compile('.+B:(-?[\d\.]+)')
 
+    @log.log_exception
     def temp_request(self):
         wait_step = 0.1
         steps_in_cycle = int(self.TEMP_REQUEST_WAIT / wait_step)
