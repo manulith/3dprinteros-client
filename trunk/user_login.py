@@ -26,7 +26,6 @@ def pack_login_zip(package_name, path, *args):
         else:
             s = "/"
         zf.write(temp_file_path, temp_file_path.split(s)[-1])
-        zf.setpassword('d0nTfe_artH_er1PPe_r')
         zf.close()
     except Exception as e:
         logger.error('Packing error: ' + e.message)
@@ -40,7 +39,7 @@ def read_login_zip(package_name, path):
     package_path = os.path.join(path, package_name)
     if os.path.exists(package_path):
         zf = zipfile.ZipFile(package_path, 'r')
-        packed_info = zf.read('info', pwd='d0nTfe_artH_er1PPe_r')
+        packed_info = zf.read('info')
         packed_info = packed_info.split('\n')
         packed_info.remove('')
         for number in range(0, len(packed_info)):
