@@ -16,7 +16,7 @@
 #You should have received a copy of the GNU Affero General Public License
 #along with 3DPrinterOS client.  If not, see <http://www.gnu.org/licenses/>.
 
-# Author: Vladimir Avdeev <another.vic@yandex.ru> 2015
+# Author: Oleg Panasevych <panasevychol@gmail.com>
 
 import sys
 import os
