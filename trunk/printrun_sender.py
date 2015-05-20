@@ -175,6 +175,7 @@ class Sender(BaseSender):
             self.temps[0] = float(match.group(1))
 
     def set_total_gcodes(self, length):
+        self.logger.info("Total gcodes number set to: %d" % length)
         self.total_gcodes = length
         self.current_line_number = 0
 
@@ -187,6 +188,7 @@ class Sender(BaseSender):
     def load_gcodes(self, gcodes):
         gcodes = self.preprocess_gcodes(gcodes)
         length = len(gcodes)
+        self.set_total_gcodes(length)
         self.logger.info('Loading %d gcodes...' % length)
         if length:
             self.buffer = LightGCode(gcodes)
