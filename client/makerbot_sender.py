@@ -156,7 +156,9 @@ class Sender(BaseSender):
             if not self.parser.state.values.get("build_name"):
                 self.parser.state.values["build_name"] = '3DPrinterOS'
             for gcode in self.preprocess_gcodes(gcodes):
-                self.execute(gcode)
+                result = self.execute(gcode)
+                if result:
+                    self.logger.info("Printers answer: " + result)
             self.logger.info("Gcodes were sent to printer")
             return True
 
