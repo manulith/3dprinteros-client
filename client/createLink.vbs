@@ -13,14 +13,16 @@
 'You should have received a copy of the GNU Affero General Public License
 'along with 3DPrinterOS client.  If not, see <http://www.gnu.org/licenses/>.
 
+' Author: Oleg Panasevych <panasevychol@gmail.com>
+
 
 set WSHShell = CreateObject("WScript.Shell")
-set objFso = CreateObject("Scripting.FileSystemObject")
+set objFSO = CreateObject("Scripting.FileSystemObject")
 
 sShortcut = WSHShell.ExpandEnvironmentStrings(WScript.Arguments.Item(0))
 sTargetPath = WSHShell.ExpandEnvironmentStrings(WScript.Arguments.Item(1))
 sIconLocation = WSHShell.ExpandEnvironmentStrings(WScript.Arguments.Item(2))
-sWorkingDirectory = objFso.GetAbsolutePathName(sShortcut)
+sWorkingDirectory = objFSO.GetAbsolutePathName(sShortcut)
 
 set objSC = WSHShell.CreateShortcut(sShortcut)
 
