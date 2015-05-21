@@ -30,7 +30,7 @@ For GNU/Linux you should install following libraries:
 
 To be able to print on GNU/Linux you must make sure that your user is in this groups:
 - tty
-- dialout(or uucp)
+- dialout (or uucp)
 
 Under MS Windows libusb1.0 need root/admin rights to read printer serial number correctly.
 
