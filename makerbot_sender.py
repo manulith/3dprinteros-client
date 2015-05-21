@@ -140,7 +140,7 @@ class Sender(BaseSender):
         else:
             # setting to xyz sequence format, zero is for compatibility
             # position[3] - A-gcode value from 'G1 X-12.440 Y-12.948 A5.53429'-like string.
-            # TODO: check if position[3] is extrusion value
+            # TODO: check if position[3] is extrusion value. It seems like it is (increases during printing)
             self.position = [position[0], position[1], position[2], 0]  # XYZE format
             return self.position
 

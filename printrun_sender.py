@@ -113,7 +113,7 @@ class Sender(BaseSender):
     def define_regexps(self):
         # ok T:29.0 /29.0 B:29.5 /29.0 @:0
         self.temp_re = re.compile('.*T:([\d\.]+) /([\d\.]+) B:(-?[\d\.]+) /(-?[\d\.]+)')
-        self.position_re = re.compile('.*X:([\d\.]+) Y:([\d\.]+) Z:([\d\.]+) E:([\d\.]+).*')
+        self.position_re = re.compile('.*X:([\d\.]+).?Y:([\d\.]+).?Z:([\d\.]+).?E:([\d\.]+).*')
         # M190 - T:26.34 E:0 B:33.7
         # M109 - T:26.3 E:0 W:?
         #self.wait_tool_temp_re = re.compile('T:([\d\.]+) E:(\d+)')
@@ -149,6 +149,7 @@ class Sender(BaseSender):
 
     def recvcb(self, line):
         #self.logger.debug(line)
+        print 'RECEIVED: ' + str(line)
         if line.startswith('T:'):
             self.fetch_temps(line)
             self.online_flag = True
@@ -156,6 +157,7 @@ class Sender(BaseSender):
             self.online_flag = True
         match = self.position_re.match(line)
         if match:
+            print 'MATCH: ' + str(line)
             self.position = [float(match.group(1)), float(match.group(2)), float(match.group(3)), float(match.group(4))]
 
     def sendcb(self, command, gline):
