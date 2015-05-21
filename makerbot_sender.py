@@ -23,6 +23,10 @@ import makerbot_driver
 import makerbot_serial as serial
 import serial.serialutil
 
+# X = [0][0] | 0.1 = 8
+# Y = [0][1] | 0.1 = 8
+# Z = [0][2] | 0.1 = 4
+# E = [0][3]
 import log
 from base_sender import BaseSender
 
@@ -130,15 +134,18 @@ class Sender(BaseSender):
 
     def request_position_from_printer(self):
         position = self.parser.state.position.ToList()
-        if position[2] is None or position[3] is None or position[4] is None:
+        if position[0] is None or position[1] is None or position[2] is None or position[3] is None:
             #self.logger.warning("Can't get current tool position to execute extruder lift") #spam
             pass
         else:
             # setting to xyz sequence format, zero is for compatibility
-            self.position = [position[3], position[4], position[2], 0]
+            # position[3] - A-gcode value from 'G1 X-12.440 Y-12.948 A5.53429'-like string.
+            # TODO: check if position[3] is extrusion value
+            self.position = [position[0], position[1], position[2], 0]  # XYZE format
             return self.position
 
     def get_position(self):
+        self.request_position_from_printer()
         return self.position
 
     def emergency_stop(self):
@@ -235,7 +242,7 @@ class Sender(BaseSender):
         self.temps = [platform_temp, head_temp1, head_temp2]
         self.target_temps = [platform_ttemp, head_ttemp1, head_ttemp2]
         # self.mb            = self.execute(lambda: self.parser.s3g.get_motherboard_status())
-        self.position      = self.execute(lambda: self.parser.s3g.get_extended_position())
+        #self.position      = self.execute(lambda: self.parser.s3g.get_extended_position())
 
     def reset(self):
         self.buffer.clear()

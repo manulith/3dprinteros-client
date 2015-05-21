@@ -13,7 +13,7 @@
 #You should have received a copy of the GNU Affero General Public License
 #along with 3DPrinterOS client.  If not, see <http://www.gnu.org/licenses/>.
 
-# Author: Alexey Slynko <alexey@3dprinteros.com>
+# Author: Alexey Slynko <alex_ey@i.ua>
 
 import logging
 import threading
