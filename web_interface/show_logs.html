@@ -1,0 +1,71 @@
+<html>
+	<head>
+        <meta http-equiv="refresh" content="5; url=/show_logs" />
+    	<title>3DPrinterOS</title>
+
+    	<style>
+    	.block1 { 
+		width: 1000px;
+		background: #ffffff;
+		float: left;
+		font-family: "Trebuchet MS", Helvetica, sans-serif;
+		color: grey;
+		font-weight: bold;
+		font-size: 15px;
+		text-align: center;
+
+		width: 60%;
+        margin: 0 auto;
+        margin-top: 20px;
+        margin-left: 20%;
+		}
+
+		.block2 { 
+		width: 100%;
+		height: 50px;
+		padding-top: 20px;
+		background: #009999; 
+		padding: none; 
+		border: none;		    
+		color: #ffffff;
+		font-weight: bolder;
+		font-size: 30px;
+		}
+
+		.messages_space {
+        height:60vh;
+		width: 100%;
+		background: #fff;
+		border: none;
+		overflow-y: scroll;
+		margin-bottom: 10px;
+		}
+		</style>
+	</head>
+	<body bgcolor=#003333>
+	<div align='right' style="align: right; color: #006666">!!!VERSION!!!</div>
+		<div class="block1">
+			<div class="block2">
+				3DPrinterOS
+			</div>
+
+			<div class="messages_space" style="color: grey; text-align: left;" id="messages_space">
+				!!!LOGS!!!
+			</div>
+            <script type="text/javascript">
+                var block = document.getElementById("messages_space");
+                block.scrollTop = block.scrollHeight;
+            </script>
+
+            <form action="/" method="get" style='display: inline'>
+				<input type="submit" value="Return" style='background: #009999; border: none; width: 150px; height: 50px; text-indent: 5px; font-family: "Trebuchet MS", Helvetica, sans-serif; color: #ffffff; font-weight: bold; font-size: 20px; margin-top: 20px; margin-bottom: 30px; margin-right: 20px;'>
+			</form>
+            <form action="/show_logs" method="get" style='display: inline'>
+				<input type="submit" value="Reload" style='background: #FF9900; border: none; width: 150px; height: 50px; text-indent: 5px; font-family: "Trebuchet MS", Helvetica, sans-serif; color: #ffffff; font-weight: bold; font-size: 20px; margin-top: 20px; margin-bottom: 30px'>
+			</form>
+
+		</div>
+
+
+	</body>
+</html>
