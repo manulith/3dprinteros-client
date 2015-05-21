@@ -23,6 +23,17 @@ For GNU/Linux you should install following libraries:
     pyusb
     libusb1.0
 
+To be able to print on GNU/Linux you must make sure that your user is in this groups:
+    tty
+    dialout(or uucp)
+
+Under MS Windows libusb1.0 need root/admin rights to read printer serial number correctly.
+Under GNU/Linux please add create file named 3dprinter.rules with following content in /etc/udev/rules.d/:
+    SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", MODE="0664", GROUP="usbusers"
+Then execute following to activate the rules:
+    useradd -G usbusers $USER
+    udevadm control --reload-rules
+
 To run client just type:
     python launch.py
 (for some OSs it will be python2)
