@@ -5,7 +5,7 @@
 3DPrinterOS supports all Printrun compatible printers as well as Makerbots (not including 5th generation and Sailfish).
 ZMorph is supported, but still experemental.
 
-##### Features:
+#### Features:
 - Autodetection and autoconnection - no need to select port or baudrate, just printer type in some cases
 - Multiprinting - several printer can be connected to the same machine
 - Remote control of 3D printer throught the web site (the web site provides slicing, model fixing and other stuff that you could find useful - all in one place)
