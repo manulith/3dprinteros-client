@@ -51,7 +51,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         return host
 
     def read_file(self, path_in_cwd):
-        with open(os.path.join(self.working_dir, path_in_cwd)) as f:
+        with open(os.path.join(self.working_dir, path_in_cwd), 'r') as f:
             return f.read()
 
     def write_with_autoreplace(self, page, response=200, headers = None):
