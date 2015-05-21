@@ -5,7 +5,7 @@
 3DPrinterOS supports all Printrun compatible printers as well as Makerbots (not including 5th generation and Sailfish).
 ZMorph is supported, but still experemental.
 
-#### Features:
+### Features:
 - Autodetection and autoconnection - no need to select port or baudrate, just printer type in some cases
 - Multiprinting - several printer can be connected to the same machine
 - Remote control of 3D printer throught the web site (the web site provides slicing, model fixing and other stuff that you could find useful - all in one place)
@@ -43,13 +43,13 @@ Then execute following to activate the rules:
 useradd -G usbusers $USER
 udevadm control --reload-rules
 ```
-###### Launching:
+#### Launching:
 ```
 python launch.py
 ```
 (or ```python2``` for some OSs. Also make sure that you had python added to your ```PATH``` under MS Windows)
 
-## License
+# License
 >3DPrinterOS client is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
