@@ -1,5 +1,8 @@
 3DPrinterOS release notes
 
+5.0.1
+
+    Linux rights warning fixed for RPi
     Fix bug of cancel during gcodes loading, with cause print locally status.
 
 5.0.0

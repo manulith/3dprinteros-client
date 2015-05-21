@@ -51,12 +51,13 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         return host
 
     def read_file(self, path_in_cwd):
-        with open(os.path.join(self.working_dir, path_in_cwd)) as f:
+        with open(os.path.join(self.working_dir, path_in_cwd), 'r') as f:
             return f.read()
 
     def write_with_autoreplace(self, page, response=200, headers = None):
         page = page.replace('!!!VERSION!!!', 'Client v.' + version.version + ', build ' + version.build)
         page = page.replace('3DPrinterOS', '3DPrinterOS Client v.' + version.version)
+        # next command removes technical prefix from our URL if exists to display it in a correct way
         url = self.URL.replace('cli-', '')
         page = page.replace('!!!URL!!!', url)
         try:
@@ -104,8 +105,10 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             if self.server.app.rights_checker_and_waiter.waiting:
                 page = self.read_file('web_interface/groups_warning.html')
             if self.server.app.updater.update_flag:
+                # next command performs replace to display update button when updates available
                 page = page.replace('get_updates" style="display:none"', 'get_updates"')
             if config.get_settings()['cloud_sync']['enabled']:
+                # next command performs replace to display CloudSync folder opening button when enabled
                 page = page.replace('open_cloudsync_folder" style="display:none"', 'open_cloudsync_folder"')
         return page
 
