@@ -1,5 +1,7 @@
 3DPrinterOS release notes
 
+    Fix bug of cancel during gcodes loading, with cause print locally status.
+
 5.0.0
 
     Cameras now uses single thread and single http connection, greatly decreases cpu usage for bot client and server
