@@ -1,5 +1,11 @@
 3DPrinterOS release notes
 
+5.0.2
+
+    Fixed bug in reaction on download failure
+    Fixed bug in percent get while switching download_thread_flag
+    Updated console by adding newer regexps and fixing makerbot console.
+
 5.0.1
 
     Linux rights warning fixed for RPi
