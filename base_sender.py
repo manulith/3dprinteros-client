@@ -105,12 +105,13 @@ class BaseSender:
                 os.remove(gcode_file_name)
             except:
                 self.logger.warning("Error while removing temporary gcodes file: " + gcode_file_name)
-            self.downloader = None
             self.logger.info('Download thread has been closed')
+            self.downloader = None
             self.downloading_flag = False
             if self.cancel_after_loading_flag:
                 self.cancel()
                 self.cancel_after_loading_flag = False
+            self.logger.info('Download thread has been closed')
 
     def is_downloading(self):
         return self.downloading_flag
