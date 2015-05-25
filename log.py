@@ -58,10 +58,10 @@ def create_logger(logger_name, log_file_name=None):
             logger.debug('Could not create log file because' + e.message + '\n.No log mode.')
     return logger
 
-def log_exception(func_or_methon):
+def log_exception(func_or_method):
     def decorator(*args, **kwargs):
         try:
-            result = func_or_methon(*args, **kwargs)
+            result = func_or_method(*args, **kwargs)
         except SystemExit:
             pass
         except:
