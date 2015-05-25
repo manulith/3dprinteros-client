@@ -101,17 +101,20 @@ class BaseSender:
                 finally:
                     self.loading_gcodes_flag = False
                 self.logger.info('Gcodes loaded to memory, deleting temp file')
-            try:
-                os.remove(gcode_file_name)
-            except:
-                self.logger.warning("Error while removing temporary gcodes file: " + gcode_file_name)
-            self.logger.info('Download thread has been closed')
-            self.downloader = None
-            self.downloading_flag = False
-            if self.cancel_after_loading_flag:
-                self.cancel()
-                self.cancel_after_loading_flag = False
-            self.logger.info('Download thread has been closed')
+                try:
+                    os.remove(gcode_file_name)
+                except:
+                    self.logger.warning("Error while removing temporary gcodes file: " + gcode_file_name)
+                self.logger.info('Download thread has been closed')
+                self.downloader = None
+                self.downloading_flag = False
+                if self.cancel_after_loading_flag:
+                    self.cancel()
+                    self.cancel_after_loading_flag = False
+                self.logger.info('Download thread has been closed')
+            else:
+                self.error_code = 25
+                self.error_message = "Can't download file from storage"
 
     def is_downloading(self):
         return self.downloading_flag
