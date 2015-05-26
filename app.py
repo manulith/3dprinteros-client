@@ -67,6 +67,7 @@ class App(object):
             self.cloud_sync_controller = cloud_sync_controller.CloudSyncController()
 
     def init_interface(self):
+        return
         if config.get_settings()['web_interface']['enabled']:
             import webbrowser
             from web_interface import WebInterface

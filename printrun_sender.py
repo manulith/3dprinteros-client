@@ -1,4 +1,4 @@
-#Copyright (c) 2015 3D Control Systems LTD
+# Copyright (c) 2015 3D Control Systems LTD
 
 #3DPrinterOS client is free software: you can redistribute it and/or modify
 #it under the terms of the GNU Affero General Public License as published by
@@ -14,6 +14,7 @@
 #along with 3DPrinterOS client.  If not, see <http://www.gnu.org/licenses/>.
 
 # Author: Vladimir Avdeev <another.vic@yandex.ru>
+from http_client import File_Downloader
 
 from printrun.printcore import printcore
 from printrun.gcoder import LightGCode
@@ -28,7 +29,6 @@ from base_sender import BaseSender
 
 
 class Sender(BaseSender):
-
     pause_lift_height = 5
     pause_extrude_length = 7
     RETRIES_FOR_EACH_BAUDRATE = 2
@@ -49,7 +49,8 @@ class Sender(BaseSender):
                 self.temp_request_thread.start()
 
     def select_baudrate_and_connect(self):
-        baudrates = self.profile['baudrate']
+        # baudrates = self.profile['baudrate']
+        baudrates = [250000]
         self.logger.info('Baudrates list for %s : %s' % (self.profile['name'], str(baudrates)))
         for baudrate in baudrates:
             self.error_code = 0
@@ -148,7 +149,7 @@ class Sender(BaseSender):
             self.target_temps = [platform_target_temp, tool_target_temp]
 
     def recvcb(self, line):
-        #self.logger.debug(line)
+        self.logger.debug(">recvcb: " + str(line))
         if line.startswith('T:'):
             self.fetch_temps(line)
             self.online_flag = True
@@ -159,7 +160,7 @@ class Sender(BaseSender):
             self.position = [float(match.group(1)), float(match.group(2)), float(match.group(3)), float(match.group(4))]
 
     def sendcb(self, command, gline):
-        #self.logger.debug("Executing command: " + command)
+        self.logger.debug(">sendcb: " + command)
         self.last_line = command
         if 'M104' in command or 'M109' in command:
             tool_match = re.match('.+T(\d+)', command)
@@ -275,14 +276,14 @@ class Sender(BaseSender):
         if self.printcore:
             if self.printcore.printing:
                 return self.printcore.read_thread and \
-                   self.printcore.read_thread.is_alive() and \
-                   self.printcore.print_thread and \
-                   self.printcore.print_thread.is_alive()
+                       self.printcore.read_thread.is_alive() and \
+                       self.printcore.print_thread and \
+                       self.printcore.print_thread.is_alive()
             elif self.printcore.paused or self.printcore.online:
                 return self.printcore.read_thread and \
-                   self.printcore.read_thread.is_alive() and \
-                   self.printcore.send_thread and \
-                   self.printcore.send_thread.is_alive()
+                       self.printcore.read_thread.is_alive() and \
+                       self.printcore.send_thread and \
+                       self.printcore.send_thread.is_alive()
         return False
 
     def update_current_line_number(self):
@@ -297,7 +298,7 @@ class Sender(BaseSender):
         percent = 0
         if self.total_gcodes:
             self.update_current_line_number()
-            percent = int( self.current_line_number / float(self.total_gcodes) * 100 )
+            percent = int(self.current_line_number / float(self.total_gcodes) * 100)
         return percent
 
     def get_current_line_number(self):
@@ -333,4 +334,37 @@ class Sender(BaseSender):
             if port:
                 port.close()
         self.logger.info('...done')
+
+class Toster():
+
+    def preprocess_gcodes(self, gcodes):
+        gcodes = gcodes.split("\n")
+        gcodes = filter(lambda item: item, gcodes)
+        if gcodes:
+            while gcodes[-1] in ("\n", "\r\n", "\t", " ", "", None):
+                line = gcodes.pop()
+                print("Removing corrupted line '%s' from gcodes tail" % line)
+        print('Got %d gcodes to print.' % len(gcodes))
+        return gcodes
+
+    def one(self):
+        gcode_file_name="49504.gcode"
+        with open(gcode_file_name, 'rb') as f:
+            gcodes = f.read()
+        q = self.preprocess_gcodes(gcodes)
+
+if __name__ == '__main__':
+    q = Toster()
+
+    gcode_file_name = "49504.gcode"
+
+    with open(gcode_file_name, 'rb') as f:
+        gcodes = f.read()
+
+    prep = q.preprocess_gcodes(gcodes)
+
+    start = time.clock()
+    print len(LightGCode(prep))
+    end = time.clock()
+    print "%.2gs" % (end-start)
 
