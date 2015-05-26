@@ -182,6 +182,7 @@ class Sender(BaseSender):
             for gcode in self.preprocess_gcodes(gcodes):
                 result = self.execute(gcode)
                 if result:
+                    self.request_position_from_printer()
                     self.logger.info("Printers answer: " + result)
             self.logger.info("Gcodes were sent to printer")
             return True
