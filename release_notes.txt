@@ -1,5 +1,7 @@
 3DPrinterOS release notes
 
+    Fixed position requesting after joysting or console executing
+
 5.0.2
 
     Fixed bug in reaction on download failure
