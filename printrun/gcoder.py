@@ -687,7 +687,6 @@ class LightGCode(GCode):
 
 class OptimizedLightGCode(LightGCode):
 
-    """Optimize _preproccess method, for best performance and delete calculations"""
     def _preprocess(self, lines = None, build_layers = False,
                     layer_callback = None):
         """Checks for imperial/relativeness settings and tool changes"""
@@ -699,14 +698,11 @@ class OptimizedLightGCode(LightGCode):
 
         current_z = self.current_z
 
-        # Store this one out of the build_layers scope for efficiency
-        cur_layer_has_extrusion = False
 
         # Initialize layers and other global computations
         lastz = 0.0
 
         all_layers = self.all_layers = []
-        all_zs = self.all_zs = set()
         layer_idxs = self.layer_idxs = []
         line_idxs = self.line_idxs = []
 
@@ -766,10 +762,7 @@ class OptimizedLightGCode(LightGCode):
                     if base_z != prev_base_z:
                         new_layer = Layer(cur_lines, base_z)
                         all_layers.append(new_layer)
-                        if cur_layer_has_extrusion and prev_z not in all_zs:
-                            all_zs.add(prev_z)
                         cur_lines = []
-                        cur_layer_has_extrusion = False
                         layer_id += 1
                         layer_line = 0
                         last_layer_z = base_z
@@ -789,8 +782,6 @@ class OptimizedLightGCode(LightGCode):
         if cur_lines:
             new_layer = Layer(cur_lines, prev_z)
             all_layers.append(new_layer)
-            if cur_layer_has_extrusion and prev_z not in all_zs:
-                all_zs.add(prev_z)
 
         self.append_layer_id = len(all_layers)
         self.append_layer = Layer([])
