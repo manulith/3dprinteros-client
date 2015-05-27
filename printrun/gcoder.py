@@ -691,110 +691,113 @@ class OptimizedLightGCode(LightGCode):
     def _preprocess(self, lines = None, build_layers = False,
                     layer_callback = None):
         """Checks for imperial/relativeness settings and tool changes"""
+        if not build_layers:
+            return
+
         if not lines:
             lines = self.lines
+
         current_z = self.current_z
 
         # Store this one out of the build_layers scope for efficiency
         cur_layer_has_extrusion = False
 
         # Initialize layers and other global computations
-        if build_layers:
-            lastz = 0.0
+        lastz = 0.0
 
-            all_layers = self.all_layers = []
-            all_zs = self.all_zs = set()
-            layer_idxs = self.layer_idxs = []
-            line_idxs = self.line_idxs = []
+        all_layers = self.all_layers = []
+        all_zs = self.all_zs = set()
+        layer_idxs = self.layer_idxs = []
+        line_idxs = self.line_idxs = []
 
-            layer_id = 0
-            layer_line = 0
+        layer_id = 0
+        layer_line = 0
 
-            last_layer_z = None
-            prev_z = None
-            prev_base_z = (None, None)
-            cur_z = None
-            cur_lines = []
+        last_layer_z = None
+        prev_z = None
+        prev_base_z = (None, None)
+        cur_z = None
+        cur_lines = []
 
         if self.line_class != Line:
             get_line = lambda l: Line(l.raw)
         else:
             get_line = lambda l: l
+
         for true_line in lines:
             line = get_line(true_line)
             if line.command:
-                if build_layers:
-                    if line.command == "G0" or line.command == "G1":
-                        z = line.z if line.z is not None else lastz
-                        lastz = z
+                if line.command == "G0" or line.command == "G1":
+                    z = line.z if line.z is not None else lastz
+                    lastz = z
 
-                    # FIXME : looks like this needs to be tested with "lift Z on move"
-                    if line.z is not None:
-                        if line.command == "G92":
-                            cur_z = line.z
-                        elif line.is_move:
-                            if line.relative and cur_z is not None:
-                                cur_z += line.z
-                            else:
-                                cur_z = line.z
-
-                    # FIXME: the logic behind this code seems to work, but it might be
-                    # broken
-                    if cur_z != prev_z:
-                        if prev_z is not None and last_layer_z is not None:
-                            offset = self.est_layer_height if self.est_layer_height else 0.01
-                            if abs(prev_z - last_layer_z) < offset:
-                                if self.est_layer_height is None:
-                                    zs = sorted([l.z for l in all_layers if l.z is not None])
-                                    heights = [round(zs[i + 1] - zs[i], 3) for i in range(len(zs) - 1)]
-                                    heights = [height for height in heights if height]
-                                    if len(heights) >= 2: self.est_layer_height = heights[1]
-                                    elif heights: self.est_layer_height = heights[0]
-                                    else: self.est_layer_height = 0.1
-                                base_z = round(prev_z - (prev_z % self.est_layer_height), 2)
-                            else:
-                                base_z = round(prev_z, 2)
+                # FIXME : looks like this needs to be tested with "lift Z on move"
+                if line.z is not None:
+                    if line.command == "G92":
+                        cur_z = line.z
+                    elif line.is_move:
+                        if line.relative and cur_z is not None:
+                            cur_z += line.z
                         else:
-                            base_z = prev_z
+                            cur_z = line.z
 
-                        if base_z != prev_base_z:
-                            new_layer = Layer(cur_lines, base_z)
-                            all_layers.append(new_layer)
-                            if cur_layer_has_extrusion and prev_z not in all_zs:
-                                all_zs.add(prev_z)
-                            cur_lines = []
-                            cur_layer_has_extrusion = False
-                            layer_id += 1
-                            layer_line = 0
-                            last_layer_z = base_z
-                            if layer_callback is not None:
-                                layer_callback(self, len(all_layers) - 1)
+                # FIXME: the logic behind this code seems to work, but it might be
+                # broken
+                if cur_z != prev_z:
+                    if prev_z is not None and last_layer_z is not None:
+                        offset = self.est_layer_height if self.est_layer_height else 0.01
+                        if abs(prev_z - last_layer_z) < offset:
+                            if self.est_layer_height is None:
+                                zs = sorted([l.z for l in all_layers if l.z is not None])
+                                heights = [round(zs[i + 1] - zs[i], 3) for i in range(len(zs) - 1)]
+                                heights = [height for height in heights if height]
+                                if len(heights) >= 2:
+                                    self.est_layer_height = heights[1]
+                                elif heights:
+                                    self.est_layer_height = heights[0]
+                                else:
+                                    self.est_layer_height = 0.1
+                            base_z = round(prev_z - (prev_z % self.est_layer_height), 2)
+                        else:
+                            base_z = round(prev_z, 2)
+                    else:
+                        base_z = prev_z
 
-                        prev_base_z = base_z
+                    if base_z != prev_base_z:
+                        new_layer = Layer(cur_lines, base_z)
+                        all_layers.append(new_layer)
+                        if cur_layer_has_extrusion and prev_z not in all_zs:
+                            all_zs.add(prev_z)
+                        cur_lines = []
+                        cur_layer_has_extrusion = False
+                        layer_id += 1
+                        layer_line = 0
+                        last_layer_z = base_z
+                        if layer_callback is not None:
+                            layer_callback(self, len(all_layers) - 1)
 
-            if build_layers:
-                cur_lines.append(true_line)
-                layer_idxs.append(layer_id)
-                line_idxs.append(layer_line)
-                layer_line += 1
-                prev_z = cur_z
+                    prev_base_z = base_z
+
+            cur_lines.append(true_line)
+            layer_idxs.append(layer_id)
+            line_idxs.append(layer_line)
+            layer_line += 1
+            prev_z = cur_z
 
         self.current_z = current_z
 
-        if build_layers:
-            if cur_lines:
-                new_layer = Layer(cur_lines, prev_z)
-                new_layer.duration = 0
-                all_layers.append(new_layer)
-                if cur_layer_has_extrusion and prev_z not in all_zs:
-                    all_zs.add(prev_z)
+        if cur_lines:
+            new_layer = Layer(cur_lines, prev_z)
+            all_layers.append(new_layer)
+            if cur_layer_has_extrusion and prev_z not in all_zs:
+                all_zs.add(prev_z)
 
-            self.append_layer_id = len(all_layers)
-            self.append_layer = Layer([])
-            self.append_layer.duration = 0
-            all_layers.append(self.append_layer)
-            self.layer_idxs = array('I', layer_idxs)
-            self.line_idxs = array('I', line_idxs)
+        self.append_layer_id = len(all_layers)
+        self.append_layer = Layer([])
+        all_layers.append(self.append_layer)
+        self.layer_idxs = array('I', layer_idxs)
+        self.line_idxs = array('I', line_idxs)
+
 
 def main():
     if len(sys.argv) < 2:
