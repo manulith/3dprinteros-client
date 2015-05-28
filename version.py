@@ -15,6 +15,5 @@
 
 # Author: Vladimir Avdeev <another.vic@yandex.ru>
 
-version = "5.0.2"
+version = "5.1.0"
 build = ""
-commit = ""

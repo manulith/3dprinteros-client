@@ -1,6 +1,9 @@
 3DPrinterOS release notes
 
-    Fixed position requesting after joysting or console executing
+5.1.0
+
+    Fixed position requesting after joystick or console executing
+    Modification of printrun to make gcodes processing faster (~7 times)
 
 5.0.2
 
