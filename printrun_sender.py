@@ -16,7 +16,7 @@
 # Author: Vladimir Avdeev <another.vic@yandex.ru>
 
 from printrun.printcore import printcore
-from printrun.gcoder import LightGCode
+from printrun.gcoder import FastLightGCode
 import re
 import time
 import logging
@@ -209,7 +209,7 @@ class Sender(BaseSender):
         self.set_total_gcodes(length)
         self.logger.info('Loading %d gcodes...' % length)
         if length:
-            self.buffer = LightGCode(gcodes)
+            self.buffer = FastLightGCode(gcodes)
             if self.printcore.startprint(self.buffer):
                 self.logger.info('...done loading gcodes.')
                 return True
