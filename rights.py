@@ -52,6 +52,7 @@ class RightsCheckerAndWaiter:
         self.check()
 
     def wait(self):
+        self.logger.info('Waiting for adding to Linux groups')
         while not self.app.stop_flag:
             time.sleep(0.1)
             if not self.waiting:
