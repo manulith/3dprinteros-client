@@ -51,8 +51,10 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         return host
 
     def read_file(self, path_in_cwd):
-        with open(os.path.join(self.working_dir, path_in_cwd), 'r') as f:
-            return f.read()
+        file = open(os.path.join(self.working_dir, path_in_cwd), 'r')
+        content = file.read()
+        file.close()
+        return content
 
     def write_with_autoreplace(self, page, response=200, headers = None):
         page = page.replace('!!!VERSION!!!', 'Client v.' + version.version + ', build ' + version.build)
@@ -100,10 +102,10 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             login = self.server.app.user_login.login
             if login:
                 page = page.replace('!!!LOGIN!!!', login)
-            if makerware_utils.get_conveyor_pid():
-                page = self.read_file('web_interface/conveyor_warning.html')
             if self.server.app.rights_checker_and_waiter.waiting:
                 page = self.read_file('web_interface/groups_warning.html')
+            if self.server.app.conveyor_killer_and_waiter.waiting:
+                page = self.read_file('web_interface/conveyor_warning.html')
             if self.server.app.updater.update_flag:
                 # next command performs replace to display update button when updates available
                 page = page.replace('get_updates" style="display:none"', 'get_updates"')
@@ -263,7 +265,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.quit_main_app()
 
     def kill_conveyor(self):        
-        result = makerware_utils.kill_existing_conveyor()
+        result = self.server.app.conveyor_killer_and_waiter.kill()
         if result:
             message = 'Conveyor was successfully stopped.<br><br>Returning...'
         else:

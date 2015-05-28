@@ -4,6 +4,8 @@
 
     Fixed position requesting after joystick or console executing
     Modification of printrun to make gcodes processing faster (~7 times)
+    Conveyor killer working schema upgraded
+    Fixed rare main page failure
 
 5.0.2
 
