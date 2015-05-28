@@ -685,7 +685,7 @@ class GCode(object):
 class LightGCode(GCode):
     line_class = LightLine
 
-class OptimizedLightGCode(LightGCode):
+class FastLightGCode(LightGCode):
 
     def _preprocess(self, lines = None, build_layers = False,
                     layer_callback = None):
@@ -697,7 +697,6 @@ class OptimizedLightGCode(LightGCode):
             lines = self.lines
 
         current_z = self.current_z
-
 
         # Initialize layers and other global computations
         lastz = 0.0
