@@ -104,7 +104,7 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 page = page.replace('!!!LOGIN!!!', login)
             if self.server.app.rights_checker_and_waiter.waiting:
                 page = self.read_file('web_interface/groups_warning.html')
-            if self.server.app.conveyor_killer.waiting:
+            if self.server.app.conveyor_kill_waiter.waiting:
                 page = self.read_file('web_interface/conveyor_warning.html')
             if self.server.app.updater.update_flag:
                 # next command performs replace to display update button when updates available
@@ -265,8 +265,8 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.quit_main_app()
 
     def kill_conveyor(self):        
-        self.server.app.conveyor_killer.kill()
-        if not self.server.app.conveyor_killer.waiting:
+        self.server.app.conveyor_kill_waiter.kill()
+        if not self.server.app.conveyor_kill_waiter.waiting:
             message = 'Conveyor was successfully stopped.<br><br>Returning...'
         else:
             message = '3DPrinterOS was unable to stop conveyor.'        

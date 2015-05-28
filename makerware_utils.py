@@ -141,7 +141,7 @@ def kill_existing_conveyor():
                 return True
         logger.info('Could not kill Makerbot Conveyor Service. Please stop it manually and restart program.')
 
-class ConveyorKiller:
+class ConveyorKillWaiter:
 
     def __init__(self, app):
         self.logger = logging.getLogger('app')

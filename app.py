@@ -58,11 +58,11 @@ class App(object):
         self.stop_flag = False
         self.updater = updater.Updater()
         self.rights_checker_and_waiter = rights.RightsCheckerAndWaiter(self)
-        self.conveyor_killer = makerware_utils.ConveyorKiller(self)
+        self.conveyor_kill_waiter = makerware_utils.ConveyorKillWaiter(self)
         self.user_login = user_login.UserLogin(self)
         self.init_interface()
         self.rights_checker_and_waiter.wait()
-        self.conveyor_killer.wait()
+        self.conveyor_kill_waiter.wait()
         if self.user_login.wait_for_login():
             config.Config.instance().set_profiles(self.user_login.profiles)
             if config.get_settings()["camera"]["enabled"]:
