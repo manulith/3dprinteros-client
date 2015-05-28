@@ -150,11 +150,12 @@ class ConveyorKiller:
         self.check()
 
     def wait(self):
-        self.logger.info('Waiting for Makerbot Conveyor to stop')
+        self.logger.info('Waiting for Makerbot Conveyor to stop...')
         while not self.app.stop_flag:
             time.sleep(0.1)
             if not self.waiting:
                 break
+        self.logger.info('...end of waiting.')
 
     def check(self):
         if get_conveyor_pid():

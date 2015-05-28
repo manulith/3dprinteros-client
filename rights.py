@@ -57,6 +57,7 @@ class RightsCheckerAndWaiter:
             time.sleep(0.1)
             if not self.waiting:
                 break
+        self.logger.info('...end of waiting.')
 
     def check(self):
         if sys.platform.startswith('linux') and config.get_settings()['linux_rights_warning'] and not is_admin():

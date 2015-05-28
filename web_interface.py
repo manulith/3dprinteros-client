@@ -265,8 +265,8 @@ class WebInterfaceHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.quit_main_app()
 
     def kill_conveyor(self):        
-        result = self.server.app.conveyor_killer.kill()
-        if result:
+        self.server.app.conveyor_killer.kill()
+        if not self.server.app.conveyor_killer.waiting:
             message = 'Conveyor was successfully stopped.<br><br>Returning...'
         else:
             message = '3DPrinterOS was unable to stop conveyor.'        
