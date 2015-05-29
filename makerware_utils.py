@@ -21,6 +21,9 @@ import time
 import logging
 from subprocess import Popen
 
+# Getting Makerbot service named Conveyor from MakerWare killed.
+# It binds COM-ports to itself even for non-makerbot printers and we can not work
+
 def detect_makerware_paths():
     logger = logging.getLogger('app')
     makerware_path = None
@@ -137,3 +140,27 @@ def kill_existing_conveyor():
                 logger.info('Makerbot Conveyor Service successfully killed.')
                 return True
         logger.info('Could not kill Makerbot Conveyor Service. Please stop it manually and restart program.')
+
+class ConveyorKillWaiter:
+
+    def __init__(self, app):
+        self.logger = logging.getLogger('app')
+        self.app = app
+        self.waiting = False
+        self.check()
+
+    def wait(self):
+        self.logger.info('Waiting for Makerbot Conveyor to stop...')
+        while not self.app.stop_flag:
+            time.sleep(0.1)
+            if not self.waiting:
+                break
+        self.logger.info('...end of waiting.')
+
+    def check(self):
+        if get_conveyor_pid():
+            self.waiting = True
+
+    def kill(self):
+        if kill_existing_conveyor():
+            self.waiting = False

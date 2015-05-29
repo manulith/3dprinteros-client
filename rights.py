@@ -52,10 +52,12 @@ class RightsCheckerAndWaiter:
         self.check()
 
     def wait(self):
+        self.logger.info('Waiting for adding to Linux groups')
         while not self.app.stop_flag:
             time.sleep(0.1)
             if not self.waiting:
                 break
+        self.logger.info('...end of waiting.')
 
     def check(self):
         if sys.platform.startswith('linux') and config.get_settings()['linux_rights_warning'] and not is_admin():

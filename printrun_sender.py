@@ -16,7 +16,7 @@
 # Author: Vladimir Avdeev <another.vic@yandex.ru>
 
 from printrun.printcore import printcore
-from printrun.gcoder import LightGCode
+from printrun.gcoder import FastLightGCode
 import re
 import time
 import logging
@@ -113,7 +113,7 @@ class Sender(BaseSender):
     def define_regexps(self):
         # ok T:29.0 /29.0 B:29.5 /29.0 @:0
         self.temp_re = re.compile('.*T:([\d\.]+) /([\d\.]+) B:(-?[\d\.]+) /(-?[\d\.]+)')
-        self.position_re = re.compile('.*X:([\d\.]+) Y:([\d\.]+) Z:([\d\.]+) E:([\d\.]+).*')
+        self.position_re = re.compile('.*X:(-?[\d\.]+).?Y:(-?[\d\.]+).?Z:(-?[\d\.]+).?E:(-?[\d\.]+).*')
         # M190 - T:26.34 E:0 B:33.7
         # M109 - T:26.3 E:0 W:?
         #self.wait_tool_temp_re = re.compile('T:([\d\.]+) E:(\d+)')
@@ -209,7 +209,7 @@ class Sender(BaseSender):
         self.set_total_gcodes(length)
         self.logger.info('Loading %d gcodes...' % length)
         if length:
-            self.buffer = LightGCode(gcodes)
+            self.buffer = FastLightGCode(gcodes)
             if self.printcore.startprint(self.buffer):
                 self.logger.info('...done loading gcodes.')
                 return True
